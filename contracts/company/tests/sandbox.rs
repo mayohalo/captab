@@ -1,7 +1,51 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use near_workspaces::types::NearToken;
-use near_workspaces::{Account, Contract};
+use near_workspaces::{Account, AccountDetailsPatch, Contract};
 use serde_json::{json, Value};
+
+#[tokio::test]
+async fn zero_balance_contributor_claims_through_signed_delegate(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/wasm32-unknown-unknown/release/captab_company.wasm"))?;
+    let worker = near_workspaces::sandbox().await?;
+    let company = worker.dev_deploy(&wasm).await?;
+    let dao = worker.dev_create_account().await?;
+    let operator = worker.dev_create_account().await?;
+    let contributor = worker.dev_create_account().await?;
+    let relayer = worker.dev_create_account().await?;
+    let token = worker.dev_create_account().await?;
+    assert!(company.call("new").args_json(json!({
+        "dao_id": dao.id(), "snapshot_operator_id": operator.id(),
+        "settlement_token_id": token.id(), "authorized_units": "1000"
+    })).transact().await?.is_success());
+    assert!(dao.call(company.id(), "increase_pool").args_json(json!({
+        "action_id": "sponsor-pool", "expected_revision": 0, "units": "100"
+    })).transact().await?.is_success());
+    let boundaries: Vec<u64> = (0..=48).map(|month| 1_000 + month * 2_592_000).collect();
+    assert!(dao.call(company.id(), "create_grant").args_json(json!({
+        "action_id": "sponsor-grant", "expected_revision": 1,
+        "recipient": contributor.id(), "units": "100", "boundaries": boundaries
+    })).transact().await?.is_success());
+    worker.patch(contributor.id()).account_from_current(|details| {
+        AccountDetailsPatch::from(details).balance(NearToken::from_yoctonear(0))
+    }).transact().await?;
+    assert_eq!(worker.view_account(contributor.id()).await?.balance, NearToken::from_yoctonear(0));
+
+    let script = concat!(env!("CARGO_MANIFEST_DIR"), "/../../apps/web/scripts/sandbox-sponsored-claim.mjs");
+    let output = std::process::Command::new("node")
+        .arg(script)
+        .env("SANDBOX_RPC_URL", worker.rpc_addr())
+        .env("SANDBOX_COMPANY_ID", company.id().as_str())
+        .env("SANDBOX_CONTRIBUTOR_ID", contributor.id().as_str())
+        .env("SANDBOX_CONTRIBUTOR_KEY", contributor.secret_key().to_string())
+        .env("SANDBOX_RELAYER_ID", relayer.id().as_str())
+        .env("SANDBOX_RELAYER_KEY", relayer.secret_key().to_string())
+        .output()?;
+    assert!(output.status.success(), "delegate script failed: {}", String::from_utf8_lossy(&output.stderr));
+    let holding: Value = company.view("get_holding").args_json(json!({"account_id": contributor.id()})).await?.json()?;
+    assert_eq!(holding, "100");
+    Ok(())
+}
 
 #[tokio::test]
 async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::error::Error>> {
