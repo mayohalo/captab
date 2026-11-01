@@ -1,7 +1,7 @@
 {
   "name": "captab",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "packageManager": "pnpm@10.16.1",
   "scripts": {
     "test:contract": "cargo test -p captab-company",
     "build:contract": "cargo build -p captab-company --target wasm32-unknown-unknown --release"
