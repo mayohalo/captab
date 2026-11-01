@@ -1,0 +1,29 @@
+import Link from "next/link";
+import { formatUnits, percent, type Distribution, type Grant, type Holding, type Totals } from "../lib/near";
+import { WalletControl } from "./wallet";
+
+export function CompanyView({ id, totals, holdings, grants, distributions }: {
+  id: string; totals: Totals; holdings: Holding[]; grants: Grant[]; distributions: Distribution[];
+}) {
+  return <main>
+    <header><div><Link href="/">CapTable</Link><h1>{id}</h1><p>NEAR testnet · DAO {totals.dao_id} · ledger revision {totals.ledger_revision}</p></div><WalletControl /></header>
+    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a></nav>
+    <section className="metrics">
+      <article><span>Issued</span><strong>{formatUnits(totals.issued_total)}</strong></article>
+      <article><span>Fully diluted</span><strong>{formatUnits(totals.fully_diluted_total)}</strong></article>
+      <article><span>Available pool</span><strong>{formatUnits(totals.pool_available)}</strong></article>
+      <article><span>Unallocated</span><strong>{formatUnits(totals.unallocated_units)}</strong></article>
+    </section>
+    <section id="ownership"><h2>Ownership</h2><p>Issued percentages use issued units. Fully diluted percentages include the pool and reserved grants.</p>
+      <table><thead><tr><th>Account</th><th>Issued units</th><th>Issued</th><th>Fully diluted</th></tr></thead><tbody>
+        {holdings.map(h => <tr key={h.account_id}><td>{h.account_id}</td><td>{formatUnits(h.issued_units)}</td><td>{percent(h.issued_units, totals.issued_total)}</td><td>{percent(h.issued_units, totals.fully_diluted_total)}</td></tr>)}
+      </tbody></table>{holdings.length === 0 && <p>No units issued yet.</p>}</section>
+    <section id="grants"><h2>Contributor grants</h2><div className="cards">
+      {grants.map(g => <article key={g.id}><h3>Grant #{g.id}</h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>{g.cancelled_at ? "Cancelled; vested rights remain" : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} /></article>)}
+    </div>{grants.length === 0 && <p>No grants yet.</p>}</section>
+    <section id="distributions"><h2>Distributions</h2><div className="cards">
+      {distributions.map(d => <article key={d.id}><h3>Distribution #{d.id}</h3><p>{formatUnits(d.budget)} token base units · {d.token_id}</p><p>{d.cancelled ? "Cancelled" : d.funded ? "Funded" : d.approved ? "Approved, awaiting funding" : "Awaiting approval"}</p><p>Paid {formatUnits(d.paid_total)} · in flight {formatUnits(d.in_flight_total)} · available {formatUnits(d.available_escrow)}</p><p>Snapshot revision {d.snapshot_revision}</p><table><thead><tr><th>Recipient</th><th>Entitlement</th><th>Status</th></tr></thead><tbody>{d.entitlements.map(e => <tr key={e.account_id}><td>{e.account_id}</td><td>{formatUnits(e.amount)}</td><td>{e.payment_status}</td></tr>)}</tbody></table></article>)}
+    </div>{distributions.length === 0 && <p>No distributions yet.</p>}</section>
+    <footer><a href={`https://testnet.nearblocks.io/address/${id}`}>View contract on NEAR Blocks</a></footer>
+  </main>;
+}

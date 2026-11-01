@@ -1,3 +1,8 @@
+import Link from "next/link";
+
 export default function Home() {
-  return <main><h1>CapTable</h1><p>Company ownership, governed on NEAR.</p><p>The ownership ledger is being built.</p></main>;
+  const configured = process.env.NEXT_PUBLIC_COMPANY_CONTRACT_ID;
+  return <main className="home"><p className="eyebrow">NEAR TESTNET</p><h1>CapTable</h1><p className="intro">Company ownership, contributor vesting, and distributions governed on NEAR.</p>
+    {configured ? <Link className="button" href={`/company/${configured}`}>Open company</Link> : <p>Set <code>NEXT_PUBLIC_COMPANY_CONTRACT_ID</code> to a deployed company account to view its live ledger.</p>}
+  </main>;
 }
