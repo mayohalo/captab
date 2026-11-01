@@ -257,6 +257,13 @@ async fn funded_payout_failure_and_retry_follow_token_receipts(
     assert_eq!(funded["funded"], true);
     assert_eq!(funded["available_escrow"], "100");
 
+    let spoofed_callback = retry_holder
+        .call(company.id(), "on_payment_result")
+        .args_json(json!({"distribution_id": 0, "recipient_id": retry_holder.id(), "attempt_id": 1}))
+        .transact()
+        .await?;
+    assert!(!spoofed_callback.is_success(), "external caller invoked private payment callback");
+
     let first = operator
         .call(company.id(), "pay_recipient")
         .args_json(json!({"distribution_id": 0, "recipient_id": paid_holder.id()}))

@@ -363,6 +363,31 @@ fn only_exact_dao_token_funding_is_accepted_once() {
             .0,
         999
     );
+    assert_eq!(
+        c.ft_on_transfer(aid("board.testnet"), U128(1_001), msg.clone())
+            .0,
+        1_001
+    );
+    assert_eq!(
+        c.ft_on_transfer(aid("board.testnet"), U128(1_000), "not-json".into())
+            .0,
+        1_000
+    );
+    assert_eq!(
+        c.ft_on_transfer(aid("board.testnet"), U128(1_000), "{}".into())
+            .0,
+        1_000
+    );
+    let mut wrong_hash = hash.clone();
+    wrong_hash[0] ^= 1;
+    assert_eq!(
+        c.ft_on_transfer(
+            aid("board.testnet"),
+            U128(1_000),
+            near_sdk::serde_json::json!({"distribution_id":id,"schedule_hash":wrong_hash}).to_string(),
+        ).0,
+        1_000
+    );
     assert!(!c.get_distribution(id).unwrap().funded);
     assert_eq!(
         c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg.clone())
@@ -461,4 +486,42 @@ fn in_flight_attempt_blocks_duplicate_transfer() {
     set_caller("executor.testnet");
     c.pay_recipient(id, aid("alice.testnet"));
     c.pay_recipient(id, aid("alice.testnet"));
+}
+
+#[test]
+#[should_panic(expected = "payment not retryable")]
+fn in_flight_payment_does_not_reset_after_expiry() {
+    let (mut c, id, hash) = approved_distribution();
+    set_caller("testusd.testnet");
+    let msg = near_sdk::serde_json::json!({"distribution_id":id,"schedule_hash":hash}).to_string();
+    c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg);
+    set_caller("executor.testnet");
+    c.pay_recipient(id, aid("alice.testnet"));
+    set_caller_at("executor.testnet", 100_000);
+    let pending = c.get_distribution(id).unwrap();
+    assert_eq!(pending.entitlements[0].payment_status, PaymentStatus::InFlight);
+    assert_eq!(pending.in_flight_total.0, 1_000);
+    c.pay_recipient(id, aid("alice.testnet"));
+}
+
+#[test]
+#[should_panic(expected = "stale attempt")]
+fn stale_payment_callback_cannot_settle_current_attempt() {
+    let (mut c, id, hash) = approved_distribution();
+    set_caller("testusd.testnet");
+    let msg = near_sdk::serde_json::json!({"distribution_id":id,"schedule_hash":hash}).to_string();
+    c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg);
+    set_caller("executor.testnet");
+    c.pay_recipient(id, aid("alice.testnet"));
+    let mut callback = VMContextBuilder::new();
+    callback.current_account_id(aid("company.testnet"));
+    callback.predecessor_account_id(aid("company.testnet"));
+    testing_env!(
+        callback.build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Successful(vec![])]
+    );
+    c.on_payment_result(id, aid("alice.testnet"), 0);
 }
