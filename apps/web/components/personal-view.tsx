@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { type Distribution, type Grant, type Holding, formatUnits } from "../lib/near";
 import { getConnector } from "./wallet";
 import { observeTransaction } from "../lib/observe";
+import { PrivateProfiles } from "./private-profiles";
 
 export function PersonalView({ companyId, holdings, grants, distributions }: {
   companyId: string; holdings: Holding[]; grants: Grant[]; distributions: Distribution[];
@@ -76,6 +77,7 @@ export function PersonalView({ companyId, holdings, grants, distributions }: {
       </article>)}</div>{ownEntitlements.length === 0 && <p>No distribution entitlements for this account.</p>}</section>
       <p>Claims from this screen use your wallet for gas. Sponsored claims are not available yet.</p>
     </>}
+    <PrivateProfiles companyId={companyId} />
     {status && <p role="status">{status}</p>}
   </main>;
 }

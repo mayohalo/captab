@@ -9,6 +9,7 @@
     "test:vesting": "node --experimental-strip-types --test lib/vesting.test.mjs",
     "test:receipts": "node --experimental-strip-types --test lib/receipts.test.mjs",
     "test:payments": "node --experimental-strip-types --test lib/payments.test.mjs",
+    "test:auth": "node --experimental-strip-types --test lib/auth-crypto.test.mjs",
     "reconcile:worker": "node scripts/reconcile-worker.mjs"
   },
   "dependencies": {
