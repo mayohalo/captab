@@ -12,6 +12,17 @@ fn set_caller(name: &str) {
     testing_env!(context.build());
 }
 
+fn set_caller_at(name: &str, seconds: u64) {
+    let mut context = VMContextBuilder::new();
+    context.predecessor_account_id(aid(name));
+    context.block_timestamp(seconds * 1_000_000_000);
+    testing_env!(context.build());
+}
+
+fn boundaries() -> Vec<u64> {
+    (0..=48).map(|m| 1_000 + m * 2_592_000).collect()
+}
+
 fn company() -> Company {
     set_caller("deployer.testnet");
     Company::new(aid("board.testnet"), U128(10_000_000))
@@ -106,4 +117,104 @@ fn pagination_and_repeat_issuance_do_not_duplicate_holders() {
     let page = c.list_holdings(1, 1);
     assert_eq!(page[0].account_id, aid("bob.testnet"));
     assert_eq!(c.get_holding(aid("alice.testnet")).0, 40);
+}
+
+#[test]
+fn grant_reservation_cliff_claim_and_full_vesting() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("pool".into(), 0, U128(2_000_000));
+    let schedule = boundaries();
+    let id = c.create_grant(
+        "grant".into(),
+        1,
+        aid("employee.testnet"),
+        U128(100_000),
+        schedule.clone(),
+    );
+    assert_eq!(id, 0);
+    assert_eq!(
+        c.create_grant(
+            "grant".into(),
+            1,
+            aid("employee.testnet"),
+            U128(100_000),
+            schedule.clone()
+        ),
+        id
+    );
+    assert_eq!(c.get_totals().pool_available.0, 1_900_000);
+    assert_eq!(c.get_totals().grant_reserved.0, 100_000);
+
+    set_caller_at("employee.testnet", schedule[12] - 1);
+    assert_eq!(c.get_grant(id).unwrap().claimable_units.0, 0);
+    set_caller_at("employee.testnet", schedule[12]);
+    assert_eq!(c.get_grant(id).unwrap().claimable_units.0, 25_000);
+    assert_eq!(c.claim_vested(id).0, 25_000);
+    assert_eq!(c.get_holding(aid("employee.testnet")).0, 25_000);
+    assert_eq!(c.get_totals().grant_reserved.0, 75_000);
+
+    set_caller_at("employee.testnet", schedule[48]);
+    assert_eq!(c.claim_vested(id).0, 75_000);
+    assert_eq!(c.get_holding(aid("employee.testnet")).0, 100_000);
+    assert_eq!(c.get_totals().grant_reserved.0, 0);
+    assert_eq!(c.get_totals().fully_diluted_total.0, 2_000_000);
+}
+
+#[test]
+fn cancellation_releases_only_unvested_units() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("pool".into(), 0, U128(100_000));
+    let schedule = boundaries();
+    let id = c.create_grant(
+        "grant".into(),
+        1,
+        aid("employee.testnet"),
+        U128(100_000),
+        schedule.clone(),
+    );
+    set_caller_at("board.testnet", schedule[18]);
+    c.cancel_unvested("cancel".into(), id);
+    assert_eq!(c.get_totals().pool_available.0, 62_500);
+    assert_eq!(c.get_totals().grant_reserved.0, 37_500);
+    set_caller_at("employee.testnet", schedule[48]);
+    assert_eq!(c.claim_vested(id).0, 37_500);
+    assert_eq!(c.get_totals().grant_reserved.0, 0);
+    assert_eq!(c.get_totals().fully_diluted_total.0, 100_000);
+}
+
+#[test]
+#[should_panic(expected = "grant recipient only")]
+fn another_account_cannot_claim() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("pool".into(), 0, U128(100_000));
+    let schedule = boundaries();
+    let id = c.create_grant(
+        "grant".into(),
+        1,
+        aid("employee.testnet"),
+        U128(100_000),
+        schedule.clone(),
+    );
+    set_caller_at("attacker.testnet", schedule[12]);
+    c.claim_vested(id);
+}
+
+#[test]
+#[should_panic(expected = "boundaries must increase")]
+fn schedule_must_be_monotonic() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("pool".into(), 0, U128(100_000));
+    let mut schedule = boundaries();
+    schedule[12] = schedule[11];
+    c.create_grant(
+        "grant".into(),
+        1,
+        aid("employee.testnet"),
+        U128(100_000),
+        schedule,
+    );
 }
