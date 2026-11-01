@@ -39,9 +39,9 @@ pnpm deploy:testnet
 When the preflight is correct, apply in dependency order:
 
 ```sh
-node apps/web/scripts/bootstrap-dao-testnet.mjs --apply
-node apps/web/scripts/bootstrap-token-testnet.mjs --apply
-node apps/web/scripts/deploy-testnet.mjs --apply
+pnpm bootstrap:dao --apply
+pnpm bootstrap:token --apply
+pnpm deploy:testnet --apply
 ```
 
 The first command deploys and initializes pinned Sputnik with exactly three council accounts and a two-vote policy. The second deploys the six-decimal TESTUSD fixture with its initial supply assigned to the DAO. The third deploys and initializes the company, registers it with TESTUSD, and writes `docs/deployment-manifest.testnet.json`. Each command checks existing code and initialization before writing, so a repeat run verifies the same deployment rather than replacing code. If a transaction fails or its result is uncertain, inspect the chain transaction and code/config views before rerunning.

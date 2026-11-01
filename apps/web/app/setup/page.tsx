@@ -42,6 +42,6 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
       {proposalStates.includes("Failed") && <p role="alert">A DAO proposal failed; inspect its receipts before retrying.</p>}
       <Link className="button" href={`/company/${selected}`}>Open company governance</Link>
     </section></>}
-    <section><h2>Deploy a new demo company</h2><p>Build the pinned Sputnik, company, and TESTUSD WASM. Prepare three board accounts plus DAO, token, operator, and funded company accounts. Run <code>pnpm bootstrap:dao</code>, <code>pnpm bootstrap:token</code>, and <code>pnpm deploy:testnet</code> for read-only preflights. After reviewing each result, add <code>--apply</code> to the corresponding direct Node command in the runbook. The final command verifies code hashes, initializes the company, registers it with the token, and writes a public deployment manifest.</p></section>
+    <section><h2>Deploy a new demo company</h2><p>Build the pinned Sputnik, company, and TESTUSD WASM. Prepare three board accounts plus DAO, token, operator, and funded company accounts. Run <code>pnpm bootstrap:dao</code>, <code>pnpm bootstrap:token</code>, and <code>pnpm deploy:testnet</code> for read-only preflights. After reviewing each result, repeat the same pnpm commands with <code>--apply</code> as shown in the runbook. The final command verifies code hashes, initializes the company, registers it with the token, and writes a public deployment manifest.</p></section>
   </main>;
 }
