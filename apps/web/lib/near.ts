@@ -7,7 +7,7 @@ export type Totals = { dao_id: string; authorized_units: string; issued_total: s
 export type Holding = { account_id: string; issued_units: string };
 export type Grant = { id: number; recipient: string; original_units: string; entitlement_cap: string; issued_units: string; vested_units: string; claimable_units: string; boundaries: number[]; cancelled_at: number | null };
 export type Entitlement = { account_id: string; units: string; amount: string; payment_status: "Ready" | "InFlight" | "Failed" | "Paid" | "Zero"; attempt_id: number };
-export type Distribution = { id: number; snapshot_revision: number; snapshot_timestamp: number; token_id: string; budget: string; expires_at: number; schedule_hash: number[]; approved: boolean; cancelled: boolean; funded: boolean; paid_total: string; in_flight_total: string; available_escrow: string; entitlements: Entitlement[] };
+export type Distribution = { id: number; snapshot_revision: number; snapshot_timestamp: number; snapshot_block_height: number; token_id: string; budget: string; expires_at: number; schedule_hash: number[]; approved: boolean; cancelled: boolean; funded: boolean; paid_total: string; in_flight_total: string; available_escrow: string; entitlements: Entitlement[] };
 
 const accountPattern = /^(?=.{2,64}$)[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 export function validAccountId(id: string): boolean { return accountPattern.test(id); }

@@ -288,6 +288,27 @@ fn snapshot_rounds_exactly_and_survives_later_issuance() {
 }
 
 #[test]
+fn tiny_budget_marks_zero_entitlements_non_payable() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(1));
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(1));
+    c.issue_founder_units("c".into(), 2, aid("carol.testnet"), U128(1));
+    set_caller("operator.testnet");
+    let id = c.prepare_distribution(3, U128(1), 10_000);
+    let distribution = c.get_distribution(id).unwrap();
+    assert_eq!(distribution.entitlements[0].amount.0, 1);
+    assert_eq!(
+        distribution.entitlements[0].payment_status,
+        PaymentStatus::Ready
+    );
+    for row in &distribution.entitlements[1..] {
+        assert_eq!(row.amount.0, 0);
+        assert_eq!(row.payment_status, PaymentStatus::Zero);
+    }
+}
+
+#[test]
 #[should_panic(expected = "schedule hash mismatch")]
 fn approval_rejects_modified_hash() {
     let mut c = company();

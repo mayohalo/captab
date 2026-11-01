@@ -222,10 +222,19 @@ dependencies = [
 name = "captab-company"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "near-sdk",
  "near-workspaces",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "captab-test-token"
+version = "0.1.0"
+dependencies = [
+ "near-contract-standards",
+ "near-sdk",
 ]
 
 [[package]]
@@ -1660,6 +1669,15 @@ dependencies = [
  "json_comments",
  "thiserror 2.0.21",
  "tracing",
+]
+
+[[package]]
+name = "near-contract-standards"
+version = "5.17.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "deeee26550aaf4b670eab42e56bd1f329a29759d26424db5a97a9277eb27fa3f"
+dependencies = [
+ "near-sdk",
 ]
 
 [[package]]

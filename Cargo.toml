@@ -1,5 +1,5 @@
 [workspace]
-members = ["contracts/company"]
+members = ["contracts/company", "contracts/test-token"]
 resolver = "2"
 
 [workspace.package]

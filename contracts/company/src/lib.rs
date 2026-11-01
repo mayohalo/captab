@@ -75,6 +75,7 @@ pub struct Distribution {
     pub id: u64,
     pub snapshot_revision: u64,
     pub snapshot_timestamp: u64,
+    pub snapshot_block_height: u64,
     pub token_id: AccountId,
     pub budget: u128,
     pub expires_at: u64,
@@ -104,6 +105,7 @@ pub struct DistributionView {
     pub id: u64,
     pub snapshot_revision: u64,
     pub snapshot_timestamp: u64,
+    pub snapshot_block_height: u64,
     pub token_id: AccountId,
     pub budget: U128,
     pub expires_at: u64,
@@ -288,19 +290,29 @@ impl Company {
         for index in rank.into_iter().take(leftover as usize) {
             rows[index].0.amount += 1;
         }
-        let mut entitlements: Vec<Entitlement> = rows.into_iter().map(|(row, _)| row).collect();
+        let mut entitlements: Vec<Entitlement> = rows
+            .into_iter()
+            .map(|(mut row, _)| {
+                if row.amount == 0 {
+                    row.payment_status = PaymentStatus::Zero;
+                }
+                row
+            })
+            .collect();
         entitlements.sort_by(|a, b| a.account_id.cmp(&b.account_id));
         let now = env::block_timestamp_ms() / 1000;
+        let block_height = env::block_height();
         let immutable_rows: Vec<_> = entitlements
             .iter()
             .map(|e| (&e.account_id, e.units, e.amount))
             .collect();
         let payload = (
-            "captable.distribution.v1",
+            "near:testnet/captable.distribution.v1",
             env::current_account_id(),
             id,
             self.ledger_revision,
             now,
+            block_height,
             &self.settlement_token_id,
             budget.0,
             expires_at,
@@ -314,6 +326,7 @@ impl Company {
                 id,
                 snapshot_revision: self.ledger_revision,
                 snapshot_timestamp: now,
+                snapshot_block_height: block_height,
                 token_id: self.settlement_token_id.clone(),
                 budget: budget.0,
                 expires_at,
@@ -533,6 +546,7 @@ impl Company {
                 id: d.id,
                 snapshot_revision: d.snapshot_revision,
                 snapshot_timestamp: d.snapshot_timestamp,
+                snapshot_block_height: d.snapshot_block_height,
                 token_id: d.token_id,
                 budget: U128(d.budget),
                 expires_at: d.expires_at,
