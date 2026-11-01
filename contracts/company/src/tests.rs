@@ -25,7 +25,12 @@ fn boundaries() -> Vec<u64> {
 
 fn company() -> Company {
     set_caller("deployer.testnet");
-    Company::new(aid("board.testnet"), U128(10_000_000))
+    Company::new(
+        aid("board.testnet"),
+        aid("operator.testnet"),
+        aid("testusd.testnet"),
+        U128(10_000_000),
+    )
 }
 
 #[test]
@@ -217,4 +222,89 @@ fn schedule_must_be_monotonic() {
         U128(100_000),
         schedule,
     );
+}
+
+#[test]
+fn snapshot_rounds_exactly_and_survives_later_issuance() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(3_600_000));
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(2_400_000));
+    c.increase_pool("pool".into(), 2, U128(2_000_000));
+    let schedule = boundaries();
+    let grant_id = c.create_grant(
+        "grant".into(),
+        3,
+        aid("employee.testnet"),
+        U128(100_000),
+        schedule.clone(),
+    );
+    set_caller_at("employee.testnet", schedule[12]);
+    c.claim_vested(grant_id);
+    set_caller_at("operator.testnet", schedule[12]);
+    let id = c.prepare_distribution(5, U128(10_000_000_000), schedule[48]);
+    let before = c.get_distribution(id).unwrap();
+    assert_eq!(
+        before.entitlements.iter().map(|e| e.amount.0).sum::<u128>(),
+        10_000_000_000
+    );
+    assert_eq!(
+        before
+            .entitlements
+            .iter()
+            .find(|e| e.account_id == aid("alice.testnet"))
+            .unwrap()
+            .amount
+            .0,
+        5_975_103_734
+    );
+    assert_eq!(
+        before
+            .entitlements
+            .iter()
+            .find(|e| e.account_id == aid("bob.testnet"))
+            .unwrap()
+            .amount
+            .0,
+        3_983_402_490
+    );
+    assert_eq!(
+        before
+            .entitlements
+            .iter()
+            .find(|e| e.account_id == aid("employee.testnet"))
+            .unwrap()
+            .amount
+            .0,
+        41_493_776
+    );
+    set_caller_at("board.testnet", schedule[12]);
+    c.issue_founder_units("late".into(), 5, aid("late.testnet"), U128(100));
+    c.approve_distribution("approve".into(), id, before.schedule_hash.clone());
+    let after = c.get_distribution(id).unwrap();
+    assert!(after.approved);
+    assert_eq!(after.entitlements.len(), 3);
+    assert_eq!(after.schedule_hash, before.schedule_hash);
+}
+
+#[test]
+#[should_panic(expected = "schedule hash mismatch")]
+fn approval_rejects_modified_hash() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    set_caller("operator.testnet");
+    let id = c.prepare_distribution(1, U128(100), 1000);
+    set_caller("board.testnet");
+    c.approve_distribution("approve".into(), id, vec![0; 32]);
+}
+
+#[test]
+#[should_panic(expected = "snapshot operator only")]
+fn non_operator_cannot_prepare_snapshot() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    set_caller("attacker.testnet");
+    c.prepare_distribution(1, U128(100), 1000);
 }

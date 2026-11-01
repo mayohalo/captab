@@ -8,6 +8,9 @@ const MAX_HOLDERS: usize = 20;
 const MAX_ACTIONS: u32 = 200;
 const MAX_GRANTS: usize = 100;
 const VESTING_BOUNDARIES: usize = 49;
+const MAX_DISTRIBUTIONS: usize = 20;
+const MAX_AUTHORIZED_UNITS: u128 = 1_000_000_000_000_000;
+const MAX_DISTRIBUTION_BUDGET: u128 = 1_000_000_000_000_000_000;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -41,6 +44,50 @@ pub struct GrantView {
     pub cancelled_at: Option<u64>,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
+pub struct Entitlement {
+    pub account_id: AccountId,
+    pub units: u128,
+    pub amount: u128,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Clone)]
+#[borsh(crate = "near_sdk::borsh")]
+pub struct Distribution {
+    pub id: u64,
+    pub snapshot_revision: u64,
+    pub snapshot_timestamp: u64,
+    pub token_id: AccountId,
+    pub budget: u128,
+    pub expires_at: u64,
+    pub schedule_hash: Vec<u8>,
+    pub approved: bool,
+    pub entitlements: Vec<Entitlement>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct EntitlementView {
+    pub account_id: AccountId,
+    pub units: U128,
+    pub amount: U128,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct DistributionView {
+    pub id: u64,
+    pub snapshot_revision: u64,
+    pub snapshot_timestamp: u64,
+    pub token_id: AccountId,
+    pub budget: U128,
+    pub expires_at: u64,
+    pub schedule_hash: Vec<u8>,
+    pub approved: bool,
+    pub entitlements: Vec<EntitlementView>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct HoldingView {
@@ -67,6 +114,8 @@ pub struct LedgerView {
 #[borsh(crate = "near_sdk::borsh")]
 pub struct Company {
     dao_id: AccountId,
+    snapshot_operator_id: AccountId,
+    settlement_token_id: AccountId,
     authorized_units: u128,
     issued_total: u128,
     pool_available: u128,
@@ -79,15 +128,28 @@ pub struct Company {
     grants: LookupMap<u64, Grant>,
     grant_ids: Vec<u64>,
     grant_action_ids: LookupMap<String, u64>,
+    distributions: LookupMap<u64, Distribution>,
+    distribution_ids: Vec<u64>,
 }
 
 #[near_bindgen]
 impl Company {
     #[init]
-    pub fn new(dao_id: AccountId, authorized_units: U128) -> Self {
+    pub fn new(
+        dao_id: AccountId,
+        snapshot_operator_id: AccountId,
+        settlement_token_id: AccountId,
+        authorized_units: U128,
+    ) -> Self {
         assert!(authorized_units.0 > 0, "authorized units must be positive");
+        assert!(
+            authorized_units.0 <= MAX_AUTHORIZED_UNITS,
+            "authorized unit limit exceeded"
+        );
         Self {
             dao_id,
+            snapshot_operator_id,
+            settlement_token_id,
             authorized_units: authorized_units.0,
             issued_total: 0,
             pool_available: 0,
@@ -100,7 +162,180 @@ impl Company {
             grants: LookupMap::new(b"g"),
             grant_ids: Vec::new(),
             grant_action_ids: LookupMap::new(&b"ga"[..]),
+            distributions: LookupMap::new(b"d"),
+            distribution_ids: Vec::new(),
         }
+    }
+
+    pub fn prepare_distribution(
+        &mut self,
+        expected_revision: u64,
+        budget: U128,
+        expires_at: u64,
+    ) -> u64 {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.snapshot_operator_id,
+            "snapshot operator only"
+        );
+        self.assert_revision(expected_revision);
+        assert!(self.issued_total > 0, "no issued units");
+        assert!(
+            budget.0 > 0 && budget.0 <= MAX_DISTRIBUTION_BUDGET,
+            "invalid budget"
+        );
+        assert!(
+            expires_at > env::block_timestamp_ms() / 1000,
+            "snapshot already expired"
+        );
+        assert!(
+            self.distribution_ids.len() < MAX_DISTRIBUTIONS,
+            "distribution limit reached"
+        );
+        let id = self.distribution_ids.len() as u64;
+        let mut rows: Vec<(Entitlement, u128)> = self
+            .holder_ids
+            .iter()
+            .map(|account_id| {
+                let units = self.holders.get(account_id).expect("missing holding").units;
+                let numerator = budget
+                    .0
+                    .checked_mul(units)
+                    .expect("distribution multiplication overflow");
+                (
+                    Entitlement {
+                        account_id: account_id.clone(),
+                        units,
+                        amount: numerator / self.issued_total,
+                    },
+                    numerator % self.issued_total,
+                )
+            })
+            .collect();
+        let allocated = rows
+            .iter()
+            .try_fold(0u128, |sum, (row, _)| sum.checked_add(row.amount))
+            .expect("distribution total overflow");
+        let leftover = budget
+            .0
+            .checked_sub(allocated)
+            .expect("distribution allocation error");
+        let mut rank: Vec<usize> = (0..rows.len()).collect();
+        rank.sort_by(|&a, &b| {
+            rows[b]
+                .1
+                .cmp(&rows[a].1)
+                .then_with(|| rows[a].0.account_id.cmp(&rows[b].0.account_id))
+        });
+        assert!((leftover as usize) <= rank.len(), "rounding error");
+        for index in rank.into_iter().take(leftover as usize) {
+            rows[index].0.amount += 1;
+        }
+        let mut entitlements: Vec<Entitlement> = rows.into_iter().map(|(row, _)| row).collect();
+        entitlements.sort_by(|a, b| a.account_id.cmp(&b.account_id));
+        let now = env::block_timestamp_ms() / 1000;
+        let payload = (
+            "captable.distribution.v1",
+            env::current_account_id(),
+            id,
+            self.ledger_revision,
+            now,
+            &self.settlement_token_id,
+            budget.0,
+            expires_at,
+            &entitlements,
+        );
+        let schedule_hash =
+            env::sha256(&near_sdk::borsh::to_vec(&payload).expect("serialize schedule"));
+        self.distributions.insert(
+            &id,
+            &Distribution {
+                id,
+                snapshot_revision: self.ledger_revision,
+                snapshot_timestamp: now,
+                token_id: self.settlement_token_id.clone(),
+                budget: budget.0,
+                expires_at,
+                schedule_hash,
+                approved: false,
+                entitlements,
+            },
+        );
+        self.distribution_ids.push(id);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"distribution_prepared\",\"data\":[{{\"distribution_id\":{},\"revision\":{}}}]}}", id, self.ledger_revision));
+        id
+    }
+
+    pub fn approve_distribution(
+        &mut self,
+        action_id: String,
+        distribution_id: u64,
+        schedule_hash: Vec<u8>,
+    ) {
+        self.assert_dao();
+        let digest = env::sha256(
+            &near_sdk::borsh::to_vec(&(
+                "approve_distribution",
+                &action_id,
+                distribution_id,
+                &schedule_hash,
+            ))
+            .expect("serialize approval"),
+        );
+        if self.was_processed(&action_id, &digest) {
+            return;
+        }
+        let mut distribution = self
+            .distributions
+            .get(&distribution_id)
+            .expect("distribution not found");
+        assert!(!distribution.approved, "already approved");
+        assert!(
+            env::block_timestamp_ms() / 1000 < distribution.expires_at,
+            "distribution expired"
+        );
+        assert_eq!(
+            distribution.schedule_hash, schedule_hash,
+            "schedule hash mismatch"
+        );
+        distribution.approved = true;
+        self.distributions.insert(&distribution_id, &distribution);
+        self.record_action(action_id, digest);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"distribution_approved\",\"data\":[{{\"distribution_id\":{}}}]}}", distribution_id));
+    }
+
+    pub fn get_distribution(&self, distribution_id: u64) -> Option<DistributionView> {
+        self.distributions
+            .get(&distribution_id)
+            .map(|d| DistributionView {
+                id: d.id,
+                snapshot_revision: d.snapshot_revision,
+                snapshot_timestamp: d.snapshot_timestamp,
+                token_id: d.token_id,
+                budget: U128(d.budget),
+                expires_at: d.expires_at,
+                schedule_hash: d.schedule_hash,
+                approved: d.approved,
+                entitlements: d
+                    .entitlements
+                    .into_iter()
+                    .map(|e| EntitlementView {
+                        account_id: e.account_id,
+                        units: U128(e.units),
+                        amount: U128(e.amount),
+                    })
+                    .collect(),
+            })
+    }
+
+    pub fn list_distributions(&self, from_index: u32, limit: u32) -> Vec<DistributionView> {
+        assert!(limit <= 20, "page limit exceeded");
+        self.distribution_ids
+            .iter()
+            .skip(from_index as usize)
+            .take(limit as usize)
+            .map(|id| self.get_distribution(*id).expect("missing distribution"))
+            .collect()
     }
 
     pub fn create_grant(
