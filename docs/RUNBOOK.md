@@ -14,11 +14,12 @@ pnpm test:sponsor
 pnpm test:payments
 pnpm test:receipts
 pnpm test:vesting
+pnpm test:e2e
 pnpm test:sandbox
 pnpm --dir apps/web build
 ```
 
-The Sandbox test builds a pinned Sputnik DAO and both local contracts, then exercises two-vote governance, funding, payout failure/retry, and a zero-balance sponsored claim. Stop if any check fails. `scripts/build-sputnik.sh` verifies the exact Sputnik WASM SHA-256 before deployment.
+Install Chromium once with `pnpm --filter @captab/web exec playwright install chromium` before `pnpm test:e2e`. Those browser tests use fixture contract views and do not sign transactions. The Sandbox test builds a pinned Sputnik DAO and both local contracts, then exercises two-vote governance, funding, payout failure/retry, and a zero-balance sponsored claim. Stop if any check fails. `scripts/build-sputnik.sh` verifies the exact Sputnik WASM SHA-256 before deployment.
 
 ## 2. Prepare accounts and local configuration
 

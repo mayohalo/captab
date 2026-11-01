@@ -39,6 +39,10 @@ jobs:
           pnpm test:sponsor
       - name: Build web app
         run: pnpm --dir apps/web build
+      - name: Install Chromium for browser tests
+        run: pnpm --filter @captab/web exec playwright install --with-deps chromium
+      - name: Test browser journeys against fixture chain views
+        run: pnpm test:e2e
       - name: Test company contract
         run: pnpm test:contract
       - name: Test on-chain lifecycle in Sandbox

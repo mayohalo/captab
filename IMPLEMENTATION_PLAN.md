@@ -1,8 +1,8 @@
 # CapTable: technical implementation plan
 
-Status: proposed implementation plan, not implemented software. Prepared 25 October 2026.
+Status: implementation in progress; see README for verified coverage and remaining work. Prepared 25 October 2026.
 
-The workspace is currently empty. This plan assumes three contributors: a contracts engineer (C), a frontend engineer (F), and a full-stack/integration engineer (I). The workstreams describe human/team ownership, not agents already assigned. With one developer, keep the same dependency order and extend the schedule rather than promise the full scope in two weeks.
+The workstreams assume three contributors: a contracts engineer (C), a frontend engineer (F), and a full-stack/integration engineer (I). They describe human/team ownership, not agents already assigned. With one developer, keep the same dependency order and extend the schedule rather than promise the full scope in two weeks.
 
 The deliverable is a testnet application demonstrating company setup, governed issuance, contributor vesting, sponsored claims, and a reconciled distribution. Ownership units are internal application records, not transferable NEP-141 tokens or legal shares. One standard NEP-141 test token is used only for payments.
 
