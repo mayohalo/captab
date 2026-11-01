@@ -1,0 +1,109 @@
+use super::*;
+use near_sdk::test_utils::VMContextBuilder;
+use near_sdk::testing_env;
+
+fn aid(name: &str) -> AccountId {
+    name.parse().unwrap()
+}
+
+fn set_caller(name: &str) {
+    let mut context = VMContextBuilder::new();
+    context.predecessor_account_id(aid(name));
+    testing_env!(context.build());
+}
+
+fn company() -> Company {
+    set_caller("deployer.testnet");
+    Company::new(aid("board.testnet"), U128(10_000_000))
+}
+
+#[test]
+fn founder_issuance_pool_and_denominators() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(3_600_000));
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(2_400_000));
+    c.increase_pool("c".into(), 2, U128(2_000_000));
+    let totals = c.get_totals();
+    assert_eq!(totals.issued_total.0, 6_000_000);
+    assert_eq!(totals.pool_available.0, 2_000_000);
+    assert_eq!(totals.fully_diluted_total.0, 8_000_000);
+    assert_eq!(totals.unallocated_units.0, 2_000_000);
+    assert_eq!(totals.ledger_revision, 3);
+    assert_eq!(c.list_holdings(0, 20).len(), 2);
+}
+
+#[test]
+fn identical_replay_is_idempotent_even_after_revision_changes() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    c.increase_pool("b".into(), 1, U128(100));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    assert_eq!(c.get_holding(aid("alice.testnet")).0, 100);
+    assert_eq!(c.get_totals().ledger_revision, 2);
+}
+
+#[test]
+#[should_panic(expected = "DAO only")]
+fn non_dao_cannot_issue() {
+    let mut c = company();
+    set_caller("attacker.testnet");
+    c.issue_founder_units("a".into(), 0, aid("attacker.testnet"), U128(100));
+}
+
+#[test]
+#[should_panic(expected = "stale ledger revision")]
+fn stale_revision_rejected() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("a".into(), 0, U128(100));
+    c.increase_pool("b".into(), 0, U128(100));
+}
+
+#[test]
+#[should_panic(expected = "action id reused with different arguments")]
+fn action_id_cannot_be_repurposed() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("a".into(), 0, U128(100));
+    c.increase_pool("a".into(), 0, U128(101));
+}
+
+#[test]
+#[should_panic(expected = "insufficient unallocated units")]
+fn cannot_exceed_authorized_supply() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.increase_pool("a".into(), 0, U128(9_000_000));
+    c.issue_founder_units("b".into(), 1, aid("alice.testnet"), U128(1_000_001));
+}
+
+#[test]
+#[should_panic(expected = "holder limit reached")]
+fn holder_limit_is_enforced() {
+    let mut c = company();
+    set_caller("board.testnet");
+    for i in 0..20 {
+        c.issue_founder_units(
+            format!("action-{i}"),
+            i,
+            aid(&format!("holder-{i}.testnet")),
+            U128(1),
+        );
+    }
+    c.issue_founder_units("overflow".into(), 20, aid("extra.testnet"), U128(1));
+}
+
+#[test]
+fn pagination_and_repeat_issuance_do_not_duplicate_holders() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(10));
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(20));
+    c.issue_founder_units("c".into(), 2, aid("alice.testnet"), U128(30));
+    assert_eq!(c.get_totals().holder_count, 2);
+    let page = c.list_holdings(1, 1);
+    assert_eq!(page[0].account_id, aid("bob.testnet"));
+    assert_eq!(c.get_holding(aid("alice.testnet")).0, 40);
+}

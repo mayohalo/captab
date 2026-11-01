@@ -1,0 +1,9 @@
+{
+  "name": "captab",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "test:contract": "cargo test -p captab-company",
+    "build:contract": "cargo build -p captab-company --target wasm32-unknown-unknown --release"
+  }
+}
