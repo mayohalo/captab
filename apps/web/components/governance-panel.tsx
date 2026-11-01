@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { type CompanyConfig, type DaoPolicy, type DaoProposal, type Distribution, type Grant, type Totals, validAccountId } from "../lib/near";
 import { buildMonthlyBoundaries } from "../lib/vesting";
+import { observeTransaction } from "../lib/observe";
 import { getConnector } from "./wallet";
 
 type Action = "founder" | "pool" | "grant" | "cancelGrant" | "approve" | "fund";
@@ -137,7 +138,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
   }
 
   async function submit() {
-    if (!prepared || !wallet || !policy) return;
+    if (!prepared || !wallet || !policy || !account) return;
     setBusy(true);
     setStatus("Awaiting wallet signature…");
     try {
@@ -148,7 +149,8 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
         } }],
       });
       assertTransactionSucceeded(outcome.status);
-      setStatus(`Proposal submitted: ${outcome.transaction.hash}. It still needs board votes and successful execution.`);
+      const observed = await observeTransaction(id, account, outcome.transaction.hash);
+      setStatus(`Proposal submitted: ${outcome.transaction.hash}. It still needs board votes and successful execution.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
       setPrepared(null);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Proposal submission failed"); }
@@ -156,7 +158,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
   }
 
   async function approve(proposal: DaoProposal) {
-    if (!wallet || !isCouncil) return;
+    if (!wallet || !isCouncil || !account) return;
     setBusy(true);
     setStatus(`Awaiting signature for proposal #${proposal.id}…`);
     try {
@@ -169,7 +171,8 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
         } }],
       });
       assertTransactionSucceeded(outcome.status);
-      setStatus(`Vote transaction ${outcome.transaction.hash}. Refresh to verify the DAO and company outcome.`);
+      const observed = await observeTransaction(id, account, outcome.transaction.hash);
+      setStatus(`Vote transaction ${outcome.transaction.hash}. Refresh to verify the DAO and company outcome.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Vote failed"); }
     finally { setBusy(false); }
@@ -207,7 +210,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
         {selected && (action === "approve" || action === "fund") && <p>Budget {selected.budget} · token {selected.token_id} · expires {new Date(selected.expires_at * 1000).toUTCString()}</p>}
         <button onClick={prepare} disabled={busy || config.paused}>Review proposal</button>
       </div>
-      {prepared && <article><h3>Review exact DAO action</h3><p>{prepared.description}</p><pre>{JSON.stringify(readableAction(prepared), null, 2)}</pre><p>This proposal is immutable. If the ledger revision or distribution status changes, prepare a new one.</p><button onClick={submit} disabled={busy || !wallet}>Submit to DAO</button></article>}
+      {prepared && <article><h3>Review exact DAO action</h3><p>{prepared.description}</p><pre>{JSON.stringify(readableAction(prepared), null, 2)}</pre><p>This proposal is immutable. If the ledger revision or distribution status changes, prepare a new one.</p><button onClick={submit} disabled={busy || !wallet || !account}>Submit to DAO</button></article>}
     </>}
     {status && <p role="status">{status}</p>}
     <h3>Recent proposals</h3>

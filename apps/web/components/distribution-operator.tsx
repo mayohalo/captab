@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { type CompanyConfig, type Distribution, type Totals } from "../lib/near";
 import { getConnector } from "./wallet";
+import { observeTransaction } from "../lib/observe";
 
 export function DistributionOperator({ id, config, totals, distributions }: {
   id: string; config: CompanyConfig; totals: Totals; distributions: Distribution[];
@@ -37,7 +38,7 @@ export function DistributionOperator({ id, config, totals, distributions }: {
   }
 
   async function send(methodName: string, args: Record<string, unknown>, gas = "100000000000000") {
-    if (!wallet) return;
+    if (!wallet || !account) return;
     setBusy(true);
     setStatus("Awaiting wallet signature…");
     try {
@@ -48,7 +49,8 @@ export function DistributionOperator({ id, config, totals, distributions }: {
       if (outcome.status === "Failure" || (typeof outcome.status === "object" && outcome.status !== null && "Failure" in outcome.status)) {
         throw new Error(`Transaction failed: ${JSON.stringify(outcome.status)}`);
       }
-      setStatus(`Transaction ${outcome.transaction.hash}. Refresh to verify the company state and payment callback.`);
+      const observed = await observeTransaction(id, account, outcome.transaction.hash);
+      setStatus(`Transaction ${outcome.transaction.hash}. Refresh to verify the company state and payment callback.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Transaction failed"); }
     finally { setBusy(false); }

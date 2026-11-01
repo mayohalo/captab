@@ -2,6 +2,7 @@
 
 import { NearConnector, type NearWalletBase } from "@hot-labs/near-connect";
 import { useEffect, useState } from "react";
+import { observeTransaction } from "../lib/observe";
 
 let connector: NearConnector | undefined;
 export function getConnector() { if (!connector) connector = new NearConnector({ network: "testnet" }); return connector; }
@@ -27,7 +28,8 @@ export function WalletControl({ contractId, grantId, recipient, claimable }: { c
     setStatus("Awaiting wallet signature…");
     try {
       const outcome = await wallet.signAndSendTransaction({ receiverId: contractId, actions: [{ type: "FunctionCall", params: { methodName: "claim_vested", args: { grant_id: grantId }, gas: "30000000000000", deposit: "0" } }] });
-      setStatus(`Submitted ${outcome.transaction.hash}. Refresh after confirmation.`);
+      const observed = account ? await observeTransaction(contractId, account, outcome.transaction.hash) : null;
+      setStatus(`Submitted ${outcome.transaction.hash}. Refresh after confirmation.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
     } catch (error) { setStatus(error instanceof Error ? error.message : "Claim failed"); }
   }
   return <div className="wallet">

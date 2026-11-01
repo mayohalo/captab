@@ -9,7 +9,7 @@ export function CompanyView({ id, totals, config, daoPolicy, proposals, holdings
 }) {
   return <main>
     <header><div><Link href="/">CapTable</Link><h1>{id}</h1><p>NEAR testnet · DAO {totals.dao_id} · ledger revision {totals.ledger_revision}</p></div><WalletControl /></header>
-    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a><a href="#distribution-actions">Execution</a><a href="#governance">Governance</a><Link href={`/me?company=${id}`}>My ownership</Link></nav>
+    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a><a href="#distribution-actions">Execution</a><a href="#governance">Governance</a><Link href={`/company/${id}/activity`}>Activity</Link><Link href={`/me?company=${id}`}>My ownership</Link></nav>
     {config.paused && <p role="alert">Company is paused. New claims, snapshots, funding, and payment attempts are disabled.</p>}
     <section className="metrics">
       <article><span>Issued</span><strong>{formatUnits(totals.issued_total)}</strong></article>

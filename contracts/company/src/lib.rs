@@ -227,6 +227,7 @@ impl Company {
         }
         self.paused = paused;
         self.record_action(action_id, digest);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"pause_changed\",\"data\":[{{\"paused\":{}}}]}}", paused));
     }
 
     pub fn is_paused(&self) -> bool {
@@ -431,6 +432,7 @@ impl Company {
         d.cancelled = true;
         self.distributions.insert(&distribution_id, &d);
         self.record_action(action_id, digest);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"distribution_cancelled\",\"data\":[{{\"distribution_id\":{}}}]}}", distribution_id));
     }
 
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
@@ -501,6 +503,7 @@ impl Company {
             .checked_add(amount)
             .expect("in-flight overflow");
         self.distributions.insert(&distribution_id, &distribution);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"payment_started\",\"data\":[{{\"distribution_id\":{},\"recipient\":\"{}\",\"attempt_id\":{},\"amount\":\"{}\"}}]}}", distribution_id, recipient_id, attempt_id, amount));
         let args = near_sdk::serde_json::json!({"receiver_id": recipient_id, "amount": amount.to_string()}).to_string().into_bytes();
         let callback_args = near_sdk::serde_json::json!({"distribution_id": distribution_id, "recipient_id": recipient_id, "attempt_id": attempt_id}).to_string().into_bytes();
         Promise::new(self.settlement_token_id.clone())

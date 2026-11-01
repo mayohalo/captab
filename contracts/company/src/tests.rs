@@ -1,5 +1,5 @@
 use super::*;
-use near_sdk::test_utils::VMContextBuilder;
+use near_sdk::test_utils::{get_logs, VMContextBuilder};
 use near_sdk::testing_env;
 
 fn aid(name: &str) -> AccountId {
@@ -387,6 +387,10 @@ fn failed_payment_releases_reservation_and_retry_pays_once() {
     );
     set_caller("executor.testnet");
     c.pay_recipient(id, aid("alice.testnet"));
+    assert!(get_logs()
+        .iter()
+        .any(|line| line.contains("\"event\":\"payment_started\"")
+            && line.contains("\"attempt_id\":1")));
     let pending = c.get_distribution(id).unwrap();
     assert_eq!(pending.available_escrow.0, 0);
     assert_eq!(pending.in_flight_total.0, 1_000);
@@ -430,6 +434,21 @@ fn failed_payment_releases_reservation_and_retry_pays_once() {
     assert_eq!(paid.available_escrow.0, 0);
     assert_eq!(paid.entitlements[0].payment_status, PaymentStatus::Paid);
     assert_eq!(paid.entitlements[0].attempt_id, 2);
+}
+
+#[test]
+fn pause_and_distribution_cancellation_emit_structured_events() {
+    let (mut c, id, _) = approved_distribution();
+    set_caller("board.testnet");
+    c.set_paused("pause".into(), true);
+    assert!(get_logs().iter().any(
+        |line| line.contains("\"event\":\"pause_changed\"") && line.contains("\"paused\":true")
+    ));
+    c.cancel_unfunded_distribution("cancel".into(), id);
+    assert!(get_logs()
+        .iter()
+        .any(|line| line.contains("\"event\":\"distribution_cancelled\"")
+            && line.contains("\"distribution_id\":0")));
 }
 
 #[test]
