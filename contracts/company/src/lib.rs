@@ -2,7 +2,9 @@ use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::LookupMap;
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
+use near_sdk::{
+    env, near_bindgen, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseResult,
+};
 
 const MAX_HOLDERS: usize = 20;
 const MAX_ACTIONS: u32 = 200;
@@ -50,6 +52,21 @@ pub struct Entitlement {
     pub account_id: AccountId,
     pub units: u128,
     pub amount: u128,
+    pub payment_status: PaymentStatus,
+    pub attempt_id: u64,
+}
+
+#[derive(
+    BorshDeserialize, BorshSerialize, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Debug,
+)]
+#[borsh(crate = "near_sdk::borsh")]
+#[serde(crate = "near_sdk::serde")]
+pub enum PaymentStatus {
+    Ready,
+    InFlight,
+    Failed,
+    Paid,
+    Zero,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Clone)]
@@ -63,6 +80,11 @@ pub struct Distribution {
     pub expires_at: u64,
     pub schedule_hash: Vec<u8>,
     pub approved: bool,
+    pub cancelled: bool,
+    pub funded: bool,
+    pub paid_total: u128,
+    pub in_flight_total: u128,
+    pub available_escrow: u128,
     pub entitlements: Vec<Entitlement>,
 }
 
@@ -72,6 +94,8 @@ pub struct EntitlementView {
     pub account_id: AccountId,
     pub units: U128,
     pub amount: U128,
+    pub payment_status: PaymentStatus,
+    pub attempt_id: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -85,7 +109,19 @@ pub struct DistributionView {
     pub expires_at: u64,
     pub schedule_hash: Vec<u8>,
     pub approved: bool,
+    pub cancelled: bool,
+    pub funded: bool,
+    pub paid_total: U128,
+    pub in_flight_total: U128,
+    pub available_escrow: U128,
     pub entitlements: Vec<EntitlementView>,
+}
+
+#[derive(Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+struct FundingMessage {
+    distribution_id: u64,
+    schedule_hash: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -130,6 +166,7 @@ pub struct Company {
     grant_action_ids: LookupMap<String, u64>,
     distributions: LookupMap<u64, Distribution>,
     distribution_ids: Vec<u64>,
+    paused: bool,
 }
 
 #[near_bindgen]
@@ -164,7 +201,24 @@ impl Company {
             grant_action_ids: LookupMap::new(&b"ga"[..]),
             distributions: LookupMap::new(b"d"),
             distribution_ids: Vec::new(),
+            paused: false,
         }
+    }
+
+    pub fn set_paused(&mut self, action_id: String, paused: bool) {
+        self.assert_dao();
+        let digest = env::sha256(
+            &near_sdk::borsh::to_vec(&("set_paused", &action_id, paused)).expect("serialize pause"),
+        );
+        if self.was_processed(&action_id, &digest) {
+            return;
+        }
+        self.paused = paused;
+        self.record_action(action_id, digest);
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.paused
     }
 
     pub fn prepare_distribution(
@@ -173,6 +227,7 @@ impl Company {
         budget: U128,
         expires_at: u64,
     ) -> u64 {
+        self.assert_active();
         assert_eq!(
             env::predecessor_account_id(),
             self.snapshot_operator_id,
@@ -207,6 +262,8 @@ impl Company {
                         account_id: account_id.clone(),
                         units,
                         amount: numerator / self.issued_total,
+                        payment_status: PaymentStatus::Ready,
+                        attempt_id: 0,
                     },
                     numerator % self.issued_total,
                 )
@@ -234,6 +291,10 @@ impl Company {
         let mut entitlements: Vec<Entitlement> = rows.into_iter().map(|(row, _)| row).collect();
         entitlements.sort_by(|a, b| a.account_id.cmp(&b.account_id));
         let now = env::block_timestamp_ms() / 1000;
+        let immutable_rows: Vec<_> = entitlements
+            .iter()
+            .map(|e| (&e.account_id, e.units, e.amount))
+            .collect();
         let payload = (
             "captable.distribution.v1",
             env::current_account_id(),
@@ -243,7 +304,7 @@ impl Company {
             &self.settlement_token_id,
             budget.0,
             expires_at,
-            &entitlements,
+            &immutable_rows,
         );
         let schedule_hash =
             env::sha256(&near_sdk::borsh::to_vec(&payload).expect("serialize schedule"));
@@ -258,6 +319,11 @@ impl Company {
                 expires_at,
                 schedule_hash,
                 approved: false,
+                cancelled: false,
+                funded: false,
+                paid_total: 0,
+                in_flight_total: 0,
+                available_escrow: 0,
                 entitlements,
             },
         );
@@ -273,6 +339,7 @@ impl Company {
         schedule_hash: Vec<u8>,
     ) {
         self.assert_dao();
+        self.assert_active();
         let digest = env::sha256(
             &near_sdk::borsh::to_vec(&(
                 "approve_distribution",
@@ -289,7 +356,10 @@ impl Company {
             .distributions
             .get(&distribution_id)
             .expect("distribution not found");
-        assert!(!distribution.approved, "already approved");
+        assert!(
+            !distribution.approved && !distribution.cancelled,
+            "distribution closed"
+        );
         assert!(
             env::block_timestamp_ms() / 1000 < distribution.expires_at,
             "distribution expired"
@@ -304,6 +374,158 @@ impl Company {
         env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"distribution_approved\",\"data\":[{{\"distribution_id\":{}}}]}}", distribution_id));
     }
 
+    pub fn cancel_unfunded_distribution(&mut self, action_id: String, distribution_id: u64) {
+        self.assert_dao();
+        let digest = env::sha256(
+            &near_sdk::borsh::to_vec(&(
+                "cancel_unfunded_distribution",
+                &action_id,
+                distribution_id,
+            ))
+            .expect("serialize cancellation"),
+        );
+        if self.was_processed(&action_id, &digest) {
+            return;
+        }
+        let mut d = self
+            .distributions
+            .get(&distribution_id)
+            .expect("distribution not found");
+        assert!(
+            !d.funded && !d.cancelled,
+            "distribution cannot be cancelled"
+        );
+        d.cancelled = true;
+        self.distributions.insert(&distribution_id, &d);
+        self.record_action(action_id, digest);
+    }
+
+    pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
+        if self.paused {
+            return amount;
+        }
+        if env::predecessor_account_id() != self.settlement_token_id || sender_id != self.dao_id {
+            return amount;
+        }
+        let Ok(message) = near_sdk::serde_json::from_str::<FundingMessage>(&msg) else {
+            return amount;
+        };
+        let Some(mut distribution) = self.distributions.get(&message.distribution_id) else {
+            return amount;
+        };
+        if !distribution.approved
+            || distribution.cancelled
+            || distribution.funded
+            || distribution.token_id != self.settlement_token_id
+            || env::block_timestamp_ms() / 1000 >= distribution.expires_at
+            || distribution.schedule_hash != message.schedule_hash
+            || distribution.budget != amount.0
+        {
+            return amount;
+        }
+        distribution.funded = true;
+        distribution.available_escrow = amount.0;
+        self.distributions
+            .insert(&message.distribution_id, &distribution);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"distribution_funded\",\"data\":[{{\"distribution_id\":{},\"amount\":\"{}\"}}]}}", message.distribution_id, amount.0));
+        U128(0)
+    }
+
+    pub fn pay_recipient(&mut self, distribution_id: u64, recipient_id: AccountId) -> Promise {
+        self.assert_active();
+        let mut distribution = self
+            .distributions
+            .get(&distribution_id)
+            .expect("distribution not found");
+        assert!(
+            distribution.funded && !distribution.cancelled,
+            "distribution not funded"
+        );
+        let row = distribution
+            .entitlements
+            .iter_mut()
+            .find(|e| e.account_id == recipient_id)
+            .expect("recipient not in snapshot");
+        assert!(
+            matches!(
+                row.payment_status,
+                PaymentStatus::Ready | PaymentStatus::Failed
+            ),
+            "payment not retryable"
+        );
+        assert!(row.amount > 0, "zero entitlement");
+        assert!(
+            row.amount <= distribution.available_escrow,
+            "insufficient distribution escrow"
+        );
+        row.attempt_id = row.attempt_id.checked_add(1).expect("attempt overflow");
+        row.payment_status = PaymentStatus::InFlight;
+        let amount = row.amount;
+        let attempt_id = row.attempt_id;
+        distribution.available_escrow -= amount;
+        distribution.in_flight_total = distribution
+            .in_flight_total
+            .checked_add(amount)
+            .expect("in-flight overflow");
+        self.distributions.insert(&distribution_id, &distribution);
+        let args = near_sdk::serde_json::json!({"receiver_id": recipient_id, "amount": amount.to_string()}).to_string().into_bytes();
+        let callback_args = near_sdk::serde_json::json!({"distribution_id": distribution_id, "recipient_id": recipient_id, "attempt_id": attempt_id}).to_string().into_bytes();
+        Promise::new(self.settlement_token_id.clone())
+            .function_call(
+                "ft_transfer".into(),
+                args,
+                NearToken::from_yoctonear(1),
+                Gas::from_tgas(15),
+            )
+            .then(Promise::new(env::current_account_id()).function_call(
+                "on_payment_result".into(),
+                callback_args,
+                NearToken::from_yoctonear(0),
+                Gas::from_tgas(15),
+            ))
+    }
+
+    #[private]
+    pub fn on_payment_result(
+        &mut self,
+        distribution_id: u64,
+        recipient_id: AccountId,
+        attempt_id: u64,
+    ) {
+        let mut distribution = self
+            .distributions
+            .get(&distribution_id)
+            .expect("distribution not found");
+        let row = distribution
+            .entitlements
+            .iter_mut()
+            .find(|e| e.account_id == recipient_id)
+            .expect("recipient not found");
+        assert_eq!(row.attempt_id, attempt_id, "stale attempt");
+        assert_eq!(
+            row.payment_status,
+            PaymentStatus::InFlight,
+            "attempt not in flight"
+        );
+        let success = matches!(env::promise_result(0), PromiseResult::Successful(_));
+        distribution.in_flight_total -= row.amount;
+        if success {
+            row.payment_status = PaymentStatus::Paid;
+            distribution.paid_total = distribution
+                .paid_total
+                .checked_add(row.amount)
+                .expect("paid overflow");
+        } else {
+            row.payment_status = PaymentStatus::Failed;
+            distribution.available_escrow = distribution
+                .available_escrow
+                .checked_add(row.amount)
+                .expect("escrow overflow");
+        }
+        self.distributions.insert(&distribution_id, &distribution);
+        env::log_str(&format!("EVENT_JSON:{{\"standard\":\"captable\",\"version\":\"1.0.0\",\"event\":\"payment_result\",\"data\":[{{\"distribution_id\":{},\"recipient\":\"{}\",\"attempt_id\":{},\"success\":{}}}]}}", distribution_id, recipient_id, attempt_id, success));
+    }
+
     pub fn get_distribution(&self, distribution_id: u64) -> Option<DistributionView> {
         self.distributions
             .get(&distribution_id)
@@ -316,6 +538,11 @@ impl Company {
                 expires_at: d.expires_at,
                 schedule_hash: d.schedule_hash,
                 approved: d.approved,
+                cancelled: d.cancelled,
+                funded: d.funded,
+                paid_total: U128(d.paid_total),
+                in_flight_total: U128(d.in_flight_total),
+                available_escrow: U128(d.available_escrow),
                 entitlements: d
                     .entitlements
                     .into_iter()
@@ -323,6 +550,8 @@ impl Company {
                         account_id: e.account_id,
                         units: U128(e.units),
                         amount: U128(e.amount),
+                        payment_status: e.payment_status,
+                        attempt_id: e.attempt_id,
                     })
                     .collect(),
             })
@@ -347,6 +576,7 @@ impl Company {
         boundaries: Vec<u64>,
     ) -> u64 {
         self.assert_dao();
+        self.assert_active();
         let digest = env::sha256(
             &near_sdk::borsh::to_vec(&(
                 "create_grant",
@@ -409,6 +639,7 @@ impl Company {
 
     pub fn cancel_unvested(&mut self, action_id: String, grant_id: u64) {
         self.assert_dao();
+        self.assert_active();
         let digest = env::sha256(
             &near_sdk::borsh::to_vec(&("cancel_unvested", &action_id, grant_id))
                 .expect("serialize cancellation"),
@@ -438,6 +669,7 @@ impl Company {
     }
 
     pub fn claim_vested(&mut self, grant_id: u64) -> U128 {
+        self.assert_active();
         let mut grant = self.grants.get(&grant_id).expect("grant not found");
         let caller = env::predecessor_account_id();
         assert_eq!(caller, grant.recipient, "grant recipient only");
@@ -492,6 +724,7 @@ impl Company {
         units: U128,
     ) {
         self.assert_dao();
+        self.assert_active();
         let digest = Self::action_digest(
             "issue_founder_units",
             &action_id,
@@ -532,6 +765,7 @@ impl Company {
 
     pub fn increase_pool(&mut self, action_id: String, expected_revision: u64, units: U128) {
         self.assert_dao();
+        self.assert_active();
         let digest = Self::action_digest(
             "increase_pool",
             &action_id,
@@ -600,6 +834,9 @@ impl Company {
 mod tests;
 
 impl Company {
+    fn assert_active(&self) {
+        assert!(!self.paused, "company paused");
+    }
     fn vested_at(grant: &Grant, now: u64) -> u128 {
         let months = grant
             .boundaries
