@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS payment_jobs (
   attempt_id INTEGER NOT NULL,
   submission_state TEXT NOT NULL,
   tx_hash TEXT,
+  last_error TEXT,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY(company_id, distribution_id, recipient_id, attempt_id)
 );
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS sponsor_requests (
 );
 CREATE INDEX IF NOT EXISTS operations_pending ON operations(status, created_at);
 CREATE INDEX IF NOT EXISTS events_company ON chain_events(company_id, receipt_id);
+CREATE INDEX IF NOT EXISTS payment_jobs_state ON payment_jobs(submission_state, updated_at);
 `;
 
 export function openDatabase(filename: string) {
@@ -107,6 +109,8 @@ export function openDatabase(filename: string) {
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.exec(schema);
+  const columns = db.pragma("table_info(payment_jobs)") as { name: string }[];
+  if (!columns.some(column => column.name === "last_error")) db.exec("ALTER TABLE payment_jobs ADD COLUMN last_error TEXT");
   return db;
 }
 

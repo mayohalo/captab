@@ -14,6 +14,9 @@ for (;;) {
     if (!response.ok) throw new Error(`Reconciliation HTTP ${response.status}`);
     const result = await response.json();
     if (result.checked) console.log(`Reconciled ${result.checked} operation(s):`, result.results);
+    if (result.payments?.length) console.log("Payment observations:", result.payments);
+    if (result.submission?.submitted) console.log("Submitted payment:", result.submission);
+    if (result.submission?.reason?.includes("review required")) console.error(result.submission.reason);
   } catch (error) {
     console.error("Reconciliation attempt failed:", error instanceof Error ? error.message : error);
   }

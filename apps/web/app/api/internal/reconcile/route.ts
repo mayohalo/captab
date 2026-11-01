@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "../../../../lib/db";
 import { type OperationRow, reconcileOperation } from "../../../../lib/observer";
+import { reconcilePaymentJobs, submitNextPayment } from "../../../../lib/payments";
 
 export const runtime = "nodejs";
 
@@ -23,5 +24,7 @@ export async function POST(request: Request) {
     const updated = await reconcileOperation(operation, operation.contract_id);
     results.push({ operationId: updated.id, status: updated.status });
   }
-  return NextResponse.json({ checked: results.length, results });
+  const payments = await reconcilePaymentJobs();
+  const submission = await submitNextPayment();
+  return NextResponse.json({ checked: results.length, results, payments, submission });
 }
