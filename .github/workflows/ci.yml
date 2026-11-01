@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.16.1
+          run_install: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.23.0
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install Rust toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal --target wasm32-unknown-unknown
+      - name: Verify pinned versions
+        run: |
+          test "$(rustc --version)" = "rustc 1.88.0 (6b00bc388 2025-06-23)"
+          test "$(pnpm --version)" = "10.16.1"
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Test web domain and services
+        run: |
+          pnpm test:vesting
+          pnpm test:receipts
+          pnpm test:auth
+          pnpm test:payments
+          pnpm test:sponsor
+      - name: Build web app
+        run: pnpm --dir apps/web build
+      - name: Test company contract
+        run: pnpm test:contract
+      - name: Test on-chain lifecycle in Sandbox
+        run: pnpm test:sandbox
