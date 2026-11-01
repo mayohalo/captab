@@ -10,11 +10,13 @@
     "test:receipts": "node --experimental-strip-types --test lib/receipts.test.mjs",
     "test:payments": "node --experimental-strip-types --test lib/payments.test.mjs",
     "test:auth": "node --experimental-strip-types --test lib/auth-crypto.test.mjs",
+    "test:sponsor": "node --experimental-strip-types --test lib/sponsor-policy.test.mjs lib/sponsor-rate.test.mjs",
     "reconcile:worker": "node scripts/reconcile-worker.mjs"
   },
   "dependencies": {
     "@hot-labs/near-connect": "^0.11.4",
     "better-sqlite3": "13.0.3",
+    "borsh": "2.0.0",
     "near-api-js": "^7.4.0",
     "next": "15.5.0",
     "react": "19.1.0",

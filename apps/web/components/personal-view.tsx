@@ -62,6 +62,25 @@ export function PersonalView({ companyId, holdings, grants, distributions }: {
     finally { setBusy(false); }
   }
 
+  async function claimSponsored(grantId: number) {
+    if (!wallet || !account) return;
+    setBusy(true);
+    setStatus("Awaiting delegated claim signature…");
+    try {
+      if (!wallet.manifest.features.signDelegateActions) throw new Error("This wallet does not support delegated actions");
+      const signed = await wallet.signDelegateActions({ signerId: account, delegateActions: [{ receiverId: companyId,
+        actions: [{ type: "FunctionCall", params: { methodName: "claim_vested", args: { grant_id: grantId }, gas: "30000000000000", deposit: "0" } }] }] });
+      if (signed.signedDelegateActions.length !== 1) throw new Error("Wallet did not return one signed claim");
+      const response = await fetch("/api/sponsor", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, signedDelegate: signed.signedDelegateActions[0] }) });
+      const result = await response.json() as { txHash?: string; error?: string };
+      if (!response.ok || !result.txHash) throw new Error(result.error ?? "Sponsorship failed");
+      setStatus(`Sponsored claim submitted: ${result.txHash}. Refresh after finality to see updated units.`);
+      router.refresh();
+    } catch (error) { setStatus(error instanceof Error ? error.message : "Sponsored claim failed"); }
+    finally { setBusy(false); }
+  }
+
   return <main>
     <header><div><Link href={`/company/${companyId}`}>← {companyId}</Link><h1>My ownership</h1><p>NEAR testnet · public on-chain holdings and entitlements</p></div></header>
     {!account ? <section><p>Connect the NEAR account that holds your units or grants.</p><button onClick={connect}>Connect wallet</button></section> : <>
@@ -70,12 +89,12 @@ export function PersonalView({ companyId, holdings, grants, distributions }: {
         <h3>Grant #{grant.id}</h3><p>{formatUnits(grant.original_units)} granted · {formatUnits(grant.vested_units)} vested · {formatUnits(grant.issued_units)} claimed</p>
         <p>{formatUnits(grant.claimable_units)} claimable now · {grant.cancelled_at === null ? "active" : "cancelled, vested rights retained"}</p>
         <p>Cliff {new Date(grant.boundaries[12] * 1000).toUTCString()} · end {new Date(grant.boundaries[48] * 1000).toUTCString()}</p>
-        {BigInt(grant.claimable_units) > 0n && <button disabled={busy} onClick={() => void claim(grant.id)}>Claim vested units</button>}
+        {BigInt(grant.claimable_units) > 0n && <><button disabled={busy} onClick={() => void claim(grant.id)}>Claim with wallet gas</button>{wallet?.manifest.features.signDelegateActions && <button disabled={busy} onClick={() => void claimSponsored(grant.id)}>Sponsored claim</button>}</>}
       </article>)}</div>{ownGrants.length === 0 && <p>No grants for this account.</p>}</section>
       <section><h2>My distributions</h2><div className="cards">{ownEntitlements.map(({ distribution, row }) => <article key={distribution.id}>
         <h3>Distribution #{distribution.id}</h3><p>{formatUnits(row.amount)} token base units · {distribution.token_id}</p><p>Status: {row.payment_status} · attempt {row.attempt_id}</p>
       </article>)}</div>{ownEntitlements.length === 0 && <p>No distribution entitlements for this account.</p>}</section>
-      <p>Claims from this screen use your wallet for gas. Sponsored claims are not available yet.</p>
+      <p>Sponsored claims require a wallet that supports delegated actions. The relayer pays the outer transaction fee after validating your signed claim.</p>
     </>}
     <PrivateProfiles companyId={companyId} />
     {status && <p role="status">{status}</p>}

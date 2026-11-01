@@ -96,11 +96,14 @@ CREATE TABLE IF NOT EXISTS sponsor_requests (
   gas_budget TEXT NOT NULL,
   deposit_budget TEXT NOT NULL,
   outcome TEXT NOT NULL,
+  tx_hash TEXT,
+  last_error TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS operations_pending ON operations(status, created_at);
 CREATE INDEX IF NOT EXISTS events_company ON chain_events(company_id, receipt_id);
 CREATE INDEX IF NOT EXISTS payment_jobs_state ON payment_jobs(submission_state, updated_at);
+CREATE INDEX IF NOT EXISTS sponsor_requests_rate ON sponsor_requests(account_id, created_at);
 `;
 
 export function openDatabase(filename: string) {
@@ -111,6 +114,9 @@ export function openDatabase(filename: string) {
   db.exec(schema);
   const columns = db.pragma("table_info(payment_jobs)") as { name: string }[];
   if (!columns.some(column => column.name === "last_error")) db.exec("ALTER TABLE payment_jobs ADD COLUMN last_error TEXT");
+  const sponsorColumns = db.pragma("table_info(sponsor_requests)") as { name: string }[];
+  if (!sponsorColumns.some(column => column.name === "tx_hash")) db.exec("ALTER TABLE sponsor_requests ADD COLUMN tx_hash TEXT");
+  if (!sponsorColumns.some(column => column.name === "last_error")) db.exec("ALTER TABLE sponsor_requests ADD COLUMN last_error TEXT");
   return db;
 }
 
