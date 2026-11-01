@@ -28,7 +28,7 @@ export function CompanyView({ id, totals, config, daoPolicy, proposals, holdings
     <section id="distributions"><h2>Distributions</h2><div className="cards">
       {distributions.map(d => <article key={d.id}><h3>Distribution #{d.id}</h3><p>{formatUnits(d.budget)} token base units · {d.token_id}</p><p>{d.cancelled ? "Cancelled" : d.funded ? "Funded" : d.approved ? "Approved, awaiting funding" : "Awaiting approval"}</p><p>Paid {formatUnits(d.paid_total)} · in flight {formatUnits(d.in_flight_total)} · available {formatUnits(d.available_escrow)}</p><p>Snapshot revision {d.snapshot_revision}</p><table><thead><tr><th>Recipient</th><th>Entitlement</th><th>Status</th></tr></thead><tbody>{d.entitlements.map(e => <tr key={e.account_id}><td>{e.account_id}</td><td>{formatUnits(e.amount)}</td><td>{e.payment_status}</td></tr>)}</tbody></table></article>)}
     </div>{distributions.length === 0 && <p>No distributions yet.</p>}</section>
-    <DistributionOperator id={id} config={config} totals={totals} distributions={distributions} />
+    <DistributionOperator id={id} config={config} policy={daoPolicy} totals={totals} distributions={distributions} />
     <GovernancePanel id={id} totals={totals} config={config} policy={daoPolicy} proposals={proposals} grants={grants} distributions={distributions} />
     <PrivateProfiles companyId={id} />
     <footer><a href={`https://testnet.nearblocks.io/address/${id}`}>View contract on NEAR Blocks</a></footer>
