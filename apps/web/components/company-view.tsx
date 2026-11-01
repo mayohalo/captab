@@ -1,13 +1,16 @@
 import Link from "next/link";
-import { formatUnits, percent, type Distribution, type Grant, type Holding, type Totals } from "../lib/near";
+import { formatUnits, percent, type CompanyConfig, type DaoPolicy, type DaoProposal, type Distribution, type Grant, type Holding, type Totals } from "../lib/near";
+import { GovernancePanel } from "./governance-panel";
+import { DistributionOperator } from "./distribution-operator";
 import { WalletControl } from "./wallet";
 
-export function CompanyView({ id, totals, holdings, grants, distributions }: {
-  id: string; totals: Totals; holdings: Holding[]; grants: Grant[]; distributions: Distribution[];
+export function CompanyView({ id, totals, config, daoPolicy, proposals, holdings, grants, distributions }: {
+  id: string; totals: Totals; config: CompanyConfig; daoPolicy: DaoPolicy | null; proposals: DaoProposal[]; holdings: Holding[]; grants: Grant[]; distributions: Distribution[];
 }) {
   return <main>
     <header><div><Link href="/">CapTable</Link><h1>{id}</h1><p>NEAR testnet · DAO {totals.dao_id} · ledger revision {totals.ledger_revision}</p></div><WalletControl /></header>
-    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a></nav>
+    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a><a href="#distribution-actions">Execution</a><a href="#governance">Governance</a></nav>
+    {config.paused && <p role="alert">Company is paused. New claims, snapshots, funding, and payment attempts are disabled.</p>}
     <section className="metrics">
       <article><span>Issued</span><strong>{formatUnits(totals.issued_total)}</strong></article>
       <article><span>Fully diluted</span><strong>{formatUnits(totals.fully_diluted_total)}</strong></article>
@@ -24,6 +27,8 @@ export function CompanyView({ id, totals, holdings, grants, distributions }: {
     <section id="distributions"><h2>Distributions</h2><div className="cards">
       {distributions.map(d => <article key={d.id}><h3>Distribution #{d.id}</h3><p>{formatUnits(d.budget)} token base units · {d.token_id}</p><p>{d.cancelled ? "Cancelled" : d.funded ? "Funded" : d.approved ? "Approved, awaiting funding" : "Awaiting approval"}</p><p>Paid {formatUnits(d.paid_total)} · in flight {formatUnits(d.in_flight_total)} · available {formatUnits(d.available_escrow)}</p><p>Snapshot revision {d.snapshot_revision}</p><table><thead><tr><th>Recipient</th><th>Entitlement</th><th>Status</th></tr></thead><tbody>{d.entitlements.map(e => <tr key={e.account_id}><td>{e.account_id}</td><td>{formatUnits(e.amount)}</td><td>{e.payment_status}</td></tr>)}</tbody></table></article>)}
     </div>{distributions.length === 0 && <p>No distributions yet.</p>}</section>
+    <DistributionOperator id={id} config={config} totals={totals} distributions={distributions} />
+    <GovernancePanel id={id} totals={totals} config={config} policy={daoPolicy} proposals={proposals} distributions={distributions} />
     <footer><a href={`https://testnet.nearblocks.io/address/${id}`}>View contract on NEAR Blocks</a></footer>
   </main>;
 }

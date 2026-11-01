@@ -4,7 +4,7 @@ import { NearConnector, type NearWalletBase } from "@hot-labs/near-connect";
 import { useEffect, useState } from "react";
 
 let connector: NearConnector | undefined;
-function getConnector() { if (!connector) connector = new NearConnector({ network: "testnet" }); return connector; }
+export function getConnector() { if (!connector) connector = new NearConnector({ network: "testnet" }); return connector; }
 
 export function WalletControl({ contractId, grantId, recipient, claimable }: { contractId?: string; grantId?: number; recipient?: string; claimable?: string }) {
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);

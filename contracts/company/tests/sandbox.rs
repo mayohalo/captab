@@ -29,6 +29,10 @@ async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::er
         .transact()
         .await?;
     assert!(init.is_success(), "initialization: {init:?}");
+    let config: Value = company.view("get_config").await?.json()?;
+    assert_eq!(config["dao_id"], dao.id().as_str());
+    assert_eq!(config["snapshot_operator_id"], operator.id().as_str());
+    assert_eq!(config["settlement_token_id"], token.id().as_str());
 
     let unauthorized = outsider
         .call(company.id(), "issue_founder_units")
@@ -234,7 +238,13 @@ async fn funded_payout_failure_and_retry_follow_token_receipts(
         .json()?;
     assert_eq!(after_failed["paid_total"], "60");
     assert_eq!(after_failed["available_escrow"], "40");
-    assert_eq!(after_failed["entitlements"][1]["payment_status"], "Failed");
+    let failed_row = after_failed["entitlements"]
+        .as_array()
+        .expect("entitlements")
+        .iter()
+        .find(|row| row["account_id"] == retry_holder.id().as_str())
+        .expect("retry holder entitlement");
+    assert_eq!(failed_row["payment_status"], "Failed");
 
     let registration = dao
         .call(token.id(), "storage_deposit")
@@ -261,8 +271,14 @@ async fn funded_payout_failure_and_retry_follow_token_receipts(
     assert_eq!(settled["paid_total"], "100");
     assert_eq!(settled["available_escrow"], "0");
     assert_eq!(settled["in_flight_total"], "0");
-    assert_eq!(settled["entitlements"][1]["payment_status"], "Paid");
-    assert_eq!(settled["entitlements"][1]["attempt_id"], 2);
+    let settled_row = settled["entitlements"]
+        .as_array()
+        .expect("entitlements")
+        .iter()
+        .find(|row| row["account_id"] == retry_holder.id().as_str())
+        .expect("retry holder entitlement");
+    assert_eq!(settled_row["payment_status"], "Paid");
+    assert_eq!(settled_row["attempt_id"], 2);
     let retry_balance: Value = token
         .view("ft_balance_of")
         .args_json(json!({"account_id": retry_holder.id()}))

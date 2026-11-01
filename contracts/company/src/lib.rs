@@ -147,6 +147,16 @@ pub struct LedgerView {
     pub holder_count: u32,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct CompanyConfigView {
+    pub dao_id: AccountId,
+    pub snapshot_operator_id: AccountId,
+    pub settlement_token_id: AccountId,
+    pub authorized_units: U128,
+    pub paused: bool,
+}
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -221,6 +231,16 @@ impl Company {
 
     pub fn is_paused(&self) -> bool {
         self.paused
+    }
+
+    pub fn get_config(&self) -> CompanyConfigView {
+        CompanyConfigView {
+            dao_id: self.dao_id.clone(),
+            snapshot_operator_id: self.snapshot_operator_id.clone(),
+            settlement_token_id: self.settlement_token_id.clone(),
+            authorized_units: U128(self.authorized_units),
+            paused: self.paused,
+        }
     }
 
     pub fn prepare_distribution(

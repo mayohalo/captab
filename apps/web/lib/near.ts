@@ -4,6 +4,9 @@ export const network = "testnet";
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 
 export type Totals = { dao_id: string; authorized_units: string; issued_total: string; pool_available: string; grant_reserved: string; fully_diluted_total: string; unallocated_units: string; ledger_revision: number; holder_count: number };
+export type CompanyConfig = { dao_id: string; snapshot_operator_id: string; settlement_token_id: string; authorized_units: string; paused: boolean };
+export type DaoPolicy = { proposal_bond: string; roles: { name: string; kind: { Group?: string[] } }[] };
+export type DaoProposal = { id: number; proposer: string; description: string; kind: Record<string, unknown>; status: string; vote_counts: Record<string, number[]> };
 export type Holding = { account_id: string; issued_units: string };
 export type Grant = { id: number; recipient: string; original_units: string; entitlement_cap: string; issued_units: string; vested_units: string; claimable_units: string; boundaries: number[]; cancelled_at: number | null };
 export type Entitlement = { account_id: string; units: string; amount: string; payment_status: "Ready" | "InFlight" | "Failed" | "Paid" | "Zero"; attempt_id: number };
@@ -20,13 +23,24 @@ export async function view<T>(contractId: string, method: string, args: Record<s
 }
 
 export async function readCompany(contractId: string) {
-  const [totals, holdings, grants, distributions] = await Promise.all([
+  const [totals, config, holdings, grants, distributions] = await Promise.all([
     view<Totals>(contractId, "get_totals"),
+    view<CompanyConfig>(contractId, "get_config"),
     view<Holding[]>(contractId, "list_holdings", { from_index: 0, limit: 20 }),
     view<Grant[]>(contractId, "list_grants", { from_index: 0, limit: 20 }),
     view<Distribution[]>(contractId, "list_distributions", { from_index: 0, limit: 20 }),
   ]);
-  return { totals, holdings, grants, distributions };
+  let daoPolicy: DaoPolicy | null = null;
+  let proposals: DaoProposal[] = [];
+  try {
+    const [policy, lastId] = await Promise.all([
+      view<DaoPolicy>(config.dao_id, "get_policy"),
+      view<number>(config.dao_id, "get_last_proposal_id"),
+    ]);
+    daoPolicy = policy;
+    proposals = await view<DaoProposal[]>(config.dao_id, "get_proposals", { from_index: Math.max(0, lastId - 20), limit: 20 });
+  } catch { /* Company views remain available while DAO reads are unavailable. */ }
+  return { totals, config, holdings, grants, distributions, daoPolicy, proposals };
 }
 
 export function formatUnits(value: string): string { return BigInt(value).toLocaleString("en-US"); }
