@@ -369,6 +369,7 @@ async fn real_sputnik_requires_two_votes_and_funds_company(
     ];
     let operator = worker.dev_create_account().await?;
     let founder = worker.dev_create_account().await?;
+    let contributor = worker.dev_create_account().await?;
     let council: Vec<_> = members.iter().map(|account| account.id()).collect();
     let init_dao = dao
         .call("new")
@@ -379,6 +380,15 @@ async fn real_sputnik_requires_two_votes_and_funds_company(
         .transact()
         .await?;
     assert!(init_dao.is_success(), "DAO initialization: {init_dao:?}");
+    let policy: Value = dao.view("get_policy").await?.json()?;
+    assert_eq!(policy["proposal_bond"], "1000000000000000000000000");
+    let council_role = policy["roles"]
+        .as_array()
+        .expect("DAO roles")
+        .iter()
+        .find(|role| role["name"] == "council")
+        .expect("council role");
+    assert_eq!(council_role["kind"]["Group"].as_array().unwrap().len(), 3);
     assert!(token
         .call("new")
         .args_json(json!({"owner_id": dao.id(), "total_supply": "1000"}))
@@ -461,5 +471,53 @@ async fn real_sputnik_requires_two_votes_and_funds_company(
         .json()?;
     assert_eq!(funded["funded"], true);
     assert_eq!(funded["available_escrow"], "120");
+
+    let pool = dao_function_call(
+        company.id().as_str(),
+        "increase_pool",
+        json!({"action_id": "sputnik-pool", "expected_revision": 1, "units": "200"}),
+        "40000000000000",
+        "0",
+    );
+    approve_two_of_three(&dao, &members, pool, "Reserve contributor pool").await?;
+    let boundaries: Vec<u64> = (0..=48).map(|month| 1_000 + month * 2_592_000).collect();
+    let grant = dao_function_call(
+        company.id().as_str(),
+        "create_grant",
+        json!({
+            "action_id": "sputnik-grant",
+            "expected_revision": 2,
+            "recipient": contributor.id(),
+            "units": "100",
+            "boundaries": boundaries
+        }),
+        "80000000000000",
+        "0",
+    );
+    approve_two_of_three(&dao, &members, grant, "Grant contributor units").await?;
+    let before_claim: Value = company
+        .view("get_grant")
+        .args_json(json!({"grant_id": 0}))
+        .await?
+        .json()?;
+    assert_eq!(before_claim["claimable_units"], "100");
+    let claim = contributor
+        .call(company.id(), "claim_vested")
+        .args_json(json!({"grant_id": 0}))
+        .transact()
+        .await?;
+    assert!(claim.is_success(), "contributor claim: {claim:?}");
+    let contributor_holding: Value = company
+        .view("get_holding")
+        .args_json(json!({"account_id": contributor.id()}))
+        .await?
+        .json()?;
+    assert_eq!(contributor_holding, "100");
+    let frozen: Value = company
+        .view("get_distribution")
+        .args_json(json!({"distribution_id": 0}))
+        .await?
+        .json()?;
+    assert_eq!(frozen["entitlements"].as_array().unwrap().len(), 1);
     Ok(())
 }

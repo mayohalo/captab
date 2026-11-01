@@ -3,10 +3,11 @@
 import { type NearWalletBase } from "@hot-labs/near-connect";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { type CompanyConfig, type DaoPolicy, type DaoProposal, type Distribution, type Totals, validAccountId } from "../lib/near";
+import { type CompanyConfig, type DaoPolicy, type DaoProposal, type Distribution, type Grant, type Totals, validAccountId } from "../lib/near";
+import { buildMonthlyBoundaries } from "../lib/vesting";
 import { getConnector } from "./wallet";
 
-type Action = "founder" | "pool" | "approve" | "fund";
+type Action = "founder" | "pool" | "grant" | "cancelGrant" | "approve" | "fund";
 type Prepared = { description: string; kind: Record<string, unknown> };
 
 function base64Json(value: Record<string, unknown>): string {
@@ -33,9 +34,9 @@ function assertTransactionSucceeded(status: unknown) {
   }
 }
 
-export function GovernancePanel({ id, totals, config, policy, proposals, distributions }: {
+export function GovernancePanel({ id, totals, config, policy, proposals, grants, distributions }: {
   id: string; totals: Totals; config: CompanyConfig; policy: DaoPolicy | null;
-  proposals: DaoProposal[]; distributions: Distribution[];
+  proposals: DaoProposal[]; grants: Grant[]; distributions: Distribution[];
 }) {
   const router = useRouter();
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);
@@ -43,11 +44,14 @@ export function GovernancePanel({ id, totals, config, policy, proposals, distrib
   const [action, setAction] = useState<Action>("founder");
   const [recipient, setRecipient] = useState("");
   const [units, setUnits] = useState("");
+  const [startIso, setStartIso] = useState("");
+  const [grantId, setGrantId] = useState(String(grants.find(grant => grant.cancelled_at === null)?.id ?? ""));
   const [distributionId, setDistributionId] = useState(String(distributions[0]?.id ?? ""));
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const selected = distributions.find(d => String(d.id) === distributionId);
+  const selectedGrant = grants.find(grant => String(grant.id) === grantId);
   const council = policy?.roles.find(role => role.name === "council")?.kind.Group ?? [];
   const isCouncil = Boolean(account && council.includes(account));
 
@@ -90,6 +94,21 @@ export function GovernancePanel({ id, totals, config, policy, proposals, distrib
             kind: functionCall(id, "increase_pool", { action_id: actionId, expected_revision: totals.ledger_revision, units }, "40000000000000", "0"),
           };
         }
+      } else if (action === "grant") {
+        if (!positiveInteger(units)) throw new Error("Enter a positive whole number of units.");
+        if (BigInt(units) > BigInt(totals.pool_available)) throw new Error("Units exceed the available contributor pool.");
+        if (!validAccountId(recipient)) throw new Error("Enter a valid NEAR recipient account.");
+        const boundaries = buildMonthlyBoundaries(startIso);
+        next = {
+          description: `Grant ${units} units to ${recipient}; cliff ${new Date(boundaries[12] * 1000).toISOString()} (revision ${totals.ledger_revision})`,
+          kind: functionCall(id, "create_grant", { action_id: actionId, expected_revision: totals.ledger_revision, recipient, units, boundaries }, "80000000000000", "0"),
+        };
+      } else if (action === "cancelGrant") {
+        if (!selectedGrant || selectedGrant.cancelled_at !== null) throw new Error("Select an active grant.");
+        next = {
+          description: `Cancel unvested units in grant #${selectedGrant.id} for ${selectedGrant.recipient}`,
+          kind: functionCall(id, "cancel_unvested", { action_id: actionId, grant_id: selectedGrant.id }, "40000000000000", "0"),
+        };
       } else {
         if (!selected) throw new Error("Select a distribution.");
         if (selected.cancelled || selected.funded) throw new Error("Distribution is closed.");
@@ -165,6 +184,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, distrib
       <div className="governance-form">
         <label>Action<select value={action} onChange={event => { setAction(event.target.value as Action); setPrepared(null); }}>
           <option value="founder">Issue founder units</option><option value="pool">Increase contributor pool</option>
+          <option value="grant">Create contributor grant</option><option value="cancelGrant">Cancel unvested grant</option>
           <option value="approve">Approve distribution</option><option value="fund">Fund approved distribution</option>
         </select></label>
         {(action === "founder" || action === "pool") && <>
@@ -172,6 +192,15 @@ export function GovernancePanel({ id, totals, config, policy, proposals, distrib
           <label>Units<input inputMode="numeric" value={units} onChange={event => { setUnits(event.target.value.trim()); setPrepared(null); }} placeholder="1000" /></label>
           <p>Unallocated: {totals.unallocated_units} · expected revision: {totals.ledger_revision}</p>
         </>}
+        {action === "grant" && <>
+          <label>Recipient account<input value={recipient} onChange={event => { setRecipient(event.target.value.trim()); setPrepared(null); }} placeholder="contributor.testnet" /></label>
+          <label>Grant units<input inputMode="numeric" value={units} onChange={event => { setUnits(event.target.value.trim()); setPrepared(null); }} placeholder="1000" /></label>
+          <label>UTC start (ISO 8601)<input value={startIso} onChange={event => { setStartIso(event.target.value.trim()); setPrepared(null); }} placeholder="2026-11-01T00:00:00Z" /></label>
+          <p>Available pool: {totals.pool_available} · 12-month cliff · 48 monthly boundaries. Historical starts are allowed for demo fixtures.</p>
+        </>}
+        {action === "cancelGrant" && <label>Active grant<select value={grantId} onChange={event => { setGrantId(event.target.value); setPrepared(null); }}>
+          {grants.filter(grant => grant.cancelled_at === null).map(grant => <option key={grant.id} value={grant.id}>#{grant.id} · {grant.recipient} · {grant.original_units} units</option>)}
+        </select></label>}
         {(action === "approve" || action === "fund") && <label>Distribution<select value={distributionId} onChange={event => { setDistributionId(event.target.value); setPrepared(null); }}>
           {distributions.map(d => <option key={d.id} value={d.id}>#{d.id} · {d.approved ? "approved" : "pending"} · {d.funded ? "funded" : "unfunded"}</option>)}
         </select></label>}

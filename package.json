@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.16.1",
   "scripts": {
     "test:contract": "cargo test -p captab-company --lib",
+    "test:vesting": "pnpm --filter @captab/web test:vesting",
     "test:sandbox": "bash scripts/build-sputnik.sh && cargo build -p captab-company -p captab-test-token --target wasm32-unknown-unknown --release && cargo test -p captab-company --test sandbox",
     "build:contract": "cargo build -p captab-company --target wasm32-unknown-unknown --release"
   }

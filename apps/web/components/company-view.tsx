@@ -9,7 +9,7 @@ export function CompanyView({ id, totals, config, daoPolicy, proposals, holdings
 }) {
   return <main>
     <header><div><Link href="/">CapTable</Link><h1>{id}</h1><p>NEAR testnet · DAO {totals.dao_id} · ledger revision {totals.ledger_revision}</p></div><WalletControl /></header>
-    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a><a href="#distribution-actions">Execution</a><a href="#governance">Governance</a></nav>
+    <nav><a href="#ownership">Ownership</a><a href="#grants">Grants</a><a href="#distributions">Distributions</a><a href="#distribution-actions">Execution</a><a href="#governance">Governance</a><Link href={`/me?company=${id}`}>My ownership</Link></nav>
     {config.paused && <p role="alert">Company is paused. New claims, snapshots, funding, and payment attempts are disabled.</p>}
     <section className="metrics">
       <article><span>Issued</span><strong>{formatUnits(totals.issued_total)}</strong></article>
@@ -22,13 +22,13 @@ export function CompanyView({ id, totals, config, daoPolicy, proposals, holdings
         {holdings.map(h => <tr key={h.account_id}><td>{h.account_id}</td><td>{formatUnits(h.issued_units)}</td><td>{percent(h.issued_units, totals.issued_total)}</td><td>{percent(h.issued_units, totals.fully_diluted_total)}</td></tr>)}
       </tbody></table>{holdings.length === 0 && <p>No units issued yet.</p>}</section>
     <section id="grants"><h2>Contributor grants</h2><div className="cards">
-      {grants.map(g => <article key={g.id}><h3>Grant #{g.id}</h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>{g.cancelled_at ? "Cancelled; vested rights remain" : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} /></article>)}
+      {grants.map(g => <article key={g.id}><h3>Grant #{g.id}</h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>Start {new Date(g.boundaries[0] * 1000).toUTCString()} · cliff {new Date(g.boundaries[12] * 1000).toUTCString()} · fully vested {new Date(g.boundaries[48] * 1000).toUTCString()}</p><p>{g.cancelled_at ? `Cancelled ${new Date(g.cancelled_at * 1000).toUTCString()}; vested rights remain` : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} /></article>)}
     </div>{grants.length === 0 && <p>No grants yet.</p>}</section>
     <section id="distributions"><h2>Distributions</h2><div className="cards">
       {distributions.map(d => <article key={d.id}><h3>Distribution #{d.id}</h3><p>{formatUnits(d.budget)} token base units · {d.token_id}</p><p>{d.cancelled ? "Cancelled" : d.funded ? "Funded" : d.approved ? "Approved, awaiting funding" : "Awaiting approval"}</p><p>Paid {formatUnits(d.paid_total)} · in flight {formatUnits(d.in_flight_total)} · available {formatUnits(d.available_escrow)}</p><p>Snapshot revision {d.snapshot_revision}</p><table><thead><tr><th>Recipient</th><th>Entitlement</th><th>Status</th></tr></thead><tbody>{d.entitlements.map(e => <tr key={e.account_id}><td>{e.account_id}</td><td>{formatUnits(e.amount)}</td><td>{e.payment_status}</td></tr>)}</tbody></table></article>)}
     </div>{distributions.length === 0 && <p>No distributions yet.</p>}</section>
     <DistributionOperator id={id} config={config} totals={totals} distributions={distributions} />
-    <GovernancePanel id={id} totals={totals} config={config} policy={daoPolicy} proposals={proposals} distributions={distributions} />
+    <GovernancePanel id={id} totals={totals} config={config} policy={daoPolicy} proposals={proposals} grants={grants} distributions={distributions} />
     <footer><a href={`https://testnet.nearblocks.io/address/${id}`}>View contract on NEAR Blocks</a></footer>
   </main>;
 }
