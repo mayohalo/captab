@@ -10,6 +10,9 @@
     "test:payments": "pnpm --filter @captab/web test:payments",
     "test:sponsor": "pnpm --filter @captab/web test:sponsor",
     "test:sandbox": "bash scripts/build-sputnik.sh && cargo build -p captab-company -p captab-test-token --target wasm32-unknown-unknown --release && cargo test -p captab-company --test sandbox",
-    "build:contract": "cargo build -p captab-company --target wasm32-unknown-unknown --release"
+    "build:contract": "cargo build -p captab-company --target wasm32-unknown-unknown --release",
+    "deploy:testnet": "pnpm --filter @captab/web deploy:testnet",
+    "bootstrap:dao": "pnpm --filter @captab/web bootstrap:dao",
+    "bootstrap:token": "pnpm --filter @captab/web bootstrap:token"
   }
 }

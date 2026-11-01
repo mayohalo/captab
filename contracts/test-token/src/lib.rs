@@ -106,8 +106,8 @@ impl FungibleTokenMetadataProvider for TestToken {
     fn ft_metadata(&self) -> FungibleTokenMetadata {
         FungibleTokenMetadata {
             spec: FT_METADATA_SPEC.into(),
-            name: "Captab Test Token".into(),
-            symbol: "CTT".into(),
+            name: "CapTable Test USD".into(),
+            symbol: "TESTUSD".into(),
             icon: None,
             reference: None,
             reference_hash: None,

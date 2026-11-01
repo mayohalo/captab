@@ -11,7 +11,10 @@
     "test:payments": "node --experimental-strip-types --test lib/payments.test.mjs",
     "test:auth": "node --experimental-strip-types --test lib/auth-crypto.test.mjs",
     "test:sponsor": "node --experimental-strip-types --test lib/sponsor-policy.test.mjs lib/sponsor-rate.test.mjs",
-    "reconcile:worker": "node scripts/reconcile-worker.mjs"
+    "reconcile:worker": "node scripts/reconcile-worker.mjs",
+    "deploy:testnet": "node scripts/deploy-testnet.mjs",
+    "bootstrap:dao": "node scripts/bootstrap-dao-testnet.mjs",
+    "bootstrap:token": "node scripts/bootstrap-token-testnet.mjs"
   },
   "dependencies": {
     "@hot-labs/near-connect": "^0.11.4",
