@@ -59,7 +59,8 @@ export function extractSubmittedProposal(result: FinalTransaction, daoId: string
 
 export function parseCaptabEvents(receipts: ReceiptOutcome[], contractId: string): CaptabEvent[] {
   return receipts.flatMap(receipt => {
-    if (receipt.outcome.executor_id !== contractId) return [];
+    const status = executionStatus(receipt.outcome.status);
+    if (receipt.outcome.executor_id !== contractId || (status !== "SuccessValue" && status !== "SuccessReceiptId")) return [];
     return receipt.outcome.logs.flatMap((line, logIndex) => {
       if (!line.startsWith("EVENT_JSON:")) return [];
       let event: unknown;
@@ -82,6 +83,18 @@ function executionStatus(status: unknown): string {
   return "Unknown";
 }
 
+export function classifyFinalTransaction(result: FinalTransaction, contractId: string): "Confirmed" | "Failed" | "NeedsReview" {
+  const topLevel = executionStatus(result.status);
+  if (topLevel === "Failure") return "Failed";
+  if (topLevel !== "SuccessValue" && topLevel !== "SuccessReceiptId") return "NeedsReview";
+  if (result.receipts_outcome.some(receipt => {
+    if (receipt.outcome.executor_id !== contractId) return false;
+    const status = executionStatus(receipt.outcome.status);
+    return status !== "SuccessValue" && status !== "SuccessReceiptId";
+  })) return "NeedsReview";
+  return "Confirmed";
+}
+
 export function persistFinalTransaction(db: Database.Database, params: {
   operationId: string;
   companyId: string;
@@ -94,7 +107,7 @@ export function persistFinalTransaction(db: Database.Database, params: {
   if (result.final_execution_status !== "FINAL") throw new Error("Transaction has not reached finality.");
   if (result.transaction.hash !== txHash || result.transaction.signer_id !== signerId) throw new Error("RPC transaction identity mismatch.");
   const events = parseCaptabEvents(result.receipts_outcome, contractId);
-  const status = executionStatus(result.status) === "Failure" ? "Failed" : "Confirmed";
+  const status = classifyFinalTransaction(result, contractId);
   const company = db.prepare("SELECT dao_id FROM companies WHERE id = ?").get(companyId) as { dao_id: string } | undefined;
   if (!company) throw new Error("Tracked company was not found.");
   const relevant = [contractId, company.dao_id].includes(result.transaction.receiver_id ?? "") ||

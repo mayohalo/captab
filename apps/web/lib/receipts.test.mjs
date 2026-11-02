@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 import { ensureCompany, openDatabase } from "./db.ts";
-import { extractSubmittedProposal, parseCaptabEvents, persistFinalTransaction, proposalPayloadHash } from "./receipts.ts";
+import { classifyFinalTransaction, extractSubmittedProposal, parseCaptabEvents, persistFinalTransaction, proposalPayloadHash } from "./receipts.ts";
 import { reconcileTrackedProposals } from "./proposal-observer.ts";
 
 const result = {
@@ -29,6 +29,31 @@ test("event parser only accepts company-owned structured logs", () => {
     receiptId: "company-receipt", logIndex: 1, eventName: "grant_claimed", version: "1.0.0",
     payload: [{ grant_id: 0, units: "25" }],
   });
+});
+
+test("failed company receipts never produce activity events or a confirmed operation", () => {
+  const failedCompany = { ...result, receipts_outcome: [result.receipts_outcome[0], {
+    ...result.receipts_outcome[1], outcome: { ...result.receipts_outcome[1].outcome, status: { Failure: { ActionError: "stale revision" } } },
+  }] };
+  assert.deepEqual(parseCaptabEvents(failedCompany.receipts_outcome, "company.testnet"), []);
+  const unknownCompanyReceipt = { ...result.receipts_outcome[1], outcome: {
+    ...result.receipts_outcome[1].outcome, status: {},
+  } };
+  assert.deepEqual(parseCaptabEvents([unknownCompanyReceipt], "company.testnet"), []);
+  assert.equal(classifyFinalTransaction({ ...result, receipts_outcome: [unknownCompanyReceipt] }, "company.testnet"), "NeedsReview");
+  assert.equal(classifyFinalTransaction(failedCompany, "company.testnet"), "NeedsReview");
+  assert.equal(classifyFinalTransaction({ ...result, status: { Failure: { ActionError: "rejected" } } }, "company.testnet"), "Failed");
+  assert.equal(classifyFinalTransaction({ ...result, status: {} }, "company.testnet"), "NeedsReview");
+  const db = openDatabase(":memory:");
+  try {
+    const companyId = ensureCompany(db, "company.testnet", "dao.testnet");
+    db.prepare("INSERT INTO operations (id, company_id, network, tx_hash, signer_id, status) VALUES (?, ?, 'testnet', ?, ?, 'Pending')")
+      .run("operation-failed-receipt", companyId, "tx-1", "member.testnet");
+    const observed = persistFinalTransaction(db, { operationId: "operation-failed-receipt", companyId,
+      contractId: "company.testnet", txHash: "tx-1", signerId: "member.testnet", result: failedCompany });
+    assert.deepEqual(observed, { status: "NeedsReview", receipts: 2, events: 0 });
+    assert.equal(db.prepare("SELECT count(*) AS count FROM chain_events").get().count, 0);
+  } finally { db.close(); }
 });
 
 test("final receipt observations persist idempotently and reject mismatched identity", () => {
