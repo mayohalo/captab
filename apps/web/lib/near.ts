@@ -55,7 +55,12 @@ export async function readCompany(contractId: string) {
     daoAssessment = assessDemoDao(policy, code.hash);
     proposals = await view<DaoProposal[]>(config.dao_id, "get_proposals", { from_index: Math.max(0, lastId - 20), limit: 20 });
   } catch { /* Company views remain available while DAO reads are unavailable. */ }
-  return { totals, config, holdings, grants, distributions, daoPolicy, daoAssessment, proposals };
+  let treasuryBalance: string | null = null;
+  try {
+    const balance = await view<string>(config.settlement_token_id, "ft_balance_of", { account_id: config.dao_id });
+    if (/^\d+$/.test(balance)) treasuryBalance = balance;
+  } catch { /* Company and distribution views remain available if the token view fails. */ }
+  return { totals, config, holdings, grants, distributions, daoPolicy, daoAssessment, proposals, treasuryBalance };
 }
 
 export function formatUnits(value: string): string { return BigInt(value).toLocaleString("en-US"); }

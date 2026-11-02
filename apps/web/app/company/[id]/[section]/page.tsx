@@ -25,7 +25,8 @@ export default async function CompanySectionPage({ params }: { params: Promise<{
       {section === "ownership" && <><OwnershipSection totals={company.totals} holdings={company.holdings} />{governance("founder")}</>}
       {section === "grants" && <><GrantsSection id={id} grants={company.grants} />{governance("grant")}</>}
       {section === "approvals" && governance("founder")}
-      {section === "distributions" && <><DistributionsSection id={id} distributions={company.distributions} />
+      {section === "distributions" && <><DistributionsSection id={id} distributions={company.distributions}
+        daoId={company.config.dao_id} tokenId={company.config.settlement_token_id} treasuryBalance={company.treasuryBalance} />
         <DistributionOperator id={id} config={company.config} policy={company.daoPolicy} daoVerified={company.daoAssessment.verified}
           totals={company.totals} distributions={company.distributions} />{governance("approve")}</>}
     </main>;

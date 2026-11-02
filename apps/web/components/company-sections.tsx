@@ -22,8 +22,12 @@ export function GrantsSection({ id, grants }: { id: string; grants: Grant[] }) {
   </div>{grants.length === 0 && <p>No grants yet.</p>}</section>;
 }
 
-export function DistributionsSection({ id, distributions }: { id: string; distributions: Distribution[] }) {
-  return <section id="distributions"><h2>Distributions</h2><div className="cards">
+export function DistributionsSection({ id, distributions, daoId, tokenId, treasuryBalance }: {
+  id: string; distributions: Distribution[]; daoId: string; tokenId: string; treasuryBalance: string | null;
+}) {
+  return <section id="distributions"><h2>Distributions</h2>
+    <p>DAO treasury {daoId}: {treasuryBalance === null ? "token balance unavailable" : `${formatUnits(treasuryBalance)} token base units`} · {tokenId}. Funding proposals transfer the exact approved budget from this account.</p>
+    <div className="cards">
     {distributions.map(d => <article key={d.id}><h3><Link href={`/company/${id}/distributions/${d.id}`}>Distribution #{d.id}</Link></h3><p>{formatUnits(d.budget)} token base units · {d.token_id}</p><p>{d.cancelled ? "Cancelled" : d.funded ? "Funded" : d.approved ? "Approved, awaiting funding" : "Awaiting approval"}</p><p>Paid {formatUnits(d.paid_total)} · in flight {formatUnits(d.in_flight_total)} · available {formatUnits(d.available_escrow)}</p><p>Snapshot revision {d.snapshot_revision}</p><table><thead><tr><th>Recipient</th><th>Entitlement</th><th>Status</th></tr></thead><tbody>{d.entitlements.map(e => <tr key={e.account_id}><td>{e.account_id}</td><td>{formatUnits(e.amount)}</td><td>{e.payment_status}</td></tr>)}</tbody></table></article>)}
   </div>{distributions.length === 0 && <p>No distributions yet.</p>}</section>;
 }

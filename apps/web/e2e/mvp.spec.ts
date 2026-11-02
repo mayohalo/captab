@@ -87,6 +87,7 @@ test("setup inspects the configured company, DAO, and settlement token", async (
 
 test("ownership, vesting, and a failed payout render from chain views", async ({ page }) => {
   await page.goto("/company/company.testnet");
+  await expect(page.getByText(/DAO treasury board\.testnet: 90,000,000,000 token base units/)).toBeVisible();
   await expect(page.getByText("6,025,000")).toBeVisible();
   await expect(page.getByText("8,000,000")).toBeVisible();
   await expect(page.getByRole("row", { name: /founder-a\.testnet.*3,600,000/ })).toBeVisible();

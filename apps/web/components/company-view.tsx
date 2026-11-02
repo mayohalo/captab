@@ -6,8 +6,8 @@ import { WalletControl } from "./wallet";
 import { PrivateProfiles } from "./private-profiles";
 import { CompanyNavigation, DistributionsSection, GrantsSection, OwnershipSection } from "./company-sections";
 
-export function CompanyView({ id, totals, config, daoPolicy, daoAssessment, proposals, holdings, grants, distributions }: {
-  id: string; totals: Totals; config: CompanyConfig; daoPolicy: DaoPolicy | null; daoAssessment: DaoAssessment; proposals: DaoProposal[]; holdings: Holding[]; grants: Grant[]; distributions: Distribution[];
+export function CompanyView({ id, totals, config, daoPolicy, daoAssessment, proposals, holdings, grants, distributions, treasuryBalance }: {
+  id: string; totals: Totals; config: CompanyConfig; daoPolicy: DaoPolicy | null; daoAssessment: DaoAssessment; proposals: DaoProposal[]; holdings: Holding[]; grants: Grant[]; distributions: Distribution[]; treasuryBalance: string | null;
 }) {
   return <main>
     <header><div><Link href="/">CapTable</Link><h1>{id}</h1><p>NEAR testnet · DAO {totals.dao_id} · ledger revision {totals.ledger_revision}</p></div><WalletControl /></header>
@@ -22,7 +22,7 @@ export function CompanyView({ id, totals, config, daoPolicy, daoAssessment, prop
     </section>
     <OwnershipSection totals={totals} holdings={holdings} />
     <GrantsSection id={id} grants={grants} />
-    <DistributionsSection id={id} distributions={distributions} />
+    <DistributionsSection id={id} distributions={distributions} daoId={config.dao_id} tokenId={config.settlement_token_id} treasuryBalance={treasuryBalance} />
     <DistributionOperator id={id} config={config} policy={daoPolicy} daoVerified={daoAssessment.verified} totals={totals} distributions={distributions} />
     <GovernancePanel id={id} totals={totals} config={config} policy={daoPolicy} daoVerified={daoAssessment.verified} proposals={proposals} grants={grants} distributions={distributions} />
     <PrivateProfiles companyId={id} />

@@ -76,6 +76,7 @@ const methods = new Map([
   [`${company}:list_distributions`, distributions], [`${dao}:get_policy`, policy],
   [`${dao}:get_last_proposal_id`, 1], [`${dao}:get_proposals`, [proposal]], [`${dao}:get_proposal`, proposal],
   [`${token}:ft_metadata`, { spec: "ft-1.0.0", name: "Test USD", symbol: "TESTUSD", decimals: 6 }],
+  [`${token}:ft_balance_of`, "90000000000"],
   [`${unsafeCompany}:get_totals`, { ...totals, dao_id: unsafeDao }],
   [`${unsafeCompany}:get_config`, { ...config, dao_id: unsafeDao }],
   [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
@@ -113,7 +114,8 @@ createServer(async (request, response) => {
       if (!methods.has(key)) throw new Error(`Unsupported contract method ${key}`);
       const args = params.args_base64 ? JSON.parse(Buffer.from(params.args_base64, "base64").toString()) : {};
       const value = methods.get(key);
-      const page = params.method_name === "get_grant" ? value[args.grant_id] ?? null
+      const page = params.method_name === "ft_balance_of" ? (args.account_id === dao ? value : "0")
+        : params.method_name === "get_grant" ? value[args.grant_id] ?? null
         : params.method_name === "get_distribution" && args.distribution_id === 2
           ? { ...distributions[1], id: 2 }
         : params.method_name === "get_distribution" ? value[args.distribution_id] ?? null

@@ -14,6 +14,8 @@ Rust is pinned to 1.88.0 in `rust-toolchain.toml`; pnpm is pinned to 10.16.1. Ru
 
 The [Sandbox storage stress test](docs/STORAGE_LIMITS.md) measures 507,471 bytes for a company at the demo's holder, grant, distribution, and action limits, including contract code, and verifies a payout callback at those limits.
 
+The setup and distribution screens read the DAO's current settlement-token balance alongside the proposed funding budget. If that token view is unavailable, the balance is labeled unavailable while the company's authoritative ledger and distributions remain visible.
+
 GitHub Actions runs the pnpm web tests, Chromium browser tests, production build, Rust contract tests, and the Sandbox lifecycle on pushes and pull requests. Run the local browser suite with `pnpm --filter @captab/web exec playwright install chromium` once, then `pnpm test:e2e`; it starts a fixture NEAR RPC and Next.js server on loopback. The pnpm workspace explicitly permits the native build steps used by `better-sqlite3` and `sharp` so a clean install can exercise the same checks.
 
 `GET /api/companies/<account>` reads all bounded on-chain grants and distributions, checks supply and funded-escrow arithmetic, and reports the local history observation counts and last final observation. The worker repeats the chain audit for known companies at least every five minutes and saves its last result for the activity page. A changed ledger revision during reads yields an inconclusive audit that should be retried. History coverage remains limited to app-submitted transactions; audit consistency does not imply external activity has been indexed.

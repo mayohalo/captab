@@ -16,7 +16,8 @@ export default async function DistributionPage({ params }: { params: Promise<{ i
     return <main><header><div><Link href={`/company/${id}/distributions`}>← Distributions</Link><h1>Distribution #{distribution.id}</h1>
       <p>NEAR testnet · snapshot revision {distribution.snapshot_revision} · settlement token {distribution.token_id}</p></div></header>
       <CompanyNavigation id={id} />
-      <DistributionsSection id={id} distributions={[distribution]} />
+      <DistributionsSection id={id} distributions={[distribution]} daoId={company.config.dao_id}
+        tokenId={company.config.settlement_token_id} treasuryBalance={company.treasuryBalance} />
       <DistributionOperator id={id} config={company.config} policy={company.daoPolicy}
         daoVerified={company.daoAssessment.verified} totals={company.totals} distributions={[distribution]} />
       <GovernancePanel id={id} totals={company.totals} config={company.config} policy={company.daoPolicy}
