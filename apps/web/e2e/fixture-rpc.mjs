@@ -3,6 +3,7 @@ import { distributionHash } from "../lib/distribution-hash.ts";
 
 const port = 14555;
 const company = "company.testnet";
+const claimableCompany = "claimable.testnet";
 const dao = "board.testnet";
 const unsafeCompany = "unsafe.testnet";
 const unsafeDao = "unsafe-board.testnet";
@@ -29,6 +30,11 @@ const grants = [{
   id: index + 1, recipient: `past-${index + 1}.testnet`, original_units: "1000", entitlement_cap: "0",
   issued_units: "0", vested_units: "0", claimable_units: "0", boundaries, cancelled_at: 1_740_000_000,
 }))];
+const claimableTotals = { dao_id: dao, authorized_units: "1000", issued_total: "0", pool_available: "0",
+  grant_reserved: "100", fully_diluted_total: "100", unallocated_units: "900", ledger_revision: 1, holder_count: 0 };
+const claimableConfig = { ...config, authorized_units: "1000" };
+const claimableGrant = { id: 0, recipient: "contributor.testnet", original_units: "100", entitlement_cap: "100",
+  issued_units: "0", vested_units: "25", claimable_units: "25", boundaries, cancelled_at: null };
 const distributions = [{
   id: 0, snapshot_revision: 4, snapshot_timestamp: 1_790_000_000, snapshot_block_height: 123,
   token_id: token, budget: "10000000000", expires_at: 1_900_000_000,
@@ -58,18 +64,25 @@ const policy = {
   ] }, permissions: ["*:VoteApprove"], vote_policy: {} }],
   default_vote_policy: { weight_kind: "RoleWeight", quorum: "0", threshold: { Ratio: [1, 2] } },
 };
+const proposal = { id: 0, proposer: "council-b.testnet", description: "Issue 100 founder units",
+  kind: { FunctionCall: { receiver_id: company, actions: [{ method_name: "issue_founder_units",
+    args: Buffer.from(JSON.stringify({ action_id: "fixture-proposal", expected_revision: 4, recipient: "new-founder.testnet", units: "100" })).toString("base64"),
+    gas: "40000000000000", deposit: "0" }] } }, status: "InProgress", vote_counts: {} };
 const methods = new Map([
   [`${company}:get_totals`, totals], [`${company}:get_config`, config],
   [`${company}:list_holdings`, holdings], [`${company}:list_grants`, grants],
   [`${company}:get_grant`, grants], [`${company}:get_distribution`, distributions],
   [`${company}:list_distributions`, distributions], [`${dao}:get_policy`, policy],
-  [`${dao}:get_last_proposal_id`, 0], [`${dao}:get_proposals`, []],
+  [`${dao}:get_last_proposal_id`, 1], [`${dao}:get_proposals`, [proposal]], [`${dao}:get_proposal`, proposal],
   [`${token}:ft_metadata`, { spec: "ft-1.0.0", name: "Test USD", symbol: "TESTUSD", decimals: 6 }],
   [`${unsafeCompany}:get_totals`, { ...totals, dao_id: unsafeDao }],
   [`${unsafeCompany}:get_config`, { ...config, dao_id: unsafeDao }],
   [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
   [`${unsafeCompany}:get_grant`, grants], [`${unsafeCompany}:get_distribution`, distributions],
   [`${unsafeCompany}:list_distributions`, distributions],
+  [`${claimableCompany}:get_totals`, claimableTotals], [`${claimableCompany}:get_config`, claimableConfig],
+  [`${claimableCompany}:list_holdings`, []], [`${claimableCompany}:list_grants`, [claimableGrant]],
+  [`${claimableCompany}:get_grant`, [claimableGrant]], [`${claimableCompany}:list_distributions`, []],
   [`${unsafeDao}:get_policy`, policy], [`${unsafeDao}:get_last_proposal_id`, 0],
   [`${unsafeDao}:get_proposals`, []],
 ]);
@@ -87,7 +100,7 @@ createServer(async (request, response) => {
     const params = rpc.params ?? {};
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);
     let result;
-    if (params.request_type === "view_code" && [company, dao, unsafeDao].includes(params.account_id)) {
+    if (params.request_type === "view_code" && [company, claimableCompany, dao, unsafeDao].includes(params.account_id)) {
       result = { code_base64: "", hash: params.account_id === dao
         ? "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq" : "fixture-company-code-hash" };
     } else if (params.request_type === "call_function") {

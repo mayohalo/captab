@@ -107,9 +107,108 @@ test("governance review binds a founder action to the current revision", async (
   await governance.getByRole("textbox", { name: "Units", exact: true }).fill("1000");
   await governance.getByRole("button", { name: "Review proposal" }).click();
   await expect(governance.getByRole("heading", { name: "Review exact DAO action" })).toBeVisible();
-  await expect(governance.locator("pre")).toContainText('"method_name": "issue_founder_units"');
-  await expect(governance.locator("pre")).toContainText('"expected_revision": 4');
+  await expect(governance.locator("pre").first()).toContainText('"method_name": "issue_founder_units"');
+  await expect(governance.locator("pre").first()).toContainText('"expected_revision": 4');
   await expect(governance.getByRole("button", { name: "Submit to DAO" })).toBeDisabled();
+});
+
+test("connected council wallet signs reviewed proposal and vote requests", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as typeof window & { __CAPTAB_E2E_CONNECTOR__?: unknown; __captabWalletCalls?: unknown[] };
+    state.__captabWalletCalls = [];
+    const account = { accountId: "council-a.testnet" };
+    const wallet = { manifest: { features: { signDelegateActions: false } }, getAccounts: async () => [account],
+      signAndSendTransaction: async (request: unknown) => {
+        state.__captabWalletCalls!.push(request);
+        return { transaction: { hash: `fixture-signed-${state.__captabWalletCalls!.length}` }, status: { SuccessValue: "" } };
+      } };
+    state.__CAPTAB_E2E_CONNECTOR__ = { getConnectedWallet: async () => ({ wallet, accounts: [account] }), connect: async () => wallet };
+  });
+  await page.route("**/api/transactions/observe", route => route.fulfill({ status: 200, contentType: "application/json",
+    body: JSON.stringify({ operationId: "fixture-operation", status: "Confirmed" }) }));
+  await page.goto("/company/company.testnet/approvals");
+  const governance = page.locator("#governance");
+  await expect(governance.getByText("council-a.testnet (council)")).toBeVisible();
+  await governance.getByLabel("Recipient account").fill("new-founder.testnet");
+  await governance.getByRole("textbox", { name: "Units", exact: true }).fill("100");
+  await governance.getByRole("button", { name: "Review proposal" }).click();
+  await governance.getByRole("button", { name: "Submit to DAO" }).click();
+  await expect(governance.getByRole("status")).toContainText("Proposal submitted: fixture-signed-1");
+  await governance.getByRole("button", { name: "Vote to approve" }).click();
+  await expect(governance.getByRole("status")).toContainText("Vote transaction fixture-signed-2");
+  const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
+  expect(calls).toHaveLength(2);
+  expect(calls?.[0]).toMatchObject({ receiverId: "board.testnet", actions: [{ params: { methodName: "add_proposal",
+    args: { proposal: { kind: { FunctionCall: { receiver_id: "company.testnet" } } } } } }] });
+  expect(calls?.[1]).toMatchObject({ receiverId: "board.testnet", actions: [{ params: { methodName: "act_proposal",
+    args: { id: 0, action: "VoteApprove" } } }] });
+});
+
+test("contributor wallet signs a vested claim for its own account", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as typeof window & { __CAPTAB_E2E_CONNECTOR__?: unknown; __captabWalletCalls?: unknown[] };
+    state.__captabWalletCalls = [];
+    const account = { accountId: "contributor.testnet" };
+    const wallet = { manifest: { features: { signDelegateActions: false } }, getAccounts: async () => [account],
+      signAndSendTransaction: async (request: unknown) => {
+        state.__captabWalletCalls!.push(request);
+        return { transaction: { hash: "fixture-claim-signed" }, status: { SuccessValue: "" } };
+      } };
+    state.__CAPTAB_E2E_CONNECTOR__ = { getConnectedWallet: async () => ({ wallet, accounts: [account] }), connect: async () => wallet };
+  });
+  await page.route("**/api/transactions/observe", route => route.fulfill({ status: 200, contentType: "application/json",
+    body: JSON.stringify({ operationId: "fixture-claim-operation", status: "Confirmed" }) }));
+  await page.goto("/me?company=claimable.testnet");
+  await expect(page.getByText("25 claimable now")).toBeVisible();
+  await page.getByRole("button", { name: "Claim with wallet gas" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Claim transaction fixture-claim-signed" })).toBeVisible();
+  const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
+  expect(calls).toEqual([{ receiverId: "claimable.testnet", actions: [{ type: "FunctionCall", params: {
+    methodName: "claim_vested", args: { grant_id: 0 }, gas: "30000000000000", deposit: "0",
+  } }] }]);
+});
+
+test("snapshot operator wallet signs an immutable distribution preparation", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as typeof window & { __CAPTAB_E2E_CONNECTOR__?: unknown; __captabWalletCalls?: unknown[] };
+    state.__captabWalletCalls = [];
+    const account = { accountId: "operator.testnet" };
+    const wallet = { manifest: { features: { signDelegateActions: false } }, getAccounts: async () => [account],
+      signAndSendTransaction: async (request: unknown) => {
+        state.__captabWalletCalls!.push(request);
+        return { transaction: { hash: "fixture-snapshot-signed" }, status: { SuccessValue: "" } };
+      } };
+    state.__CAPTAB_E2E_CONNECTOR__ = { getConnectedWallet: async () => ({ wallet, accounts: [account] }), connect: async () => wallet };
+  });
+  await page.route("**/api/transactions/observe", route => route.fulfill({ status: 200, contentType: "application/json",
+    body: JSON.stringify({ operationId: "fixture-snapshot-operation", status: "Confirmed" }) }));
+  await page.goto("/company/company.testnet/distributions");
+  const execution = page.locator("#distribution-actions");
+  await execution.getByLabel("Budget in token base units").fill("1000");
+  await execution.getByLabel("Expiry in UTC (ISO 8601)").fill("2035-01-01T00:00:00Z");
+  await execution.getByRole("button", { name: "Create immutable snapshot" }).click();
+  await expect(execution.getByRole("status")).toContainText("Transaction fixture-snapshot-signed");
+  const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
+  expect(calls).toEqual([{ receiverId: "company.testnet", actions: [{ type: "FunctionCall", params: {
+    methodName: "prepare_distribution", args: { expected_revision: 4, budget: "1000", expires_at: 2_051_222_400 },
+    gas: "100000000000000", deposit: "0",
+  } }] }]);
+});
+
+test("grant card reports a failed wallet claim without observing it as submitted", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as typeof window & { __CAPTAB_E2E_CONNECTOR__?: unknown };
+    const account = { accountId: "contributor.testnet" };
+    const wallet = { manifest: { features: { signDelegateActions: false } }, getAccounts: async () => [account],
+      signAndSendTransaction: async () => ({ transaction: { hash: "failed-claim" }, status: { Failure: { ActionError: "fixture" } } }) };
+    state.__CAPTAB_E2E_CONNECTOR__ = { getConnectedWallet: async () => ({ wallet, accounts: [account] }), connect: async () => wallet };
+  });
+  let observations = 0;
+  await page.route("**/api/transactions/observe", route => { observations++; return route.fulfill({ status: 200, body: "{}" }); });
+  await page.goto("/company/claimable.testnet/grants/0");
+  await page.getByRole("button", { name: "Claim vested units" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Claim failed" })).toBeVisible();
+  expect(observations).toBe(0);
 });
 
 test("personal ownership has a safe disconnected state", async ({ page }) => {
