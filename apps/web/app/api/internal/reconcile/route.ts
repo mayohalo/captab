@@ -3,6 +3,7 @@ import { getDatabase } from "../../../../lib/db";
 import { type OperationRow, reconcileOperation } from "../../../../lib/observer";
 import { reconcilePaymentJobs, submitNextPayment } from "../../../../lib/payments";
 import { reconcileSponsorRequests } from "../../../../lib/sponsor";
+import { auditKnownCompanies } from "../../../../lib/company-auditor";
 
 export const runtime = "nodejs";
 
@@ -28,5 +29,6 @@ export async function POST(request: Request) {
   const payments = await reconcilePaymentJobs();
   const sponsors = reconcileSponsorRequests();
   const submission = await submitNextPayment();
-  return NextResponse.json({ checked: results.length, results, payments, sponsors, submission });
+  const audits = await auditKnownCompanies(db);
+  return NextResponse.json({ checked: results.length, results, payments, sponsors, submission, audits });
 }

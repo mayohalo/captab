@@ -1,5 +1,26 @@
 import { expect, test } from "@playwright/test";
 
+test("company API audits the full ledger and reports tracked-history coverage", async ({ request }) => {
+  const response = await request.get("/api/companies/company.testnet");
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  expect(body.audit).toEqual({ state: "Consistent", checkedRevision: 4, issues: [] });
+  expect(body.chain.grants).toHaveLength(21);
+  expect(body.history.coverage).toBe("app-submitted-only");
+  expect(body.history.trackedCount).toBe(0);
+  const worker = await request.post("/api/internal/reconcile", {
+    headers: { authorization: "Bearer local-e2e-fixture-secret" },
+  });
+  expect(worker.ok()).toBeTruthy();
+  expect((await worker.json()).audits).toEqual([{ contractId: "company.testnet", state: "Consistent", issues: [] }]);
+  const refreshed = await (await request.get("/api/companies/company.testnet")).json();
+  expect(refreshed.history.lastWorkerAudit.state).toBe("Consistent");
+  const again = await request.post("/api/internal/reconcile", {
+    headers: { authorization: "Bearer local-e2e-fixture-secret" },
+  });
+  expect((await again.json()).audits).toEqual([]);
+});
+
 test("setup inspects the configured company, DAO, and settlement token", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "CapTable" })).toBeVisible();
@@ -20,6 +41,7 @@ test("ownership, vesting, and a failed payout render from chain views", async ({
   await expect(page.getByText("8,000,000")).toBeVisible();
   await expect(page.getByRole("row", { name: /founder-a\.testnet.*3,600,000/ })).toBeVisible();
   await expect(page.getByText("Claimable 0 · remaining reservation 75,000")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Grant #20" })).toBeVisible();
   await expect(page.getByRole("row", { name: /contributor\.testnet.*41,493,776.*Failed/ })).toBeVisible();
   await expect(page.getByText("contributor.testnet · 41493776 · Failed · attempt 1")).toBeVisible();
 });

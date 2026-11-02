@@ -24,7 +24,10 @@ const holdings = [
 const grants = [{
   id: 0, recipient: "contributor.testnet", original_units: "100000", entitlement_cap: "100000",
   issued_units: "25000", vested_units: "25000", claimable_units: "0", boundaries, cancelled_at: null,
-}];
+}, ...Array.from({ length: 20 }, (_, index) => ({
+  id: index + 1, recipient: `past-${index + 1}.testnet`, original_units: "1000", entitlement_cap: "0",
+  issued_units: "0", vested_units: "0", claimable_units: "0", boundaries, cancelled_at: 1_740_000_000,
+}))];
 const distributions = [{
   id: 0, snapshot_revision: 4, snapshot_timestamp: 1_790_000_000, snapshot_block_height: 123,
   token_id: token, budget: "10000000000", expires_at: 1_900_000_000,
@@ -76,7 +79,11 @@ createServer(async (request, response) => {
     } else if (params.request_type === "call_function") {
       const key = `${params.account_id}:${params.method_name}`;
       if (!methods.has(key)) throw new Error(`Unsupported contract method ${key}`);
-      result = { result: [...Buffer.from(JSON.stringify(methods.get(key)))], logs: [] };
+      const args = params.args_base64 ? JSON.parse(Buffer.from(params.args_base64, "base64").toString()) : {};
+      const value = methods.get(key);
+      const page = Array.isArray(value) && params.method_name.startsWith("list_")
+        ? value.slice(args.from_index ?? 0, (args.from_index ?? 0) + (args.limit ?? value.length)) : value;
+      result = { result: [...Buffer.from(JSON.stringify(page))], logs: [] };
     } else throw new Error(`Unsupported query ${params.request_type}`);
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(JSON.stringify({ jsonrpc: "2.0", id: rpc.id, result: {

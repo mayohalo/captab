@@ -11,6 +11,7 @@ pnpm install
 pnpm test:contract
 pnpm test:auth
 pnpm test:dao
+pnpm test:health
 pnpm test:sponsor
 pnpm test:payments
 pnpm test:receipts
@@ -73,7 +74,7 @@ The final expected amounts are 5,975.103734 TESTUSD for founder A, 3,983.402490 
 
 ## 5. Review and recovery
 
-The contract is authoritative. Reconnect by reading `get_totals`, `list_grants`, `list_distributions`, and each `get_distribution`; the SQLite states are observations. A payment job in `Submitted` waits for final receipt reconciliation. An in-flight entitlement after a final transaction, ambiguous submission, or a worker crash after `Claimed` stays `NeedsReview` and blocks the queue. Never reset it by timeout or submit another payment manually. Record the transaction hash, final receipts, token balance, entitlement attempt ID, and callback outcome for investigation. There is intentionally no automatic repair method for a token transfer whose callback failed.
+The contract is authoritative. Reconnect by reading `get_totals`, every page of `list_grants`, `list_distributions`, and each `get_distribution`; the SQLite states are observations. `GET /api/companies/<company-account>` compares all bounded holdings, grants, and payout states with on-chain totals and shows the last periodic worker audit. Retry an inconclusive audit after the ledger stops changing. A payment job in `Submitted` waits for final receipt reconciliation. An in-flight entitlement after a final transaction, ambiguous submission, or a worker crash after `Claimed` stays `NeedsReview` and blocks the queue. Never reset it by timeout or submit another payment manually. Record the transaction hash, final receipts, token balance, entitlement attempt ID, and callback outcome for investigation. There is intentionally no automatic repair method for a token transfer whose callback failed.
 
 The sponsor relayer stores a digest before submission. A duplicate signed delegate cannot be relayed again by this API. A `NeedsReview` sponsor outcome requires inspecting the outer transaction and contributor holding before a new signed request is obtained. Never reuse the old signature to guess whether it succeeded.
 

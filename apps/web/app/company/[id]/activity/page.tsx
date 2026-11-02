@@ -18,7 +18,17 @@ export default async function ActivityPage({ params }: { params: Promise<{ id: s
   const events = db.prepare(`SELECT e.receipt_id, e.log_index, e.event_name, e.payload_json
     FROM chain_events e JOIN companies c ON c.id = e.company_id
     WHERE c.network = 'testnet' AND c.contract_id = ? ORDER BY e.rowid DESC LIMIT 100`).all(id) as EventRow[];
+  const pending = operations.filter(operation => operation.status === "Pending").length;
+  const needsReview = operations.filter(operation => operation.status === "NeedsReview").length;
+  const lastObservedAt = operations.map(operation => operation.observed_at).filter((value): value is string => Boolean(value)).sort().at(-1);
+  const audit = db.prepare(`SELECT a.state, a.checked_at, a.issues_json FROM company_audits a
+    JOIN companies c ON c.id = a.company_id WHERE c.network = 'testnet' AND c.contract_id = ?`).get(id) as {
+      state: string; checked_at: string; issues_json: string;
+    } | undefined;
   return <main><Link href={`/company/${id}`}>← {id}</Link><h1>Activity</h1><p>NEAR testnet · tracked app submissions and their finalized receipts. Actions submitted outside this app may be absent from this history; current contract views remain authoritative.</p>
+    <p>Tracked history: {pending} pending · {needsReview} need review · last final observation {lastObservedAt ?? "none"}. <Link href={`/api/companies/${id}`}>Check authoritative ledger and history coverage</Link>.</p>
+    <p>Last periodic chain audit: {audit ? `${audit.state} at ${audit.checked_at}` : "not yet run"}.</p>
+    {audit && audit.state !== "Consistent" && <p role="alert">{(JSON.parse(audit.issues_json) as string[]).join(" ")}</p>}
     <section><h2>Transactions</h2>{operations.length === 0 ? <p>No tracked transactions yet.</p> : <div className="cards">{operations.map(operation => <article key={operation.id}>
       <h3>{operation.status}</h3><p>{operation.signer_id} · {operation.created_at}</p><p>Observed {operation.observed_at ?? "pending"}</p>
       <a href={`https://testnet.nearblocks.io/txns/${operation.tx_hash}`} target="_blank" rel="noreferrer">View transaction</a> · <Link href={`/api/operations/${operation.id}`}>Receipt details</Link>

@@ -15,6 +15,7 @@ for (;;) {
     const result = await response.json();
     if (result.checked) console.log(`Reconciled ${result.checked} operation(s):`, result.results);
     if (result.payments?.length) console.log("Payment observations:", result.payments);
+    if (result.audits?.length) console.log("Company audits:", result.audits);
     if (result.submission?.submitted) console.log("Submitted payment:", result.submission);
     if (result.submission?.reason?.includes("review required")) console.error(result.submission.reason);
   } catch (error) {

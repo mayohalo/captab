@@ -100,6 +100,14 @@ CREATE TABLE IF NOT EXISTS sponsor_requests (
   last_error TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS company_audits (
+  company_id TEXT PRIMARY KEY REFERENCES companies(id),
+  state TEXT NOT NULL CHECK (state IN ('Consistent', 'Inconsistent', 'Inconclusive', 'Unavailable')),
+  ledger_revision INTEGER,
+  issues_json TEXT NOT NULL,
+  last_error TEXT,
+  checked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS operations_pending ON operations(status, created_at);
 CREATE INDEX IF NOT EXISTS events_company ON chain_events(company_id, receipt_id);
 CREATE INDEX IF NOT EXISTS payment_jobs_state ON payment_jobs(submission_state, updated_at);

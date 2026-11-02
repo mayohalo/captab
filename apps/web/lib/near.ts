@@ -34,13 +34,14 @@ export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
 }
 
 export async function readCompany(contractId: string) {
-  const [totals, config, holdings, grants, distributions] = await Promise.all([
+  const [totals, config, holdings, grantPages, distributions] = await Promise.all([
     view<Totals>(contractId, "get_totals"),
     view<CompanyConfig>(contractId, "get_config"),
     view<Holding[]>(contractId, "list_holdings", { from_index: 0, limit: 20 }),
-    view<Grant[]>(contractId, "list_grants", { from_index: 0, limit: 20 }),
+    Promise.all([0, 20, 40, 60, 80].map(from_index => view<Grant[]>(contractId, "list_grants", { from_index, limit: 20 }))),
     view<Distribution[]>(contractId, "list_distributions", { from_index: 0, limit: 20 }),
   ]);
+  const grants = grantPages.flat();
   let daoPolicy: DaoPolicy | null = null;
   let daoAssessment: DaoAssessment = { verified: false, reason: "DAO policy could not be verified." };
   let proposals: DaoProposal[] = [];
