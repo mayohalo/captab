@@ -3,7 +3,7 @@ import type Database from "better-sqlite3";
 import { Account, JsonRpcProvider, teraToGas } from "near-api-js";
 import { ensureCompany, getDatabase } from "./db";
 import { type CompanyConfig, type Distribution, validAccountId, view } from "./near";
-import { classifyPayment } from "./payment-state";
+import { classifyPayment, markAbandonedClaimsForReview } from "./payment-state";
 
 type Job = { company_id: string; contract_id: string; distribution_id: number; recipient_id: string; attempt_id: number; submission_state: string; tx_hash: string | null };
 
@@ -86,11 +86,14 @@ export async function submitNextPayment() {
 
 export async function reconcilePaymentJobs() {
   const db = getDatabase();
+  const abandoned = markAbandonedClaimsForReview(db);
   const jobs = db.prepare(`SELECT j.*, c.contract_id FROM payment_jobs j JOIN companies c ON c.id = j.company_id
     JOIN operations o ON o.network = 'testnet' AND o.tx_hash = j.tx_hash
     WHERE j.submission_state = 'Submitted' AND o.status IN ('Confirmed', 'Failed', 'NeedsReview')
     ORDER BY j.updated_at LIMIT 20`).all() as Job[];
-  const results = [];
+  const results: { distributionId: number; recipientId: string; state: string }[] = abandoned.map(job => ({
+    distributionId: job.distribution_id, recipientId: job.recipient_id, state: "NeedsReview",
+  }));
   for (const job of jobs) {
     try {
       const current = await distribution(job.contract_id, job.distribution_id);
