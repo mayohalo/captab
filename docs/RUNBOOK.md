@@ -50,6 +50,8 @@ pnpm deploy:testnet --apply
 
 The first command deploys and initializes pinned Sputnik with exactly three council accounts and a two-vote policy. The second deploys the six-decimal TESTUSD fixture with its initial supply assigned to the DAO. The third deploys and initializes the company, registers it with TESTUSD, and writes `docs/deployment-manifest.testnet.json`. Each command checks existing code and initialization before writing, so a repeat run verifies the same deployment rather than replacing code. If a transaction fails or its result is uncertain, inspect the chain transaction and code/config views before rerunning.
 
+After issuance, `pnpm deploy:testnet --apply` can reverify an already initialized, token-registered company without its deployment key. It preserves the deployment and initialization transaction hashes already recorded in the manifest while refreshing the on-chain code, configuration, access-key list, and verification time. A key is still required if deployment, initialization, or token storage registration remains unfinished.
+
 Open `/setup?company=<company-account>` and confirm the DAO, operator, token, code hash, initial totals, and the explicit pinned-Sputnik two-of-three verification message. The app refuses governance and council-only private-data access if the DAO code or policy differs. Set `NEXT_PUBLIC_COMPANY_CONTRACT_ID` to the deployed company account, then start the app and worker in separate terminals:
 
 ```sh

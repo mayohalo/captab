@@ -10,9 +10,10 @@ const companyWasmPath = resolve(root, "target/wasm32-unknown-unknown/release/cap
 const daoWasmPath = resolve(root, ".cache/sputnik/target/wasm32-unknown-unknown/release/sputnikdao2.wasm");
 const tokenWasmPath = resolve(root, "target/wasm32-unknown-unknown/release/captab_test_token.wasm");
 const manifestPath = resolve(root, "docs/deployment-manifest.testnet.json");
+let previousManifest = null;
 try {
-  const previous = JSON.parse(await readFile(manifestPath, "utf8"));
-  if (previous.companyId !== process.env.CAPTAB_COMPANY_ACCOUNT_ID) throw new Error("Existing manifest belongs to another company account");
+  previousManifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  if (previousManifest.companyId !== process.env.CAPTAB_COMPANY_ACCOUNT_ID) throw new Error("Existing manifest belongs to another company account");
 } catch (error) {
   if (error?.code !== "ENOENT") throw error;
 }
@@ -30,7 +31,6 @@ if (![companyId, daoId, operatorId, tokenId].every(validAccount) || !/^[1-9][0-9
   throw new Error("Set CAPTAB_COMPANY_ACCOUNT_ID, CAPTAB_DAO_ACCOUNT_ID, CAPTAB_OPERATOR_ACCOUNT_ID, CAPTAB_TOKEN_ACCOUNT_ID, and positive CAPTAB_AUTHORIZED_UNITS");
 }
 if (BigInt(units) > 1_000_000_000_000_000n) throw new Error("Authorized units exceed the contract limit");
-if (apply && !companyKey) throw new Error("Set CAPTAB_COMPANY_PRIVATE_KEY locally before --apply");
 
 const sha256 = bytes => createHash("sha256").update(bytes).digest();
 const [companyWasm, daoWasm, tokenWasm] = await Promise.all([readFile(companyWasmPath), readFile(daoWasmPath), readFile(tokenWasmPath)]);
@@ -80,6 +80,7 @@ if (companyAccount.code_hash === companyCodeHash) {
 if (config && Object.entries(expectedConfig).some(([key, value]) => String(config[key]) !== value)) {
   throw new Error("Existing company initialization differs from requested configuration");
 }
+const alreadyInitialized = Boolean(config);
 console.log(JSON.stringify({ network: "testnet", companyId, daoId, council: members, operatorId, tokenId,
   token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, wasmSha256: tokenDigest.toString("hex"), companyStorage: initialStorage ? "registered" : "missing or unavailable" },
   companyWasmSha256: companyDigest.toString("hex"), daoWasmSha256: daoDigest.toString("hex"),
@@ -89,17 +90,23 @@ if (!apply) {
   process.exit(0);
 }
 
-const signerKey = KeyPair.fromString(companyKey);
-const accessKey = await provider.viewAccessKey({ accountId: companyId, publicKey: signerKey.getPublicKey().toString() });
-if (accessKey.permission !== "FullAccess") throw new Error("Company deployment key must have full access");
-const company = new Account(companyId, provider, companyKey);
-const transactions = {};
+let company;
+async function writableCompany() {
+  if (company) return company;
+  if (!companyKey) throw new Error("Set CAPTAB_COMPANY_PRIVATE_KEY locally before a deployment or storage-registration write");
+  const signerKey = KeyPair.fromString(companyKey);
+  const accessKey = await provider.viewAccessKey({ accountId: companyId, publicKey: signerKey.getPublicKey().toString() });
+  if (accessKey.permission !== "FullAccess") throw new Error("Company deployment key must have full access");
+  company = new Account(companyId, provider, companyKey);
+  return company;
+}
+const transactions = { ...previousManifest?.transactions };
 if (companyAccount.code_hash === emptyHash) {
-  const result = await company.signAndSendTransaction({ receiverId: companyId, actions: [actions.deployContract(companyWasm)], waitUntil: "FINAL" });
+  const result = await (await writableCompany()).signAndSendTransaction({ receiverId: companyId, actions: [actions.deployContract(companyWasm)], waitUntil: "FINAL" });
   transactions.deploy = result.transaction.hash;
 }
 if (!config) {
-  const result = await company.callFunctionRaw({ contractId: companyId, methodName: "new", args: expectedConfig,
+  const result = await (await writableCompany()).callFunctionRaw({ contractId: companyId, methodName: "new", args: expectedConfig,
     gas: teraToGas(40), deposit: 0n, waitUntil: "FINAL" });
   transactions.initialize = result.transaction.hash;
 }
@@ -109,8 +116,17 @@ const [verifiedCode, verifiedConfig, totals, accessKeys] = await Promise.all([
   provider.callFunction({ contractId: companyId, method: "get_totals", args: {} }),
   provider.viewAccessKeyList({ accountId: companyId }),
 ]);
-if (verifiedCode.hash !== companyCodeHash || Object.entries(expectedConfig).some(([key, value]) => String(verifiedConfig[key]) !== value) || totals.issued_total !== "0") {
+if (verifiedCode.hash !== companyCodeHash || Object.entries(expectedConfig).some(([key, value]) => String(verifiedConfig[key]) !== value) ||
+    totals.dao_id !== daoId || String(totals.authorized_units) !== units ||
+    (!alreadyInitialized && (String(totals.issued_total) !== "0" || Number(totals.ledger_revision) !== 0))) {
   throw new Error("Deployment verification failed; inspect transaction receipts before retrying");
+}
+const issued = BigInt(totals.issued_total);
+const pool = BigInt(totals.pool_available);
+const reserved = BigInt(totals.grant_reserved);
+const diluted = issued + pool + reserved;
+if (diluted !== BigInt(totals.fully_diluted_total) || BigInt(units) - diluted !== BigInt(totals.unallocated_units)) {
+  throw new Error("Company supply accounting does not reconcile; inspect contract state before continuing");
 }
 let storageRegistration = "unverified";
 let storageBalance = null;
@@ -121,7 +137,7 @@ try {
 if (storageRegistration === "missing") {
   const bounds = await provider.callFunction({ contractId: tokenId, method: "storage_balance_bounds", args: {} });
   if (!bounds?.min || !/^[1-9][0-9]*$/.test(String(bounds.min))) throw new Error("Token storage registration minimum is unavailable");
-  const registration = await company.callFunctionRaw({ contractId: tokenId, methodName: "storage_deposit",
+  const registration = await (await writableCompany()).callFunctionRaw({ contractId: tokenId, methodName: "storage_deposit",
     args: { account_id: companyId, registration_only: true }, gas: teraToGas(30), deposit: BigInt(bounds.min), waitUntil: "FINAL" });
   transactions.storageRegistration = registration.transaction.hash;
   storageBalance = await provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId } });
