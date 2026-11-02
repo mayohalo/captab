@@ -4,6 +4,8 @@ import { type OperationRow, reconcileOperation } from "../../../../lib/observer"
 import { reconcilePaymentJobs, submitNextPayment } from "../../../../lib/payments";
 import { reconcileSponsorRequests } from "../../../../lib/sponsor";
 import { auditKnownCompanies } from "../../../../lib/company-auditor";
+import { reconcileTrackedProposals } from "../../../../lib/proposal-observer";
+import { type DaoProposal, view } from "../../../../lib/near";
 
 export const runtime = "nodejs";
 
@@ -27,8 +29,9 @@ export async function POST(request: Request) {
     results.push({ operationId: updated.id, status: updated.status });
   }
   const payments = await reconcilePaymentJobs();
+  const proposals = await reconcileTrackedProposals(db, (daoId, id) => view<DaoProposal>(daoId, "get_proposal", { id }));
   const sponsors = reconcileSponsorRequests();
   const submission = await submitNextPayment();
   const audits = await auditKnownCompanies(db);
-  return NextResponse.json({ checked: results.length, results, payments, sponsors, submission, audits });
+  return NextResponse.json({ checked: results.length, results, proposals, payments, sponsors, submission, audits });
 }

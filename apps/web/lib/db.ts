@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS proposals (
   network TEXT NOT NULL,
   dao_id TEXT NOT NULL,
   proposal_id INTEGER NOT NULL,
+  company_id TEXT REFERENCES companies(id),
+  submission_tx_hash TEXT,
   action_id TEXT,
   payload_hash TEXT,
   observed_status TEXT NOT NULL,
@@ -125,6 +127,9 @@ export function openDatabase(filename: string) {
   const sponsorColumns = db.pragma("table_info(sponsor_requests)") as { name: string }[];
   if (!sponsorColumns.some(column => column.name === "tx_hash")) db.exec("ALTER TABLE sponsor_requests ADD COLUMN tx_hash TEXT");
   if (!sponsorColumns.some(column => column.name === "last_error")) db.exec("ALTER TABLE sponsor_requests ADD COLUMN last_error TEXT");
+  const proposalColumns = db.pragma("table_info(proposals)") as { name: string }[];
+  if (!proposalColumns.some(column => column.name === "company_id")) db.exec("ALTER TABLE proposals ADD COLUMN company_id TEXT REFERENCES companies(id)");
+  if (!proposalColumns.some(column => column.name === "submission_tx_hash")) db.exec("ALTER TABLE proposals ADD COLUMN submission_tx_hash TEXT");
   return db;
 }
 
