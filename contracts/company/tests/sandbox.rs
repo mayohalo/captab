@@ -147,6 +147,101 @@ async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::er
 }
 
 #[tokio::test]
+async fn bounded_storage_still_allows_payment_callback_at_demo_limits() -> Result<(), Box<dyn std::error::Error>> {
+    let company_wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/wasm32-unknown-unknown/release/captab_company.wasm"))?;
+    let token_wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/wasm32-unknown-unknown/release/captab_test_token.wasm"))?;
+    let worker = near_workspaces::sandbox().await?;
+    let company = worker.dev_deploy(&company_wasm).await?;
+    let token = worker.dev_deploy(&token_wasm).await?;
+    let dao = worker.dev_create_account().await?;
+    let operator = worker.dev_create_account().await?;
+    let paid_holder = worker.dev_create_account().await?;
+    let baseline = worker.view_account(company.id()).await?.storage_usage;
+    assert!(token.call("new").args_json(json!({"owner_id": dao.id(), "total_supply": "1000000"})).transact().await?.is_success());
+    for account_id in [company.id(), paid_holder.id()] {
+        assert!(dao.call(token.id(), "storage_deposit")
+            .args_json(json!({"account_id": account_id, "registration_only": true}))
+            .deposit(NearToken::from_millinear(10)).transact().await?.is_success());
+    }
+    assert!(company.call("new").args_json(json!({
+        "dao_id": dao.id(), "snapshot_operator_id": operator.id(),
+        "settlement_token_id": token.id(), "authorized_units": "100000"
+    })).transact().await?.is_success());
+    for index in 0..20 {
+        let recipient = if index == 0 { paid_holder.id().to_string() } else { format!("holder-{index}.testnet") };
+        let result = dao.call(company.id(), "issue_founder_units")
+            .args_json(json!({"action_id": format!("stress-issue-{index}"), "expected_revision": index,
+                "recipient": recipient, "units": "1000"})).transact().await?;
+        assert!(result.is_success(), "holder {index}: {result:?}");
+    }
+    let extra_holder = dao.call(company.id(), "issue_founder_units")
+        .args_json(json!({"action_id": "stress-extra-holder", "expected_revision": 20,
+            "recipient": "holder-20.testnet", "units": "1"})).transact().await?;
+    assert!(!extra_holder.is_success(), "21st holder succeeded");
+    let holders_bytes = worker.view_account(company.id()).await?.storage_usage;
+    assert!(dao.call(company.id(), "increase_pool").args_json(json!({
+        "action_id": "stress-pool", "expected_revision": 20, "units": "10000"
+    })).transact().await?.is_success());
+    let boundaries: Vec<u64> = (0..=48).map(|month| 1_000 + month * 2_592_000).collect();
+    for index in 0..100 {
+        let result = dao.call(company.id(), "create_grant").args_json(json!({
+            "action_id": format!("stress-grant-{index}"), "expected_revision": 21 + index,
+            "recipient": paid_holder.id(), "units": "100", "boundaries": boundaries,
+        })).max_gas().transact().await?;
+        assert!(result.is_success(), "grant {index}: {result:?}");
+    }
+    let extra_grant = dao.call(company.id(), "create_grant").args_json(json!({
+        "action_id": "stress-extra-grant", "expected_revision": 121,
+        "recipient": paid_holder.id(), "units": "1", "boundaries": boundaries,
+    })).max_gas().transact().await?;
+    assert!(!extra_grant.is_success(), "101st grant succeeded");
+    let grants_bytes = worker.view_account(company.id()).await?.storage_usage;
+    for index in 0..20 {
+        let snapshot = operator.call(company.id(), "prepare_distribution").args_json(json!({
+            "expected_revision": 121, "budget": "1000", "expires_at": 4_102_444_800u64,
+        })).max_gas().transact().await?;
+        assert!(snapshot.is_success(), "distribution {index}: {snapshot:?}");
+        let prepared: Value = company.view("get_distribution").args_json(json!({"distribution_id": index})).await?.json()?;
+        let approval = dao.call(company.id(), "approve_distribution").args_json(json!({
+            "action_id": format!("stress-approve-{index}"), "distribution_id": index,
+            "schedule_hash": prepared["schedule_hash"],
+        })).transact().await?;
+        assert!(approval.is_success(), "approval {index}: {approval:?}");
+    }
+    let extra_distribution = operator.call(company.id(), "prepare_distribution").args_json(json!({
+        "expected_revision": 121, "budget": "1000", "expires_at": 4_102_444_800u64,
+    })).max_gas().transact().await?;
+    assert!(!extra_distribution.is_success(), "21st distribution succeeded");
+    for index in 0..59 {
+        let result = dao.call(company.id(), "set_paused")
+            .args_json(json!({"action_id": format!("stress-action-{index}"), "paused": false}))
+            .transact().await?;
+        assert!(result.is_success(), "action {index}: {result:?}");
+    }
+    let limit_bytes = worker.view_account(company.id()).await?.storage_usage;
+    eprintln!("company storage bytes: deployed={baseline}, holders={holders_bytes}, grants={grants_bytes}, limits={limit_bytes}");
+    assert!(baseline < holders_bytes && holders_bytes < grants_bytes && grants_bytes < limit_bytes);
+    assert!(limit_bytes - baseline < 1_000_000, "demo state exceeds one megabyte");
+    let extra = dao.call(company.id(), "set_paused")
+        .args_json(json!({"action_id": "stress-over-limit", "paused": false})).transact().await?;
+    assert!(!extra.is_success(), "201st privileged action succeeded");
+    let prepared: Value = company.view("get_distribution").args_json(json!({"distribution_id": 0})).await?.json()?;
+    let funding = dao.call(token.id(), "ft_transfer_call").args_json(json!({
+        "receiver_id": company.id(), "amount": "1000",
+        "msg": json!({"distribution_id": 0, "schedule_hash": prepared["schedule_hash"]}).to_string(),
+    })).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?;
+    assert!(funding.is_success(), "funding at limits: {funding:?}");
+    let payout = operator.call(company.id(), "pay_recipient")
+        .args_json(json!({"distribution_id": 0, "recipient_id": paid_holder.id()}))
+        .max_gas().transact().await?;
+    assert!(payout.is_success(), "payment callback at limits: {payout:?}");
+    let settled: Value = company.view("get_distribution").args_json(json!({"distribution_id": 0})).await?.json()?;
+    assert_eq!(settled["paid_total"], "50");
+    assert_eq!(settled["in_flight_total"], "0");
+    Ok(())
+}
+
+#[tokio::test]
 async fn funded_payout_failure_and_retry_follow_token_receipts(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let company_wasm = std::fs::read(concat!(
