@@ -434,6 +434,140 @@ async fn funded_payout_failure_and_retry_follow_token_receipts(
     Ok(())
 }
 
+#[tokio::test]
+async fn seeded_demo_lifecycle_settles_exact_amounts_after_retry(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let company_wasm = std::fs::read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../target/wasm32-unknown-unknown/release/captab_company.wasm"
+    ))?;
+    let token_wasm = std::fs::read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../target/wasm32-unknown-unknown/release/captab_test_token.wasm"
+    ))?;
+    let worker = near_workspaces::sandbox().await?;
+    let company = worker.dev_deploy(&company_wasm).await?;
+    let token = worker.dev_deploy(&token_wasm).await?;
+    let dao = worker.dev_create_account().await?;
+    let operator = worker.dev_create_account().await?;
+    let founder_a = worker.dev_create_account().await?;
+    let founder_b = worker.dev_create_account().await?;
+    let contributor = worker.dev_create_account().await?;
+
+    assert!(token.call("new").args_json(json!({
+        "owner_id": dao.id(), "total_supply": "100000000000"
+    })).transact().await?.is_success());
+    for account_id in [company.id(), founder_a.id(), founder_b.id()] {
+        let registered = dao.call(token.id(), "storage_deposit")
+            .args_json(json!({"account_id": account_id, "registration_only": true}))
+            .deposit(NearToken::from_millinear(10)).transact().await?;
+        assert!(registered.is_success(), "token registration: {registered:?}");
+    }
+    assert!(company.call("new").args_json(json!({
+        "dao_id": dao.id(), "snapshot_operator_id": operator.id(),
+        "settlement_token_id": token.id(), "authorized_units": "10000000"
+    })).transact().await?.is_success());
+    for (index, (recipient, units)) in [
+        (founder_a.id(), "3600000"), (founder_b.id(), "2400000")
+    ].into_iter().enumerate() {
+        let issue = dao.call(company.id(), "issue_founder_units").args_json(json!({
+            "action_id": format!("demo-founder-{index}"), "expected_revision": index,
+            "recipient": recipient, "units": units
+        })).transact().await?;
+        assert!(issue.is_success(), "founder issuance: {issue:?}");
+    }
+    assert!(dao.call(company.id(), "increase_pool").args_json(json!({
+        "action_id": "demo-pool", "expected_revision": 2, "units": "2000000"
+    })).transact().await?.is_success());
+
+    // The cliff passed one hour ago; the next month is still in the future.
+    let now = worker.view_block().await?.timestamp() / 1_000_000_000;
+    let month = 2_592_000u64;
+    let start = now - 12 * month - 3_600;
+    let boundaries: Vec<u64> = (0..=48).map(|index| start + index * month).collect();
+    let grant = dao.call(company.id(), "create_grant").args_json(json!({
+        "action_id": "demo-grant", "expected_revision": 3,
+        "recipient": contributor.id(), "units": "100000", "boundaries": boundaries
+    })).transact().await?;
+    assert!(grant.is_success(), "grant: {grant:?}");
+    let claim = contributor.call(company.id(), "claim_vested")
+        .args_json(json!({"grant_id": 0})).transact().await?;
+    assert!(claim.is_success(), "cliff claim: {claim:?}");
+    let totals: Value = company.view("get_totals").await?.json()?;
+    assert_eq!(totals["issued_total"], "6025000");
+    assert_eq!(totals["pool_available"], "1900000");
+    assert_eq!(totals["grant_reserved"], "75000");
+    assert_eq!(totals["fully_diluted_total"], "8000000");
+
+    let snapshot = operator.call(company.id(), "prepare_distribution").args_json(json!({
+        "expected_revision": 5, "budget": "10000000000", "expires_at": now + 31_536_000
+    })).max_gas().transact().await?;
+    assert!(snapshot.is_success(), "snapshot: {snapshot:?}");
+    let prepared: Value = company.view("get_distribution")
+        .args_json(json!({"distribution_id": 0})).await?.json()?;
+    for (recipient, amount) in [
+        (founder_a.id(), "5975103734"),
+        (founder_b.id(), "3983402490"),
+        (contributor.id(), "41493776"),
+    ] {
+        let row = prepared["entitlements"].as_array().unwrap().iter()
+            .find(|row| row["account_id"] == recipient.as_str()).unwrap();
+        assert_eq!(row["amount"], amount);
+    }
+    let hash = prepared["schedule_hash"].clone();
+    let approval = dao.call(company.id(), "approve_distribution").args_json(json!({
+        "action_id": "demo-approval", "distribution_id": 0, "schedule_hash": hash
+    })).transact().await?;
+    assert!(approval.is_success(), "approval: {approval:?}");
+    let funding = dao.call(token.id(), "ft_transfer_call").args_json(json!({
+        "receiver_id": company.id(), "amount": "10000000000",
+        "msg": json!({"distribution_id": 0, "schedule_hash": hash}).to_string()
+    })).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?;
+    assert!(funding.is_success(), "funding: {funding:?}");
+
+    for recipient in [founder_a.id(), founder_b.id(), contributor.id()] {
+        let payment = operator.call(company.id(), "pay_recipient")
+            .args_json(json!({"distribution_id": 0, "recipient_id": recipient}))
+            .max_gas().transact().await?;
+        assert!(payment.is_success(), "payment attempt: {payment:?}");
+    }
+    let failed: Value = company.view("get_distribution")
+        .args_json(json!({"distribution_id": 0})).await?.json()?;
+    assert_eq!(failed["paid_total"], "9958506224");
+    assert_eq!(failed["available_escrow"], "41493776");
+    let contributor_row = failed["entitlements"].as_array().unwrap().iter()
+        .find(|row| row["account_id"] == contributor.id().as_str()).unwrap();
+    assert_eq!(contributor_row["payment_status"], "Failed");
+
+    let registration = dao.call(token.id(), "storage_deposit")
+        .args_json(json!({"account_id": contributor.id(), "registration_only": true}))
+        .deposit(NearToken::from_millinear(10)).transact().await?;
+    assert!(registration.is_success(), "contributor registration: {registration:?}");
+    let retry = operator.call(company.id(), "pay_recipient")
+        .args_json(json!({"distribution_id": 0, "recipient_id": contributor.id()}))
+        .max_gas().transact().await?;
+    assert!(retry.is_success(), "contributor retry: {retry:?}");
+    let settled: Value = company.view("get_distribution")
+        .args_json(json!({"distribution_id": 0})).await?.json()?;
+    assert_eq!(settled["paid_total"], "10000000000");
+    assert_eq!(settled["available_escrow"], "0");
+    assert_eq!(settled["in_flight_total"], "0");
+    for (recipient, amount) in [
+        (founder_a.id(), "5975103734"),
+        (founder_b.id(), "3983402490"),
+        (contributor.id(), "41493776"),
+    ] {
+        let row = settled["entitlements"].as_array().unwrap().iter()
+            .find(|row| row["account_id"] == recipient.as_str()).unwrap();
+        assert_eq!(row["payment_status"], "Paid");
+        assert_eq!(row["attempt_id"], if recipient == contributor.id() { 2 } else { 1 });
+        let balance: Value = token.view("ft_balance_of")
+            .args_json(json!({"account_id": recipient})).await?.json()?;
+        assert_eq!(balance, amount);
+    }
+    Ok(())
+}
+
 fn dao_function_call(
     receiver_id: &str,
     method_name: &str,

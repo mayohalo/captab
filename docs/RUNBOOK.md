@@ -22,7 +22,7 @@ pnpm test:sandbox
 pnpm --dir apps/web build
 ```
 
-Install Chromium once with `pnpm --filter @captab/web exec playwright install chromium` before `pnpm test:e2e`. Browser tests use fixture contract views and a development-only wallet adapter to inspect proposal, vote, claim, and snapshot requests; they do not produce cryptographic signatures or submit to testnet. The Sandbox test builds a pinned Sputnik DAO and both local contracts, then exercises two-vote governance, funding, payout failure/retry, and a zero-balance sponsored claim on a real local chain. Stop if any check fails. `scripts/build-sputnik.sh` verifies the exact Sputnik WASM SHA-256 before deployment.
+Install Chromium once with `pnpm --filter @captab/web exec playwright install chromium` before `pnpm test:e2e`. Browser tests use fixture contract views and a development-only wallet adapter to inspect proposal, vote, claim, and snapshot requests; they do not produce cryptographic signatures or submit to testnet. The Sandbox suite builds a pinned Sputnik DAO and both local contracts, then exercises two-vote governance, funding, payout failure/retry, a zero-balance sponsored claim, and the complete seeded demo amounts on a real local chain. The seeded demo test leaves the contributor unregistered for the first payout, registers them, and verifies the second attempt pays the exact remaining amount once. Stop if any check fails. `scripts/build-sputnik.sh` verifies the exact Sputnik WASM SHA-256 before deployment.
 
 ## 2. Prepare accounts and local configuration
 
