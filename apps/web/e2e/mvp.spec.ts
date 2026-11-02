@@ -34,6 +34,16 @@ test("company API audits the full ledger and reports tracked-history coverage", 
   expect((await again.json()).audits.filter((audit: { contractId: string }) => audit.contractId === "company.testnet")).toEqual([]);
 });
 
+test("ownership and entitlement tables scroll within a narrow viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const path of ["/company/company.testnet/ownership", "/company/company.testnet/distributions"]) {
+    await page.goto(path);
+    await expect(page.getByRole("region", { name: path.endsWith("ownership") ? "Ownership table" : "Distribution 0 entitlements" })).toBeVisible();
+    const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: window.innerWidth }));
+    expect(widths.page).toBeLessThanOrEqual(widths.viewport);
+  }
+});
+
 test("proposal API rebuilds exact actions from current chain state", async ({ request }) => {
   const endpoint = "/api/companies/company.testnet/proposals";
   const founder = await request.post(endpoint, { data: { action: "founder", expectedRevision: 4,

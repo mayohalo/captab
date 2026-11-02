@@ -80,9 +80,9 @@ export function PrivateProfiles({ companyId }: { companyId: string }) {
     <p>Names and email addresses are stored off-chain. Council members may edit them; contributors can view only their own record.</p>
     {!account ? <button disabled={busy} onClick={() => void signIn()}>Verify wallet to view profiles</button> : <p>Verified as {account} · <button onClick={() => void signOut()}>Sign out</button></p>}
     {account && <><p>{council ? "Council access" : "Personal access"}</p>
-      <table><thead><tr><th>Account</th><th>Name</th><th>Email</th></tr></thead><tbody>{profiles.map(profile => <tr key={profile.account_id}>
+      <div className="table-scroll" role="region" aria-label="Private profiles table" tabIndex={0}><table><thead><tr><th>Account</th><th>Name</th><th>Email</th></tr></thead><tbody>{profiles.map(profile => <tr key={profile.account_id}>
         <td>{profile.account_id}</td><td>{profile.display_name ?? "—"}</td><td>{profile.email ?? "—"}</td>
-      </tr>)}</tbody></table>
+      </tr>)}</tbody></table></div>
       {profiles.length === 0 && <p>No private profile has been saved.</p>}
       {council && <form className="governance-form" onSubmit={event => void saveProfile(event)}><h3>Edit stakeholder profile</h3>
         <label>On-chain stakeholder account <input value={target} onChange={event => setTarget(event.target.value)} required /></label>
