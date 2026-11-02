@@ -3,6 +3,7 @@
 import { NearConnector, type NearWalletBase } from "@hot-labs/near-connect";
 import { useEffect, useState } from "react";
 import { observeTransaction } from "../lib/observe";
+import { describeObservation } from "../lib/observed-status.mjs";
 
 let connector: NearConnector | undefined;
 declare global { interface Window { __CAPTAB_E2E_CONNECTOR__?: NearConnector } }
@@ -39,8 +40,9 @@ export function WalletControl({ contractId, grantId, recipient, claimable, compa
       if (outcome.status === "Failure" || (typeof outcome.status === "object" && outcome.status !== null && "Failure" in outcome.status)) {
         throw new Error(`Claim failed: ${JSON.stringify(outcome.status)}`);
       }
+      setStatus(`Submitted claim ${outcome.transaction.hash}. Waiting for receipt observation…`);
       const observed = account ? await observeTransaction(contractId, account, outcome.transaction.hash) : null;
-      setStatus(`Submitted ${outcome.transaction.hash}. Refresh after confirmation.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
+      setStatus(`Claim transaction ${outcome.transaction.hash}. ${describeObservation(observed)}`);
     } catch (error) { setStatus(error instanceof Error ? error.message : "Claim failed"); }
     finally { setBusy(false); }
   }

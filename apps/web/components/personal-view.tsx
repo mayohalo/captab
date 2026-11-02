@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { type Distribution, type Grant, type Holding, formatUnits } from "../lib/near";
 import { getConnector } from "./wallet";
 import { observeTransaction } from "../lib/observe";
+import { describeObservation } from "../lib/observed-status.mjs";
 import { PrivateProfiles } from "./private-profiles";
 
 export function PersonalView({ companyId, holdings, grants, distributions, companyVerified }: {
@@ -55,8 +56,9 @@ export function PersonalView({ companyId, holdings, grants, distributions, compa
       if (outcome.status === "Failure" || (typeof outcome.status === "object" && outcome.status !== null && "Failure" in outcome.status)) {
         throw new Error(`Claim failed: ${JSON.stringify(outcome.status)}`);
       }
+      setStatus(`Submitted claim ${outcome.transaction.hash}. Waiting for receipt observation…`);
       const observed = await observeTransaction(companyId, account, outcome.transaction.hash);
-      setStatus(`Claim transaction ${outcome.transaction.hash}. Refresh to verify your updated holdings.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
+      setStatus(`Claim transaction ${outcome.transaction.hash}. ${describeObservation(observed)}`);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Claim failed"); }
     finally { setBusy(false); }

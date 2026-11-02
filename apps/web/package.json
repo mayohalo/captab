@@ -17,7 +17,7 @@
     "test:sponsor": "node --experimental-strip-types --test lib/sponsor-policy.test.mjs lib/sponsor-rate.test.mjs",
     "test:deployment": "node --test lib/storage-funding.test.mjs",
     "test:network": "node --test lib/network-guard.test.mjs",
-    "test:observation": "node --test lib/transaction-identity.test.mjs",
+    "test:observation": "node --test lib/transaction-identity.test.mjs lib/observed-status.test.mjs",
     "reconcile:worker": "node scripts/reconcile-worker.mjs",
     "deploy:testnet": "node scripts/deploy-testnet.mjs",
     "bootstrap:dao": "node scripts/bootstrap-dao-testnet.mjs",

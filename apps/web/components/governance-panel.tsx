@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { type CompanyConfig, type DaoPolicy, type DaoProposal, type Distribution, type Grant, type Totals } from "../lib/near";
 import type { PreparedProposal, ProposalAction, ProposalRequest } from "../lib/proposal-builder";
 import { observeTransaction } from "../lib/observe";
+import { describeObservation } from "../lib/observed-status.mjs";
 import { getConnector } from "./wallet";
 
 type PreparedEnvelope = { proposal: PreparedProposal; daoId: string; proposalBond: string; expectedRevision: number; preparedAt: string };
@@ -93,8 +94,9 @@ export function GovernancePanel({ id, totals, config, policy, governanceVerified
         } }],
       });
       assertTransactionSucceeded(outcome.status);
+      setStatus(`Submitted proposal ${outcome.transaction.hash}. Waiting for receipt observation…`);
       const observed = await observeTransaction(id, account, outcome.transaction.hash);
-      setStatus(`Proposal submitted: ${outcome.transaction.hash}. It still needs board votes and successful execution.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
+      setStatus(`Proposal submitted: ${outcome.transaction.hash}. ${describeObservation(observed)} Board votes and company execution remain separate.`);
       setPrepared(null);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Proposal submission failed"); }
@@ -115,8 +117,9 @@ export function GovernancePanel({ id, totals, config, policy, governanceVerified
         } }],
       });
       assertTransactionSucceeded(outcome.status);
+      setStatus(`Submitted vote ${outcome.transaction.hash}. Waiting for receipt observation…`);
       const observed = await observeTransaction(id, account, outcome.transaction.hash);
-      setStatus(`Vote transaction ${outcome.transaction.hash}. Refresh to verify the DAO and company outcome.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
+      setStatus(`Vote transaction ${outcome.transaction.hash}. ${describeObservation(observed)} Verify the DAO and company outcome separately.`);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Vote failed"); }
     finally { setBusy(false); }

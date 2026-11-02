@@ -205,6 +205,8 @@ test("connected council wallet signs reviewed proposal and vote requests", async
   await governance.getByRole("button", { name: "Review proposal" }).click();
   await governance.getByRole("button", { name: "Submit to DAO" }).click();
   await expect(governance.getByRole("status")).toContainText("Proposal submitted: fixture-signed-1");
+  await expect(governance.getByRole("status")).toContainText("Confirmed in final receipts");
+  await expect(governance.getByRole("status")).toContainText("Board votes and company execution remain separate");
   await governance.getByRole("button", { name: "Vote to approve" }).click();
   await expect(governance.getByRole("status")).toContainText("Vote transaction fixture-signed-2");
   const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
@@ -233,6 +235,7 @@ test("contributor wallet signs a vested claim for its own account", async ({ pag
   await expect(page.getByText("25 claimable now")).toBeVisible();
   await page.getByRole("button", { name: "Claim with wallet gas" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Claim transaction fixture-claim-signed" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("Confirmed in final receipts");
   const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
   expect(calls).toEqual([{ receiverId: "claimable.testnet", actions: [{ type: "FunctionCall", params: {
     methodName: "claim_vested", args: { grant_id: 0 }, gas: "30000000000000", deposit: "0",
@@ -252,13 +255,14 @@ test("snapshot operator wallet signs an immutable distribution preparation", asy
     state.__CAPTAB_E2E_CONNECTOR__ = { getConnectedWallet: async () => ({ wallet, accounts: [account] }), connect: async () => wallet };
   });
   await page.route("**/api/transactions/observe", route => route.fulfill({ status: 200, contentType: "application/json",
-    body: JSON.stringify({ operationId: "fixture-snapshot-operation", status: "Confirmed" }) }));
+    body: JSON.stringify({ operationId: "fixture-snapshot-operation", status: "Pending" }) }));
   await page.goto("/company/company.testnet/distributions");
   const execution = page.locator("#distribution-actions");
   await execution.getByLabel("Budget in token base units").fill("1000");
   await execution.getByLabel("Expiry in UTC (ISO 8601)").fill("2035-01-01T00:00:00Z");
   await execution.getByRole("button", { name: "Create immutable snapshot" }).click();
   await expect(execution.getByRole("status")).toContainText("Transaction fixture-snapshot-signed");
+  await expect(execution.getByRole("status")).toContainText("Executing: waiting for final receipts");
   const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
   expect(calls).toEqual([{ receiverId: "company.testnet", actions: [{ type: "FunctionCall", params: {
     methodName: "prepare_distribution", args: { expected_revision: 4, budget: "1000", expires_at: 2_051_222_400 },

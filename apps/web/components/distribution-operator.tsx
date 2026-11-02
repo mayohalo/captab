@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { type CompanyConfig, type DaoPolicy, type Distribution, type Totals } from "../lib/near";
 import { getConnector } from "./wallet";
 import { observeTransaction } from "../lib/observe";
+import { describeObservation } from "../lib/observed-status.mjs";
 
 type Job = { recipient_id: string; attempt_id: number; submission_state: string; tx_hash: string | null; last_error: string | null };
 
@@ -53,8 +54,9 @@ export function DistributionOperator({ id, config, policy, governanceVerified, t
       if (outcome.status === "Failure" || (typeof outcome.status === "object" && outcome.status !== null && "Failure" in outcome.status)) {
         throw new Error(`Transaction failed: ${JSON.stringify(outcome.status)}`);
       }
+      setStatus(`Submitted transaction ${outcome.transaction.hash}. Waiting for receipt observation…`);
       const observed = await observeTransaction(id, account, outcome.transaction.hash);
-      setStatus(`Transaction ${outcome.transaction.hash}. Refresh to verify the company state and payment callback.${observed ? ` History: ${observed.status}.` : " History sync unavailable; keep this hash."}`);
+      setStatus(`Transaction ${outcome.transaction.hash}. ${describeObservation(observed)}`);
       router.refresh();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Transaction failed"); }
     finally { setBusy(false); }
