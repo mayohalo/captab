@@ -76,6 +76,87 @@ fn company() -> Company {
     )
 }
 
+fn assert_accounting_from_views(company: &Company) {
+    let totals = company.get_totals();
+    let mut holdings = Vec::new();
+    let mut grants = Vec::new();
+    for offset in (0..totals.holder_count).step_by(20) {
+        holdings.extend(company.list_holdings(offset, 20));
+    }
+    let mut offset = 0;
+    loop {
+        let page = company.list_grants(offset, 20);
+        if page.is_empty() {
+            break;
+        }
+        offset += page.len() as u32;
+        grants.extend(page);
+    }
+    let issued: u128 = holdings.iter().map(|holding| holding.issued_units.0).sum();
+    let reserved: u128 = grants
+        .iter()
+        .map(|grant| grant.entitlement_cap.0 - grant.issued_units.0)
+        .sum();
+    let diluted = issued + totals.pool_available.0 + reserved;
+    assert_eq!(holdings.len() as u32, totals.holder_count);
+    assert_eq!(issued, totals.issued_total.0);
+    assert_eq!(reserved, totals.grant_reserved.0);
+    assert_eq!(diluted, totals.fully_diluted_total.0);
+    assert_eq!(totals.authorized_units.0 - diluted, totals.unallocated_units.0);
+    assert!(diluted <= totals.authorized_units.0);
+    for grant in grants {
+        assert!(grant.issued_units.0 <= grant.entitlement_cap.0);
+        assert!(grant.entitlement_cap.0 <= grant.original_units.0);
+    }
+}
+
+#[test]
+fn mixed_ledger_operations_preserve_accounting_after_every_step() {
+    let mut company = company();
+    set_caller("board.testnet");
+    company.increase_pool("initial-pool".into(), 0, U128(2_000_000));
+    company.issue_founder_units("initial-founder".into(), 1, aid("holder-0.testnet"), U128(100_000));
+    let mut random = 0x84c1_6e4d_39b2_07a5u64;
+    let mut created_grants = Vec::new();
+    let mut claims = 0;
+    let mut cancellations = 0;
+    let schedule = boundaries();
+    for step in 0..120 {
+        random = random.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+        let operation = (random >> 32) % 5;
+        let units = 100 + ((random >> 16) % 9_900) as u128;
+        let now = 1_000 + step * 2_592_000;
+        set_caller_at("board.testnet", now);
+        let revision = company.get_totals().ledger_revision;
+        let action = format!("mixed-{step}");
+        match operation {
+            0 => company.issue_founder_units(action, revision, aid(&format!("holder-{}.testnet", random % 5)), U128(units)),
+            1 => company.increase_pool(action, revision, U128(units)),
+            2 if company.get_totals().pool_available.0 >= units => {
+                let id = company.create_grant(action, revision, aid(&format!("holder-{}.testnet", random % 5)), U128(units), schedule.clone());
+                created_grants.push(id);
+            }
+            3 => {
+                if let Some(grant) = created_grants.iter().filter_map(|id| company.get_grant(*id)).find(|grant| grant.claimable_units.0 > 0) {
+                    set_caller_at(grant.recipient.as_str(), now);
+                    company.claim_vested(grant.id);
+                    claims += 1;
+                }
+            }
+            4 => {
+                if let Some(grant) = created_grants.iter().filter_map(|id| company.get_grant(*id)).find(|grant| grant.cancelled_at.is_none()) {
+                    company.cancel_unvested(action, grant.id);
+                    cancellations += 1;
+                }
+            }
+            _ => {}
+        }
+        assert_accounting_from_views(&company);
+    }
+    assert!(!created_grants.is_empty());
+    assert!(claims > 0 && cancellations > 0);
+}
+
 #[test]
 fn founder_issuance_pool_and_denominators() {
     let mut c = company();
