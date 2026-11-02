@@ -18,6 +18,8 @@ The setup and distribution screens read the DAO's current settlement-token balan
 
 After testnet deployment, set `CAPTAB_COMPANY_CODE_HASH` to `company.codeHash` from the deployment manifest. The app verifies the deployed company code before enabling governance, claims, sponsorship, or payment execution; read-only ledger views remain available if that check fails.
 
+The app also checks the configured NEAR RPC node's chain ID before reading company state or preparing writes. A mainnet or unavailable RPC endpoint fails closed instead of being treated as testnet.
+
 GitHub Actions runs the pnpm web tests, Chromium browser tests, production build, Rust contract tests, and the Sandbox lifecycle on pushes and pull requests. Run the local browser suite with `pnpm --filter @captab/web exec playwright install chromium` once, then `pnpm test:e2e`; it starts a fixture NEAR RPC and Next.js server on loopback. The pnpm workspace explicitly permits the native build steps used by `better-sqlite3` and `sharp` so a clean install can exercise the same checks.
 
 `GET /api/companies/<account>` reads all bounded on-chain grants and distributions, checks supply and funded-escrow arithmetic, and reports the local history observation counts and last final observation. The worker repeats the chain audit for known companies at least every five minutes and saves its last result for the activity page. A changed ledger revision during reads yields an inconclusive audit that should be retried. History coverage remains limited to app-submitted transactions; audit consistency does not imply external activity has been indexed.

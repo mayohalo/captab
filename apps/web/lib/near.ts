@@ -1,8 +1,10 @@
 import { JsonRpcProvider } from "near-api-js";
 import { assessDemoDao, type DaoAssessment, type DaoPolicy } from "./dao-policy";
+import { requireTestnet } from "./network-guard.mjs";
 
 export const network = "testnet";
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+export const assertTestnetNetwork = () => requireTestnet(provider);
 
 export type Totals = { dao_id: string; authorized_units: string; issued_total: string; pool_available: string; grant_reserved: string; fully_diluted_total: string; unallocated_units: string; ledger_revision: number; holder_count: number };
 export type CompanyConfig = { schema_version: number; dao_id: string; snapshot_operator_id: string; settlement_token_id: string;
@@ -23,12 +25,14 @@ export function validAccountId(id: string): boolean { return accountPattern.test
 
 export async function view<T>(contractId: string, method: string, args: Record<string, unknown> = {}): Promise<T> {
   if (!validAccountId(contractId)) throw new Error("Invalid NEAR account ID");
+  await assertTestnetNetwork();
   const result = await provider.callFunction({ contractId, method, args }) as T | undefined;
   if (result === undefined) throw new Error(`${method} returned no result`);
   return result;
 }
 
 export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
+  await assertTestnetNetwork();
   const [policy, code] = await Promise.all([
     view<DaoPolicy>(daoId, "get_policy"),
     provider.viewContractCode({ contractId: daoId }),
@@ -39,6 +43,7 @@ export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
 }
 
 export async function assessCompanyCode(contractId: string): Promise<CompanyCodeAssessment> {
+  await assertTestnetNetwork();
   const expected = process.env.CAPTAB_COMPANY_CODE_HASH;
   if (!expected) return { verified: false, reason: "Expected company code hash is not configured.", codeHash: null };
   try {

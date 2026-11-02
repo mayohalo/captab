@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { JsonRpcProvider } from "near-api-js";
 import { getDatabase } from "./db";
 import { challengeMessage, verifyNep413 } from "./auth-crypto";
-import { validAccountId } from "./near";
+import { assertTestnetNetwork, validAccountId } from "./near";
 
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 const challengeMinutes = 5;
@@ -34,6 +34,7 @@ export function createChallenge(accountId: string, origin: string) {
 }
 
 export async function verifyChallenge(input: { challengeId: string; nonce: string; accountId: string; publicKey: string; signature: string }, origin: string) {
+  await assertTestnetNetwork();
   const db = getDatabase();
   const row = db.prepare("SELECT id, account_id, challenge_nonce_hash, challenge_expires_at, domain, verified_at FROM sessions WHERE id = ?")
     .get(input.challengeId) as ChallengeRow | undefined;

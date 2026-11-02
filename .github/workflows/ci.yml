@@ -41,6 +41,7 @@ jobs:
           pnpm test:payments
           pnpm test:sponsor
           pnpm test:deployment
+          pnpm test:network
       - name: Build web app
         run: pnpm --dir apps/web build
       - name: Install Chromium for browser tests

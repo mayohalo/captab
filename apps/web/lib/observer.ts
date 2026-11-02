@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { JsonRpcProvider } from "near-api-js";
 import { ensureCompany, getDatabase } from "./db";
-import { type CompanyConfig, view } from "./near";
+import { assertTestnetNetwork, type CompanyConfig, view } from "./near";
 import { type FinalTransaction, persistFinalTransaction } from "./receipts";
 
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
@@ -36,6 +36,7 @@ export async function reconcileOperation(operation: OperationRow, contractId: st
   db.prepare("UPDATE operations SET check_count = check_count + 1, last_checked_at = CURRENT_TIMESTAMP WHERE id = ?")
     .run(operation.id);
   try {
+    await assertTestnetNetwork();
     const result = await provider.viewTransactionStatusWithReceipts({
       txHash: operation.tx_hash,
       accountId: operation.signer_id,

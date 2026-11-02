@@ -119,6 +119,11 @@ createServer(async (request, response) => {
     for await (const chunk of request) body += chunk;
     const rpc = JSON.parse(body);
     const params = rpc.params ?? {};
+    if (rpc.method === "status") {
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ jsonrpc: "2.0", id: rpc.id, result: { chain_id: "testnet" } }));
+      return;
+    }
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);
     let result;
     if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, alteredCompany, dao, unsafeDao].includes(params.account_id)) {
