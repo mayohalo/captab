@@ -24,7 +24,9 @@ test("valid signed claim decodes and verifies against its key and policy", async
 test("sponsor rejects other receivers, methods, deposits, expiry, and damaged signatures", async () => {
   for (const options of [
     { receiverId: "other.testnet" }, { methodName: "issue_founder_units" }, { deposit: 1n },
-    { maxBlockHeight: 100n }, { args: { grant_id: 3, recipient: "mallory.testnet" } },
+    { maxBlockHeight: 100n }, { maxBlockHeight: 301n },
+    { gas: 9_999_999_999_999n }, { gas: 30_000_000_000_001n },
+    { args: { grant_id: 3, recipient: "mallory.testnet" } },
   ]) {
     const encoded = await signedClaim(options);
     assert.throws(() => inspectSponsoredClaim(encoded, "company.testnet", 100n));
