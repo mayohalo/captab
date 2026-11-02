@@ -43,6 +43,7 @@ jobs:
           pnpm test:deployment
           pnpm test:network
           pnpm test:observation
+          pnpm test:release
       - name: Build web app
         run: pnpm --dir apps/web build
       - name: Install Chromium for browser tests

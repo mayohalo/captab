@@ -20,6 +20,7 @@ pnpm test:vesting
 pnpm test:deployment
 pnpm test:network
 pnpm test:observation
+pnpm test:release
 pnpm test:e2e
 pnpm test:sandbox
 pnpm --dir apps/web build
@@ -88,4 +89,4 @@ The contract is authoritative. Reconnect by reading `get_totals`, every page of 
 
 The sponsor relayer stores a digest before submission. A duplicate signed delegate cannot be relayed again by this API. A `NeedsReview` sponsor outcome requires inspecting the outer transaction and contributor holding before a new signed request is obtained. Never reuse the old signature to guess whether it succeeded.
 
-The company contract has no upgrade method, but its deployment full-access key can redeploy code until removed. After the final rehearsal, compare `docs/deployment-manifest.testnet.json` with on-chain code/config and explicitly remove that key only as part of a reviewed release step. Keep DAO member keys in wallets. A new contract version should use a new company account. Direct token deposits outside an approved distribution are not credited by the ownership ledger and may be stranded.
+The company contract has no upgrade method, but its deployment full-access key can redeploy code until removed. After the final rehearsal, run `pnpm verify:testnet` from the built workspace. This read-only command compares the manifest with local WASM hashes, on-chain code, DAO policy, token metadata and storage registration, company configuration and supply, access keys, and storage funding. It exits nonzero on drift and does not need deployment keys. Explicitly remove the company deployment key only as part of a reviewed release step; then refresh the manifest's access-key list with `pnpm deploy:testnet --apply` and re-run verification. Keep DAO member keys in wallets. A new contract version should use a new company account. Direct token deposits outside an approved distribution are not credited by the ownership ledger and may be stranded.
