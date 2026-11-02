@@ -13,6 +13,7 @@
     "test:auth": "node --experimental-strip-types --test lib/auth-crypto.test.mjs",
     "test:dao": "node --experimental-strip-types --test lib/dao-policy.test.mjs",
     "test:health": "node --experimental-strip-types --test lib/company-health.test.mjs",
+    "test:hash": "node --experimental-strip-types --test lib/distribution-hash.test.mjs",
     "test:sponsor": "node --experimental-strip-types --test lib/sponsor-policy.test.mjs lib/sponsor-rate.test.mjs",
     "reconcile:worker": "node scripts/reconcile-worker.mjs",
     "deploy:testnet": "node scripts/deploy-testnet.mjs",

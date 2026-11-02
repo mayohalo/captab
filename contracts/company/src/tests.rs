@@ -23,6 +23,49 @@ fn boundaries() -> Vec<u64> {
     (0..=48).map(|m| 1_000 + m * 2_592_000).collect()
 }
 
+#[test]
+fn distribution_hash_matches_typescript_vector() {
+    set_caller("operator.testnet");
+    let rows = [
+        (aid("contributor.testnet"), 25_000u128, 0u128),
+        (aid("founder-a.testnet"), 3_600_000u128, 60u128),
+        (aid("founder-b.testnet"), 2_400_000u128, 40u128),
+    ];
+    let immutable_rows: Vec<_> = rows.iter().map(|(account, units, amount)| (account, *units, *amount)).collect();
+    let payload = (
+        "near:testnet/captable.distribution.v1",
+        aid("company.testnet"),
+        1u64,
+        4u64,
+        1_790_000_001u64,
+        124u64,
+        aid("testusd.testnet"),
+        100u128,
+        1_900_000_000u64,
+        &immutable_rows,
+    );
+    let digest = env::sha256(&near_sdk::borsh::to_vec(&payload).unwrap());
+    let hex = digest.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    assert_eq!(hex, "ecd5b5989bcf9bf50485085e99f4425d7e973842edcaaecf5cc000bd1fce22eb");
+
+    let mut company = company();
+    set_caller("board.testnet");
+    company.issue_founder_units("a".into(), 0, aid("founder-a.testnet"), U128(3_600_000));
+    company.issue_founder_units("b".into(), 1, aid("founder-b.testnet"), U128(2_400_000));
+    company.issue_founder_units("c".into(), 2, aid("contributor.testnet"), U128(25_000));
+    company.increase_pool("p".into(), 3, U128(1_000_000));
+    let mut context = VMContextBuilder::new();
+    context.current_account_id(aid("company.testnet"));
+    context.predecessor_account_id(aid("operator.testnet"));
+    context.block_timestamp(1_790_000_001_000_000_000);
+    context.block_height(124);
+    testing_env!(context.build());
+    let id = company.prepare_distribution(4, U128(100), 1_900_000_000);
+    let hash = company.get_distribution(id).unwrap().schedule_hash;
+    let hex = hash.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+    assert_eq!(hex, "6e0c40b35adae6decb3ce471e540fc42cbd0935abd4e3d37af2fe9d4ed491a5c");
+}
+
 fn company() -> Company {
     set_caller("deployer.testnet");
     Company::new(

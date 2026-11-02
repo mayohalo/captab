@@ -21,6 +21,40 @@ test("company API audits the full ledger and reports tracked-history coverage", 
   expect((await again.json()).audits).toEqual([]);
 });
 
+test("proposal API rebuilds exact actions from current chain state", async ({ request }) => {
+  const endpoint = "/api/companies/company.testnet/proposals";
+  const founder = await request.post(endpoint, { data: { action: "founder", expectedRevision: 4,
+    recipient: "new-founder.testnet", units: "1000" } });
+  expect(founder.ok()).toBeTruthy();
+  const prepared = await founder.json();
+  expect(prepared.daoId).toBe("board.testnet");
+  expect(prepared.proposalBond).toBe("100000000000000000000000");
+  const call = prepared.proposal.kind.FunctionCall.actions[0];
+  expect(call.method_name).toBe("issue_founder_units");
+  expect(JSON.parse(Buffer.from(call.args, "base64").toString())).toMatchObject({
+    expected_revision: 4, recipient: "new-founder.testnet", units: "1000",
+  });
+  const stale = await request.post(endpoint, { data: { action: "founder", expectedRevision: 3,
+    recipient: "new-founder.testnet", units: "1000" } });
+  expect(stale.status()).toBe(409);
+  const grant = await request.post(endpoint, { data: { action: "grant", expectedRevision: 4,
+    recipient: "new-contributor.testnet", units: "1000", startIso: "2025-01-31T00:00:00Z" } });
+  expect(grant.ok()).toBeTruthy();
+  const grantArgs = JSON.parse(Buffer.from((await grant.json()).proposal.kind.FunctionCall.actions[0].args, "base64").toString());
+  expect(grantArgs.boundaries).toHaveLength(49);
+  expect(new Date(grantArgs.boundaries[1] * 1000).toISOString()).toBe("2025-02-28T00:00:00.000Z");
+  const closed = await request.post(endpoint, { data: { action: "fund", expectedRevision: 4, distributionId: 0 } });
+  expect(closed.status()).toBe(409);
+  const approval = await request.post(endpoint, { data: { action: "approve", expectedRevision: 4, distributionId: 1 } });
+  expect(approval.ok()).toBeTruthy();
+  expect((await approval.json()).proposal.kind.FunctionCall.actions[0].method_name).toBe("approve_distribution");
+  const tampered = await request.post(endpoint, { data: { action: "approve", expectedRevision: 4, distributionId: 2 } });
+  expect(tampered.status()).toBe(400);
+  expect((await tampered.json()).error).toContain("schedule hash");
+  const unsafe = await request.post("/api/companies/unsafe.testnet/proposals", { data: { action: "pool", expectedRevision: 4, units: "1" } });
+  expect(unsafe.ok()).toBeFalsy();
+});
+
 test("setup inspects the configured company, DAO, and settlement token", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "CapTable" })).toBeVisible();

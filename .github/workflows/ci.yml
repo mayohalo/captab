@@ -37,6 +37,7 @@ jobs:
           pnpm test:auth
           pnpm test:dao
           pnpm test:health
+          pnpm test:hash
           pnpm test:payments
           pnpm test:sponsor
       - name: Build web app

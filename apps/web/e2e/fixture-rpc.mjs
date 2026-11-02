@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { distributionHash } from "../lib/distribution-hash.ts";
 
 const port = 14555;
 const company = "company.testnet";
@@ -39,7 +40,18 @@ const distributions = [{
     { account_id: "founder-b.testnet", units: "2400000", amount: "3983402490", payment_status: "Paid", attempt_id: 1 },
     { account_id: "contributor.testnet", units: "25000", amount: "41493776", payment_status: "Failed", attempt_id: 1 },
   ],
+}, {
+  id: 1, snapshot_revision: 4, snapshot_timestamp: 1_790_000_001, snapshot_block_height: 124,
+  token_id: token, budget: "100", expires_at: 1_900_000_000,
+  schedule_hash: [], approved: false, cancelled: false, funded: false,
+  paid_total: "0", in_flight_total: "0", available_escrow: "0",
+  entitlements: [
+    { account_id: "founder-a.testnet", units: "3600000", amount: "60", payment_status: "Ready", attempt_id: 0 },
+    { account_id: "founder-b.testnet", units: "2400000", amount: "40", payment_status: "Ready", attempt_id: 0 },
+    { account_id: "contributor.testnet", units: "25000", amount: "0", payment_status: "Zero", attempt_id: 0 },
+  ],
 }];
+for (const distribution of distributions) distribution.schedule_hash = distributionHash(company, distribution);
 const policy = {
   proposal_bond: "100000000000000000000000", roles: [{ name: "council", kind: { Group: [
     "council-a.testnet", "council-b.testnet", "council-c.testnet",
@@ -49,12 +61,14 @@ const policy = {
 const methods = new Map([
   [`${company}:get_totals`, totals], [`${company}:get_config`, config],
   [`${company}:list_holdings`, holdings], [`${company}:list_grants`, grants],
+  [`${company}:get_grant`, grants], [`${company}:get_distribution`, distributions],
   [`${company}:list_distributions`, distributions], [`${dao}:get_policy`, policy],
   [`${dao}:get_last_proposal_id`, 0], [`${dao}:get_proposals`, []],
   [`${token}:ft_metadata`, { spec: "ft-1.0.0", name: "Test USD", symbol: "TESTUSD", decimals: 6 }],
   [`${unsafeCompany}:get_totals`, { ...totals, dao_id: unsafeDao }],
   [`${unsafeCompany}:get_config`, { ...config, dao_id: unsafeDao }],
   [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
+  [`${unsafeCompany}:get_grant`, grants], [`${unsafeCompany}:get_distribution`, distributions],
   [`${unsafeCompany}:list_distributions`, distributions],
   [`${unsafeDao}:get_policy`, policy], [`${unsafeDao}:get_last_proposal_id`, 0],
   [`${unsafeDao}:get_proposals`, []],
@@ -81,7 +95,11 @@ createServer(async (request, response) => {
       if (!methods.has(key)) throw new Error(`Unsupported contract method ${key}`);
       const args = params.args_base64 ? JSON.parse(Buffer.from(params.args_base64, "base64").toString()) : {};
       const value = methods.get(key);
-      const page = Array.isArray(value) && params.method_name.startsWith("list_")
+      const page = params.method_name === "get_grant" ? value[args.grant_id] ?? null
+        : params.method_name === "get_distribution" && args.distribution_id === 2
+          ? { ...distributions[1], id: 2 }
+        : params.method_name === "get_distribution" ? value[args.distribution_id] ?? null
+        : Array.isArray(value) && params.method_name.startsWith("list_")
         ? value.slice(args.from_index ?? 0, (args.from_index ?? 0) + (args.limit ?? value.length)) : value;
       result = { result: [...Buffer.from(JSON.stringify(page))], logs: [] };
     } else throw new Error(`Unsupported query ${params.request_type}`);

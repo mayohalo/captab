@@ -12,6 +12,7 @@ pnpm test:contract
 pnpm test:auth
 pnpm test:dao
 pnpm test:health
+pnpm test:hash
 pnpm test:sponsor
 pnpm test:payments
 pnpm test:receipts
@@ -66,7 +67,7 @@ Use the company page's typed governance controls; each DAO action is a real prop
 2. Increase the contributor pool by 2,000,000. Confirm `pool_available=2000000` and `unallocated_units=2000000`.
 3. Create a 100,000-unit contributor grant with 49 anchored UTC month boundaries and a 12-month cliff. For an immediate rehearsal, use a historical start date; for a live vesting demonstration, wait until the cliff. The app previews the schedule.
 4. At the cliff, claim 25,000 units from `/me` using either the contributor wallet or a supported delegated-action wallet with the sponsor relayer. Confirm `issued_total=6025000`, `pool_available=1900000`, `grant_reserved=75000`, and `fully_diluted_total=8000000`.
-5. The operator prepares a distribution with budget `10000000000` token base units (10,000.000000 TESTUSD) and a future UTC expiry. Review the frozen schedule and hash. Council members approve the schedule through Sputnik, then approve the exact `ft_transfer_call` funding proposal from the DAO treasury.
+5. The operator prepares a distribution with budget `10000000000` token base units (10,000.000000 TESTUSD) and a future UTC expiry. Review the frozen schedule and hash. The proposal API independently recomputes that hash before returning an approval or funding action. Council members approve the schedule through Sputnik, then approve the exact `ft_transfer_call` funding proposal from the DAO treasury.
 6. Confirm `funded=true` and `available_escrow=10000000000`. A verified council member queues recipients on the company page. The worker submits one payout at a time and reconciles final receipts.
 7. To demonstrate ordinary failure/retry, leave the contributor unregistered with TESTUSD for the first attempt, confirm that their entitlement becomes `Failed`, register the contributor with TESTUSD, and queue the remaining failed recipient again. Confirm `Paid` once, no duplicate payment, and zero remaining escrow.
 
