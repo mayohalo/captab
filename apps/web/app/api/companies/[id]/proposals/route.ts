@@ -5,7 +5,7 @@ import { type CompanyConfig, type Distribution, type Grant, type Totals, validAc
 
 export const runtime = "nodejs";
 
-const actions: ProposalAction[] = ["founder", "pool", "grant", "cancelGrant", "approve", "fund"];
+const actions: ProposalAction[] = ["founder", "pool", "grant", "cancelGrant", "approve", "fund", "pause", "resume", "cancelDistribution"];
 const integerId = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Invalid proposal action or revision" }, { status: 400 });
   }
   if (input.action === "cancelGrant" && !integerId(input.grantId) ||
-      (input.action === "approve" || input.action === "fund") && !integerId(input.distributionId)) {
+      (input.action === "approve" || input.action === "fund" || input.action === "cancelDistribution") && !integerId(input.distributionId)) {
     return NextResponse.json({ error: "Invalid grant or distribution ID" }, { status: 400 });
   }
   let config: CompanyConfig;
@@ -36,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     policy = await verifiedDaoPolicy(config.dao_id);
     [grant, distribution] = await Promise.all([
       input.action === "cancelGrant" ? view<Grant | null>(id, "get_grant", { grant_id: input.grantId }) : Promise.resolve(null),
-      input.action === "approve" || input.action === "fund"
+      input.action === "approve" || input.action === "fund" || input.action === "cancelDistribution"
         ? view<Distribution | null>(id, "get_distribution", { distribution_id: input.distributionId }) : Promise.resolve(null),
     ]);
   } catch (error) {
@@ -50,7 +50,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Proposal could not be prepared";
-    const conflict = /revision changed|exceed|closed|expired|already approved|before funding|paused|Select/.test(message);
+    const conflict = /revision changed|exceed|closed|expired|already approved|before funding|paused|already active|cannot be cancelled|Select/.test(message);
     return NextResponse.json({ error: message }, { status: conflict ? 409 : 400 });
   }
 }

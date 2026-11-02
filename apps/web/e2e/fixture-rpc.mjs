@@ -6,6 +6,7 @@ const company = "company.testnet";
 const claimableCompany = "claimable.testnet";
 const dao = "board.testnet";
 const unsafeCompany = "unsafe.testnet";
+const pausedCompany = "paused.testnet";
 const unsafeDao = "unsafe-board.testnet";
 const token = "testusd.testnet";
 const boundaries = Array.from({ length: 49 }, (_, month) => Math.floor(Date.UTC(2025, month, 1) / 1000));
@@ -80,6 +81,10 @@ const methods = new Map([
   [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
   [`${unsafeCompany}:get_grant`, grants], [`${unsafeCompany}:get_distribution`, distributions],
   [`${unsafeCompany}:list_distributions`, distributions],
+  [`${pausedCompany}:get_totals`, totals], [`${pausedCompany}:get_config`, { ...config, paused: true }],
+  [`${pausedCompany}:list_holdings`, holdings], [`${pausedCompany}:list_grants`, grants],
+  [`${pausedCompany}:get_grant`, grants], [`${pausedCompany}:get_distribution`, distributions],
+  [`${pausedCompany}:list_distributions`, distributions],
   [`${claimableCompany}:get_totals`, claimableTotals], [`${claimableCompany}:get_config`, claimableConfig],
   [`${claimableCompany}:list_holdings`, []], [`${claimableCompany}:list_grants`, [claimableGrant]],
   [`${claimableCompany}:get_grant`, [claimableGrant]], [`${claimableCompany}:list_distributions`, []],
@@ -100,7 +105,7 @@ createServer(async (request, response) => {
     const params = rpc.params ?? {};
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);
     let result;
-    if (params.request_type === "view_code" && [company, claimableCompany, dao, unsafeDao].includes(params.account_id)) {
+    if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, dao, unsafeDao].includes(params.account_id)) {
       result = { code_base64: "", hash: params.account_id === dao
         ? "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq" : "fixture-company-code-hash" };
     } else if (params.request_type === "call_function") {

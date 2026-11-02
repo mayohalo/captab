@@ -133,6 +133,8 @@ export function GovernancePanel({ id, totals, config, policy, daoVerified, propo
           <option value="founder">Issue founder units</option><option value="pool">Increase contributor pool</option>
           <option value="grant">Create contributor grant</option><option value="cancelGrant">Cancel unvested grant</option>
           <option value="approve">Approve distribution</option><option value="fund">Fund approved distribution</option>
+          <option value="cancelDistribution">Cancel unfunded distribution</option>
+          {config.paused ? <option value="resume">Resume company</option> : <option value="pause">Pause company</option>}
         </select></label>
         {(action === "founder" || action === "pool") && <>
           {action === "founder" && <label>Recipient account<input disabled={busy} value={recipient} onChange={event => { setRecipient(event.target.value.trim()); setPrepared(null); }} placeholder="founder.testnet" /></label>}
@@ -148,11 +150,11 @@ export function GovernancePanel({ id, totals, config, policy, daoVerified, propo
         {action === "cancelGrant" && <label>Active grant<select disabled={busy} value={grantId} onChange={event => { setGrantId(event.target.value); setPrepared(null); }}>
           {grants.filter(grant => grant.cancelled_at === null).map(grant => <option key={grant.id} value={grant.id}>#{grant.id} · {grant.recipient} · {grant.original_units} units</option>)}
         </select></label>}
-        {(action === "approve" || action === "fund") && <label>Distribution<select disabled={busy} value={distributionId} onChange={event => { setDistributionId(event.target.value); setPrepared(null); }}>
+        {(action === "approve" || action === "fund" || action === "cancelDistribution") && <label>Distribution<select disabled={busy} value={distributionId} onChange={event => { setDistributionId(event.target.value); setPrepared(null); }}>
           {distributions.map(d => <option key={d.id} value={d.id}>#{d.id} · {d.approved ? "approved" : "pending"} · {d.funded ? "funded" : "unfunded"}</option>)}
         </select></label>}
-        {selected && (action === "approve" || action === "fund") && <p>Budget {selected.budget} · token {selected.token_id} · expires {new Date(selected.expires_at * 1000).toUTCString()}</p>}
-        <button onClick={() => void prepare()} disabled={busy || config.paused}>Review proposal</button>
+        {selected && (action === "approve" || action === "fund" || action === "cancelDistribution") && <p>Budget {selected.budget} · token {selected.token_id} · expires {new Date(selected.expires_at * 1000).toUTCString()}</p>}
+        <button onClick={() => void prepare()} disabled={busy || (config.paused && action !== "resume" && action !== "cancelDistribution")}>Review proposal</button>
       </div>
       {prepared && <article><h3>Review exact DAO action</h3><p>{prepared.proposal.description}</p><pre>{JSON.stringify(readableAction(prepared.proposal), null, 2)}</pre><p>Prepared from on-chain revision {prepared.expectedRevision} at {prepared.preparedAt}. This proposal is immutable; prepare a new one if chain state changes.</p><button onClick={submit} disabled={busy || !wallet || !account}>Submit to DAO</button></article>}
     </>}

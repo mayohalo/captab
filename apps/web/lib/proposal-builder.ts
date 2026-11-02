@@ -2,7 +2,7 @@ import type { CompanyConfig, Distribution, Grant, Totals } from "./near";
 import { buildMonthlyBoundaries } from "./vesting";
 import { assertDistributionHash } from "./distribution-hash";
 
-export type ProposalAction = "founder" | "pool" | "grant" | "cancelGrant" | "approve" | "fund";
+export type ProposalAction = "founder" | "pool" | "grant" | "cancelGrant" | "approve" | "fund" | "pause" | "resume" | "cancelDistribution";
 export type ProposalRequest = {
   action: ProposalAction;
   expectedRevision: number;
@@ -28,11 +28,24 @@ export function buildGovernanceProposal(input: ProposalRequest, context: {
   nowSeconds: number; actionId: string;
 }): PreparedProposal {
   const { companyId, config, totals, grant, distribution, nowSeconds, actionId } = context;
-  if (config.paused) throw new Error("Company is paused.");
   if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision !== totals.ledger_revision) {
     throw new Error("Ledger revision changed. Refresh the company and prepare a new proposal.");
   }
   if (config.dao_id !== totals.dao_id) throw new Error("DAO account differs between config and ledger.");
+  if (input.action === "pause" || input.action === "resume") {
+    const paused = input.action === "pause";
+    if (config.paused === paused) throw new Error(paused ? "Company is already paused." : "Company is already active.");
+    return { description: `${paused ? "Pause" : "Resume"} company ${companyId}`,
+      kind: functionCall(companyId, "set_paused", { action_id: actionId, paused }, "40000000000000", "0") };
+  }
+  if (input.action === "cancelDistribution") {
+    if (!distribution || distribution.id !== input.distributionId) throw new Error("Select a distribution.");
+    if (distribution.funded || distribution.cancelled) throw new Error("Distribution cannot be cancelled after funding or cancellation.");
+    return { description: `Cancel unfunded distribution #${distribution.id}`,
+      kind: functionCall(companyId, "cancel_unfunded_distribution", { action_id: actionId,
+        distribution_id: distribution.id }, "40000000000000", "0") };
+  }
+  if (config.paused) throw new Error("Company is paused.");
   if (input.action === "founder" || input.action === "pool" || input.action === "grant") {
     if (!positiveInteger(input.units)) throw new Error("Enter a positive whole number of units.");
     const capacity = input.action === "grant" ? totals.pool_available : totals.unallocated_units;

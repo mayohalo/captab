@@ -51,6 +51,22 @@ test("proposal API rebuilds exact actions from current chain state", async ({ re
   const tampered = await request.post(endpoint, { data: { action: "approve", expectedRevision: 4, distributionId: 2 } });
   expect(tampered.status()).toBe(400);
   expect((await tampered.json()).error).toContain("schedule hash");
+  const pause = await request.post(endpoint, { data: { action: "pause", expectedRevision: 4 } });
+  expect(pause.ok()).toBeTruthy();
+  const pauseCall = (await pause.json()).proposal.kind.FunctionCall.actions[0];
+  expect(pauseCall.method_name).toBe("set_paused");
+  expect(JSON.parse(Buffer.from(pauseCall.args, "base64").toString()).paused).toBe(true);
+  const cancellation = await request.post(endpoint, { data: { action: "cancelDistribution", expectedRevision: 4, distributionId: 1 } });
+  expect(cancellation.ok()).toBeTruthy();
+  expect((await cancellation.json()).proposal.kind.FunctionCall.actions[0].method_name).toBe("cancel_unfunded_distribution");
+  expect((await request.post(endpoint, { data: { action: "cancelDistribution", expectedRevision: 4, distributionId: 0 } })).status()).toBe(409);
+  const pausedEndpoint = "/api/companies/paused.testnet/proposals";
+  const resume = await request.post(pausedEndpoint, { data: { action: "resume", expectedRevision: 4 } });
+  expect(resume.ok()).toBeTruthy();
+  const resumeCall = (await resume.json()).proposal.kind.FunctionCall.actions[0];
+  expect(JSON.parse(Buffer.from(resumeCall.args, "base64").toString()).paused).toBe(false);
+  expect((await request.post(pausedEndpoint, { data: { action: "founder", expectedRevision: 4,
+    recipient: "new-founder.testnet", units: "1" } })).status()).toBe(409);
   const unsafe = await request.post("/api/companies/unsafe.testnet/proposals", { data: { action: "pool", expectedRevision: 4, units: "1" } });
   expect(unsafe.ok()).toBeFalsy();
 });
@@ -110,6 +126,16 @@ test("governance review binds a founder action to the current revision", async (
   await expect(governance.locator("pre").first()).toContainText('"method_name": "issue_founder_units"');
   await expect(governance.locator("pre").first()).toContainText('"expected_revision": 4');
   await expect(governance.getByRole("button", { name: "Submit to DAO" })).toBeDisabled();
+});
+
+test("paused company can review an exact DAO resume action", async ({ page }) => {
+  await page.goto("/company/paused.testnet/approvals");
+  const governance = page.locator("#governance");
+  await governance.getByLabel("Action").selectOption("resume");
+  await governance.getByRole("button", { name: "Review proposal" }).click();
+  const review = governance.locator("article").first();
+  await expect(review.locator("pre")).toContainText('"method_name": "set_paused"');
+  await expect(review.locator("pre")).toContainText('"paused": false');
 });
 
 test("connected council wallet signs reviewed proposal and vote requests", async ({ page }) => {

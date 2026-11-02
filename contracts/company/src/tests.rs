@@ -601,6 +601,45 @@ fn pause_and_distribution_cancellation_emit_structured_events() {
 }
 
 #[test]
+fn pause_rejects_new_funding_but_preserves_in_flight_callback_settlement() {
+    let (mut c, id, hash) = approved_distribution();
+    let msg = near_sdk::serde_json::json!({"distribution_id":id,"schedule_hash":hash}).to_string();
+    set_caller("board.testnet");
+    c.set_paused("pause".into(), true);
+    set_caller("testusd.testnet");
+    assert_eq!(c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg.clone()).0, 1_000);
+    set_caller("board.testnet");
+    c.set_paused("resume".into(), false);
+    set_caller("testusd.testnet");
+    assert_eq!(c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg).0, 0);
+    set_caller("executor.testnet");
+    c.pay_recipient(id, aid("alice.testnet"));
+    set_caller("board.testnet");
+    c.set_paused("pause-again".into(), true);
+    let mut callback = VMContextBuilder::new();
+    callback.current_account_id(aid("company.testnet"));
+    callback.predecessor_account_id(aid("company.testnet"));
+    testing_env!(callback.build(), near_sdk::test_vm_config(), near_sdk::RuntimeFeesConfig::test(),
+        Default::default(), vec![PromiseResult::Successful(vec![])]);
+    c.on_payment_result(id, aid("alice.testnet"), 1);
+    assert_eq!(c.get_distribution(id).unwrap().paid_total.0, 1_000);
+    assert!(c.is_paused());
+}
+
+#[test]
+#[should_panic(expected = "company paused")]
+fn pause_blocks_new_payment_attempts() {
+    let (mut c, id, hash) = approved_distribution();
+    set_caller("testusd.testnet");
+    let msg = near_sdk::serde_json::json!({"distribution_id":id,"schedule_hash":hash}).to_string();
+    c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg);
+    set_caller("board.testnet");
+    c.set_paused("pause".into(), true);
+    set_caller("executor.testnet");
+    c.pay_recipient(id, aid("alice.testnet"));
+}
+
+#[test]
 #[should_panic(expected = "payment not retryable")]
 fn in_flight_attempt_blocks_duplicate_transfer() {
     let (mut c, id, hash) = approved_distribution();
