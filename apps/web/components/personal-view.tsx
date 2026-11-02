@@ -9,8 +9,8 @@ import { getConnector } from "./wallet";
 import { observeTransaction } from "../lib/observe";
 import { PrivateProfiles } from "./private-profiles";
 
-export function PersonalView({ companyId, holdings, grants, distributions }: {
-  companyId: string; holdings: Holding[]; grants: Grant[]; distributions: Distribution[];
+export function PersonalView({ companyId, holdings, grants, distributions, companyVerified }: {
+  companyId: string; holdings: Holding[]; grants: Grant[]; distributions: Distribution[]; companyVerified: boolean;
 }) {
   const router = useRouter();
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);
@@ -42,7 +42,7 @@ export function PersonalView({ companyId, holdings, grants, distributions }: {
   }
 
   async function claim(grantId: number) {
-    if (!wallet || !account) return;
+    if (!wallet || !account || !companyVerified) return;
     setBusy(true);
     setStatus("Awaiting wallet signature…");
     try {
@@ -63,7 +63,7 @@ export function PersonalView({ companyId, holdings, grants, distributions }: {
   }
 
   async function claimSponsored(grantId: number) {
-    if (!wallet || !account) return;
+    if (!wallet || !account || !companyVerified) return;
     setBusy(true);
     setStatus("Awaiting delegated claim signature…");
     try {
@@ -83,13 +83,14 @@ export function PersonalView({ companyId, holdings, grants, distributions }: {
 
   return <main>
     <header><div><Link href={`/company/${companyId}`}>← {companyId}</Link><h1>My ownership</h1><p>NEAR testnet · public on-chain holdings and entitlements</p></div></header>
+    {!companyVerified && <p role="alert">Company code is not verified. Claims are disabled.</p>}
     {!account ? <section><p>Connect the NEAR account that holds your units or grants.</p><button onClick={connect}>Connect wallet</button></section> : <>
       <section className="metrics"><article><span>Account</span><strong className="account-label">{account}</strong></article><article><span>Issued units</span><strong>{formatUnits(holding?.issued_units ?? "0")}</strong></article><article><span>Active grants</span><strong>{ownGrants.filter(grant => grant.cancelled_at === null).length}</strong></article><article><span>Distributions</span><strong>{ownEntitlements.length}</strong></article></section>
       <section><h2>My grants</h2><div className="cards">{ownGrants.map(grant => <article key={grant.id}>
         <h3>Grant #{grant.id}</h3><p>{formatUnits(grant.original_units)} granted · {formatUnits(grant.vested_units)} vested · {formatUnits(grant.issued_units)} claimed</p>
         <p>{formatUnits(grant.claimable_units)} claimable now · {grant.cancelled_at === null ? "active" : "cancelled, vested rights retained"}</p>
         <p>Cliff {new Date(grant.boundaries[12] * 1000).toUTCString()} · end {new Date(grant.boundaries[48] * 1000).toUTCString()}</p>
-        {BigInt(grant.claimable_units) > 0n && <><button disabled={busy} onClick={() => void claim(grant.id)}>Claim with wallet gas</button>{wallet?.manifest.features.signDelegateActions && <button disabled={busy} onClick={() => void claimSponsored(grant.id)}>Sponsored claim</button>}</>}
+        {BigInt(grant.claimable_units) > 0n && <><button disabled={busy || !companyVerified} onClick={() => void claim(grant.id)}>Claim with wallet gas</button>{wallet?.manifest.features.signDelegateActions && <button disabled={busy || !companyVerified} onClick={() => void claimSponsored(grant.id)}>Sponsored claim</button>}</>}
       </article>)}</div>{ownGrants.length === 0 && <p>No grants for this account.</p>}</section>
       <section><h2>My distributions</h2><div className="cards">{ownEntitlements.map(({ distribution, row }) => <article key={distribution.id}>
         <h3>Distribution #{distribution.id}</h3><p>{formatUnits(row.amount)} token base units · {distribution.token_id}</p><p>Status: {row.payment_status} · attempt {row.attempt_id}</p>

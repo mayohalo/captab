@@ -69,6 +69,9 @@ test("proposal API rebuilds exact actions from current chain state", async ({ re
     recipient: "new-founder.testnet", units: "1" } })).status()).toBe(409);
   const unsafe = await request.post("/api/companies/unsafe.testnet/proposals", { data: { action: "pool", expectedRevision: 4, units: "1" } });
   expect(unsafe.ok()).toBeFalsy();
+  const altered = await request.post("/api/companies/altered.testnet/proposals", { data: { action: "pool", expectedRevision: 4, units: "1" } });
+  expect(altered.status()).toBe(502);
+  expect((await altered.json()).error).toContain("Company code does not match");
 });
 
 test("setup inspects the configured company, DAO, and settlement token", async ({ page }) => {
@@ -90,6 +93,27 @@ test("setup rejects an unsupported company schema", async ({ page }) => {
   await page.goto("/setup?company=legacy.testnet");
   await expect(page.getByText("Unsupported company schema or demo limits.", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open company governance" })).toHaveCount(0);
+});
+
+test("altered company code keeps the ledger readable but disables governance", async ({ page }) => {
+  await page.goto("/company/altered.testnet");
+  await expect(page.getByRole("heading", { name: "Ownership" })).toBeVisible();
+  await expect(page.getByText(/Company verification failed: Company code does not match/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Review proposal" })).toHaveCount(0);
+});
+
+test("altered company code is rejected by payout and sponsor APIs", async ({ request }) => {
+  const payout = await request.post("/api/distributions/0/execute", {
+    headers: { authorization: "Bearer local-e2e-fixture-secret" }, data: { companyId: "altered.testnet" },
+  });
+  expect(payout.status()).toBe(409);
+  expect((await payout.json()).error).toContain("Company code does not match");
+  const sponsor = await request.post("/api/sponsor", {
+    headers: { origin: "http://127.0.0.1:3100" },
+    data: { companyId: "altered.testnet", signedDelegate: "signed-request" },
+  });
+  expect(sponsor.status()).toBe(409);
+  expect((await sponsor.json()).error).toContain("Company code does not match");
 });
 
 test("ownership, vesting, and a failed payout render from chain views", async ({ page }) => {

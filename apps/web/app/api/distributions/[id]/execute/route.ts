@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { enqueueDistribution } from "../../../../../lib/payments";
 import { validAccountId } from "../../../../../lib/near";
 import { accountFromSession, assertRequestOrigin, authOrigin } from "../../../../../lib/auth";
-import { type CompanyConfig, verifiedDaoPolicy, view } from "../../../../../lib/near";
+import { type CompanyConfig, verifiedCompanyCode, verifiedDaoPolicy, view } from "../../../../../lib/near";
 import { getDatabase } from "../../../../../lib/db";
 
 export const runtime = "nodejs";
 
 async function authorized(request: Request, companyId: string): Promise<boolean> {
+  await verifiedCompanyCode(companyId);
   const secret = process.env.CAPTAB_WORKER_SECRET;
   if (secret && request.headers.get("authorization") === `Bearer ${secret}`) return true;
   const actor = accountFromSession(request);

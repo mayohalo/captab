@@ -37,6 +37,9 @@ const [companyWasm, daoWasm, tokenWasm] = await Promise.all([readFile(companyWas
 const companyDigest = sha256(companyWasm);
 const daoDigest = sha256(daoWasm);
 const companyCodeHash = baseEncode(companyDigest);
+if (process.env.CAPTAB_COMPANY_CODE_HASH && process.env.CAPTAB_COMPANY_CODE_HASH !== companyCodeHash) {
+  throw new Error("CAPTAB_COMPANY_CODE_HASH differs from the local company WASM; update it only after reviewing the build");
+}
 const daoCodeHash = baseEncode(daoDigest);
 const tokenDigest = sha256(tokenWasm);
 const tokenCodeHash = baseEncode(tokenDigest);

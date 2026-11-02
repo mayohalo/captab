@@ -9,6 +9,7 @@ export type CompanyConfig = { schema_version: number; dao_id: string; snapshot_o
   authorized_units: string; paused: boolean; limits: { max_holders: number; max_grants: number; max_distributions: number;
     max_actions: number; vesting_boundaries: number } };
 export type CompanySnapshot = { config: CompanyConfig; totals: Totals };
+export type CompanyCodeAssessment = { verified: boolean; reason: string; codeHash: string | null };
 const demoLimits = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
 export type { DaoPolicy, DaoAssessment } from "./dao-policy";
 export type DaoProposal = { id: number; proposer: string; description: string; kind: Record<string, unknown>; status: string; vote_counts: Record<string, number[]> };
@@ -37,6 +38,24 @@ export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
   return policy;
 }
 
+export async function assessCompanyCode(contractId: string): Promise<CompanyCodeAssessment> {
+  const expected = process.env.CAPTAB_COMPANY_CODE_HASH;
+  if (!expected) return { verified: false, reason: "Expected company code hash is not configured.", codeHash: null };
+  try {
+    const code = await provider.viewContractCode({ contractId });
+    return code.hash === expected
+      ? { verified: true, reason: "Company code matches the configured release build.", codeHash: code.hash }
+      : { verified: false, reason: "Company code does not match the configured release build.", codeHash: code.hash };
+  } catch {
+    return { verified: false, reason: "Company code could not be verified.", codeHash: null };
+  }
+}
+
+export async function verifiedCompanyCode(contractId: string): Promise<void> {
+  const assessment = await assessCompanyCode(contractId);
+  if (!assessment.verified) throw new Error(assessment.reason);
+}
+
 export async function readCompany(contractId: string) {
   const [company, holdings, grantPages, distributions] = await Promise.all([
     view<CompanySnapshot>(contractId, "get_company"),
@@ -50,6 +69,7 @@ export async function readCompany(contractId: string) {
     throw new Error("Unsupported company schema or demo limits.");
   }
   const grants = grantPages.flat();
+  const companyAssessment = await assessCompanyCode(contractId);
   let daoPolicy: DaoPolicy | null = null;
   let daoAssessment: DaoAssessment = { verified: false, reason: "DAO policy could not be verified." };
   let proposals: DaoProposal[] = [];
@@ -68,7 +88,7 @@ export async function readCompany(contractId: string) {
     const balance = await view<string>(config.settlement_token_id, "ft_balance_of", { account_id: config.dao_id });
     if (/^\d+$/.test(balance)) treasuryBalance = balance;
   } catch { /* Company and distribution views remain available if the token view fails. */ }
-  return { totals, config, holdings, grants, distributions, daoPolicy, daoAssessment, proposals, treasuryBalance };
+  return { totals, config, holdings, grants, distributions, companyAssessment, daoPolicy, daoAssessment, proposals, treasuryBalance };
 }
 
 export function formatUnits(value: string): string { return BigInt(value).toLocaleString("en-US"); }

@@ -13,7 +13,7 @@ export function getConnector() {
   return connector;
 }
 
-export function WalletControl({ contractId, grantId, recipient, claimable }: { contractId?: string; grantId?: number; recipient?: string; claimable?: string }) {
+export function WalletControl({ contractId, grantId, recipient, claimable, companyVerified = false }: { contractId?: string; grantId?: number; recipient?: string; claimable?: string; companyVerified?: boolean }) {
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);
   const [account, setAccount] = useState<string | null>(null);
   const [status, setStatus] = useState("");
@@ -31,7 +31,7 @@ export function WalletControl({ contractId, grantId, recipient, claimable }: { c
   }
   async function disconnect() { await getConnector().disconnect(wallet ?? undefined); setWallet(null); setAccount(null); }
   async function claim() {
-    if (!wallet || !contractId || grantId === undefined) return;
+    if (!wallet || !contractId || grantId === undefined || !companyVerified) return;
     setBusy(true);
     setStatus("Awaiting wallet signature…");
     try {
@@ -46,7 +46,7 @@ export function WalletControl({ contractId, grantId, recipient, claimable }: { c
   }
   return <div className="wallet">
     {account ? <><span>{account}</span><button disabled={busy} onClick={disconnect}>Disconnect</button></> : <button onClick={connect}>Connect wallet</button>}
-    {contractId && grantId !== undefined && account === recipient && BigInt(claimable ?? "0") > 0n && <button disabled={busy} onClick={claim}>Claim vested units</button>}
+    {contractId && grantId !== undefined && account === recipient && BigInt(claimable ?? "0") > 0n && <button disabled={busy || !companyVerified} onClick={claim}>Claim vested units</button>}
     {status && <p role="status">{status}</p>}
   </div>;
 }

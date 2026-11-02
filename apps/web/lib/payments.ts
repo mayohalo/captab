@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import { Account, JsonRpcProvider, teraToGas } from "near-api-js";
 import { ensureCompany, getDatabase } from "./db";
-import { type CompanyConfig, type Distribution, validAccountId, view } from "./near";
+import { type CompanyConfig, type Distribution, validAccountId, verifiedCompanyCode, view } from "./near";
 import { classifyPayment, markAbandonedClaimsForReview } from "./payment-state";
 
 type Job = { company_id: string; contract_id: string; distribution_id: number; recipient_id: string; attempt_id: number; submission_state: string; tx_hash: string | null };
@@ -11,6 +11,7 @@ const distribution = (contractId: string, id: number) => view<Distribution | nul
 
 export async function enqueueDistribution(contractId: string, id: number) {
   if (!validAccountId(contractId) || !Number.isSafeInteger(id) || id < 0) throw new Error("Invalid distribution request");
+  await verifiedCompanyCode(contractId);
   const [config, current] = await Promise.all([view<CompanyConfig>(contractId, "get_config"), distribution(contractId, id)]);
   if (config.paused || !current?.funded || current.cancelled) throw new Error("Distribution is not payable");
   const db = getDatabase();
@@ -54,6 +55,7 @@ export async function submitNextPayment() {
   if (!job) return { submitted: false, reason: "No eligible job or payment awaiting settlement/review" };
   let signingStarted = false;
   try {
+    await verifiedCompanyCode(job.contract_id);
     const [config, current] = await Promise.all([view<CompanyConfig>(job.contract_id, "get_config"), distribution(job.contract_id, job.distribution_id)]);
     const row = current?.entitlements.find(item => item.account_id === job.recipient_id);
     if (!row || config.paused || !current?.funded || current.cancelled || !["Ready", "Failed"].includes(row.payment_status) || row.attempt_id + 1 !== job.attempt_id || BigInt(row.amount) <= 0n) {

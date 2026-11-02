@@ -9,8 +9,8 @@ import { observeTransaction } from "../lib/observe";
 
 type Job = { recipient_id: string; attempt_id: number; submission_state: string; tx_hash: string | null; last_error: string | null };
 
-export function DistributionOperator({ id, config, policy, daoVerified, totals, distributions }: {
-  id: string; config: CompanyConfig; policy: DaoPolicy | null; daoVerified: boolean; totals: Totals; distributions: Distribution[];
+export function DistributionOperator({ id, config, policy, governanceVerified, totals, distributions }: {
+  id: string; config: CompanyConfig; policy: DaoPolicy | null; governanceVerified: boolean; totals: Totals; distributions: Distribution[];
 }) {
   const router = useRouter();
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);
@@ -21,7 +21,7 @@ export function DistributionOperator({ id, config, policy, daoVerified, totals, 
   const [busy, setBusy] = useState(false);
   const [jobs, setJobs] = useState<Record<number, Job[]>>({});
   const isOperator = account === config.snapshot_operator_id;
-  const isCouncil = Boolean(daoVerified && account && policy?.roles.some(role => role.name === "council" && role.kind.Group?.includes(account)));
+  const isCouncil = Boolean(governanceVerified && account && policy?.roles.some(role => role.name === "council" && role.kind.Group?.includes(account)));
 
   useEffect(() => {
     let active = true;
@@ -42,7 +42,7 @@ export function DistributionOperator({ id, config, policy, daoVerified, totals, 
   }
 
   async function send(methodName: string, args: Record<string, unknown>, gas = "100000000000000") {
-    if (!wallet || !account) return;
+    if (!wallet || !account || !governanceVerified) return;
     setBusy(true);
     setStatus("Awaiting wallet signature…");
     try {
@@ -108,7 +108,7 @@ export function DistributionOperator({ id, config, policy, daoVerified, totals, 
         <p>Issued holdings only · ledger revision {totals.ledger_revision} · token {config.settlement_token_id}</p>
         <label>Budget in token base units<input inputMode="numeric" value={budget} onChange={event => setBudget(event.target.value.trim())} placeholder="1000000" /></label>
         <label>Expiry in UTC (ISO 8601)<input value={expiry} onChange={event => setExpiry(event.target.value.trim())} placeholder="2026-11-15T00:00:00Z" /></label>
-        <button disabled={busy || config.paused || BigInt(totals.issued_total) === 0n} onClick={prepareSnapshot}>Create immutable snapshot</button>
+        <button disabled={busy || !governanceVerified || config.paused || BigInt(totals.issued_total) === 0n} onClick={prepareSnapshot}>Create immutable snapshot</button>
       </div>
     </>}
     <h3>Pay fixed entitlements</h3>
@@ -119,7 +119,7 @@ export function DistributionOperator({ id, config, policy, daoVerified, totals, 
       {distribution.entitlements.map(row => <div className="payment-row" key={row.account_id}>
         <span>{row.account_id} · {row.amount} · {row.payment_status} · attempt {row.attempt_id}</span>
       </div>)}
-      <><button disabled={busy || config.paused || !daoVerified || !isCouncil} onClick={() => void queue(distribution.id)}>Queue ready and failed recipients</button>
+      <><button disabled={busy || config.paused || !governanceVerified || !isCouncil} onClick={() => void queue(distribution.id)}>Queue ready and failed recipients</button>
         <button disabled={busy} onClick={() => void refreshJobs(distribution.id).catch(error => setStatus(error instanceof Error ? error.message : "Queue status unavailable"))}>Refresh queue</button>
         {jobs[distribution.id]?.map(job => <p key={`${job.recipient_id}-${job.attempt_id}`}>
           {job.recipient_id} · attempt {job.attempt_id} · {job.submission_state}{job.tx_hash ? ` · ${job.tx_hash}` : ""}{job.last_error ? ` · ${job.last_error}` : ""}

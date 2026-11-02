@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { buildGovernanceProposal, type ProposalAction, type ProposalRequest } from "../../../../../lib/proposal-builder";
-import { type CompanyConfig, type Distribution, type Grant, type Totals, validAccountId, verifiedDaoPolicy, view } from "../../../../../lib/near";
+import { type CompanyConfig, type Distribution, type Grant, type Totals, validAccountId, verifiedCompanyCode, verifiedDaoPolicy, view } from "../../../../../lib/near";
 
 export const runtime = "nodejs";
 
@@ -30,6 +30,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   let grant: Grant | null;
   let distribution: Distribution | null;
   try {
+    await verifiedCompanyCode(id);
     [config, totals] = await Promise.all([
       view<CompanyConfig>(id, "get_config"), view<Totals>(id, "get_totals"),
     ]);

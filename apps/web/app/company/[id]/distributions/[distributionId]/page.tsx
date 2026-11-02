@@ -11,17 +11,19 @@ export default async function DistributionPage({ params }: { params: Promise<{ i
   if (!validAccountId(id) || !/^(0|[1-9]\d*)$/.test(distributionId)) return <main><h1>Invalid distribution</h1></main>;
   try {
     const company = await readCompany(id);
+    const governanceVerified = company.companyAssessment.verified && company.daoAssessment.verified;
     const distribution = company.distributions.find(item => item.id === Number(distributionId));
     if (!distribution) return <main><Link href={`/company/${id}/distributions`}>← Distributions</Link><h1>Distribution not found</h1></main>;
     return <main><header><div><Link href={`/company/${id}/distributions`}>← Distributions</Link><h1>Distribution #{distribution.id}</h1>
       <p>NEAR testnet · snapshot revision {distribution.snapshot_revision} · settlement token {distribution.token_id}</p></div></header>
       <CompanyNavigation id={id} />
+      {!company.companyAssessment.verified && <p role="alert">Company verification failed: {company.companyAssessment.reason}</p>}
       <DistributionsSection id={id} distributions={[distribution]} daoId={company.config.dao_id}
         tokenId={company.config.settlement_token_id} treasuryBalance={company.treasuryBalance} />
       <DistributionOperator id={id} config={company.config} policy={company.daoPolicy}
-        daoVerified={company.daoAssessment.verified} totals={company.totals} distributions={[distribution]} />
+        governanceVerified={governanceVerified} totals={company.totals} distributions={[distribution]} />
       <GovernancePanel id={id} totals={company.totals} config={company.config} policy={company.daoPolicy}
-        daoVerified={company.daoAssessment.verified} proposals={company.proposals} grants={company.grants}
+        governanceVerified={governanceVerified} proposals={company.proposals} grants={company.grants}
         distributions={[distribution]} initialAction={distribution.approved ? "fund" : "approve"} />
     </main>;
   } catch (error) { return <main><h1>Distribution unavailable</h1><p>{error instanceof Error ? error.message : "Unable to load distribution"}</p></main>; }

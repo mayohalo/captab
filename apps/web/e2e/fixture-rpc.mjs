@@ -6,6 +6,7 @@ const company = "company.testnet";
 const claimableCompany = "claimable.testnet";
 const dao = "board.testnet";
 const unsafeCompany = "unsafe.testnet";
+const alteredCompany = "altered.testnet";
 const legacyCompany = "legacy.testnet";
 const pausedCompany = "paused.testnet";
 const unsafeDao = "unsafe-board.testnet";
@@ -87,6 +88,10 @@ const methods = new Map([
   [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
   [`${unsafeCompany}:get_grant`, grants], [`${unsafeCompany}:get_distribution`, distributions],
   [`${unsafeCompany}:list_distributions`, distributions],
+  [`${alteredCompany}:get_company`, { config, totals }],
+  [`${alteredCompany}:get_config`, config], [`${alteredCompany}:get_totals`, totals],
+  [`${alteredCompany}:list_holdings`, holdings], [`${alteredCompany}:list_grants`, grants],
+  [`${alteredCompany}:list_distributions`, distributions],
   [`${legacyCompany}:get_company`, { config: { ...config, schema_version: 0 }, totals }],
   [`${legacyCompany}:list_holdings`, holdings], [`${legacyCompany}:list_grants`, grants],
   [`${legacyCompany}:list_distributions`, distributions],
@@ -116,9 +121,10 @@ createServer(async (request, response) => {
     const params = rpc.params ?? {};
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);
     let result;
-    if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, dao, unsafeDao].includes(params.account_id)) {
+    if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, alteredCompany, dao, unsafeDao].includes(params.account_id)) {
       result = { code_base64: "", hash: params.account_id === dao
-        ? "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq" : "fixture-company-code-hash" };
+        ? "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq"
+        : params.account_id === alteredCompany ? "altered-company-code-hash" : "fixture-company-code-hash" };
     } else if (params.request_type === "call_function") {
       const key = `${params.account_id}:${params.method_name}`;
       if (!methods.has(key)) throw new Error(`Unsupported contract method ${key}`);

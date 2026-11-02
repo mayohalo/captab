@@ -23,9 +23,9 @@ function assertTransactionSucceeded(status: unknown) {
   }
 }
 
-export function GovernancePanel({ id, totals, config, policy, daoVerified, proposals, grants, distributions, initialAction = "founder" }: {
+export function GovernancePanel({ id, totals, config, policy, governanceVerified, proposals, grants, distributions, initialAction = "founder" }: {
   id: string; totals: Totals; config: CompanyConfig; policy: DaoPolicy | null;
-  daoVerified: boolean; initialAction?: ProposalAction;
+  governanceVerified: boolean; initialAction?: ProposalAction;
   proposals: DaoProposal[]; grants: Grant[]; distributions: Distribution[];
 }) {
   const router = useRouter();
@@ -42,7 +42,7 @@ export function GovernancePanel({ id, totals, config, policy, daoVerified, propo
   const [busy, setBusy] = useState(false);
   const selected = distributions.find(d => String(d.id) === distributionId);
   const council = policy?.roles.find(role => role.name === "council")?.kind.Group ?? [];
-  const isCouncil = Boolean(daoVerified && account && council.includes(account));
+  const isCouncil = Boolean(governanceVerified && account && council.includes(account));
 
   useEffect(() => {
     let active = true;
@@ -68,7 +68,7 @@ export function GovernancePanel({ id, totals, config, policy, daoVerified, propo
     setStatus("Checking current chain state…");
     try {
       if (!policy) throw new Error("DAO policy is unavailable; proposal bond cannot be verified.");
-      if (!daoVerified) throw new Error("DAO code or two-of-three policy is not verified.");
+      if (!governanceVerified) throw new Error("Company code or DAO policy is not verified.");
       const input: ProposalRequest = { action, expectedRevision: totals.ledger_revision,
         recipient, units, startIso, grantId: Number(grantId), distributionId: Number(distributionId) };
       const response = await fetch(`/api/companies/${id}/proposals`, { method: "POST",
@@ -125,7 +125,7 @@ export function GovernancePanel({ id, totals, config, policy, daoVerified, propo
   return <section id="governance">
     <h2>Governance</h2>
     <p>Sputnik DAO {config.dao_id}. A proposal needs two council approvals under the configured demo policy. The company changes only after the DAO executes the call.</p>
-    {!policy || !daoVerified ? <p role="alert">DAO code and two-of-three policy must be verified before proposal submission.</p> : <>
+    {!policy || !governanceVerified ? <p role="alert">Company code and the DAO's two-of-three policy must be verified before proposal submission.</p> : <>
       <p>Proposal bond: {policy.proposal_bond} yoctoNEAR · {account ? `${account}${isCouncil ? " (council)" : ""}` : "Wallet disconnected"}</p>
       {!account && <button onClick={connect}>Connect to propose or vote</button>}
       <div className="governance-form">

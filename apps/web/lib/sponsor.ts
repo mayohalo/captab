@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Account, JsonRpcProvider } from "near-api-js";
 import { ensureCompany, getDatabase } from "./db";
-import { type CompanyConfig, type Grant, validAccountId, view } from "./near";
+import { type CompanyConfig, type Grant, validAccountId, verifiedCompanyCode, view } from "./near";
 import { inspectSponsoredClaim } from "./sponsor-policy";
 import { reserveSponsorRequest } from "./sponsor-rate";
 
@@ -9,6 +9,7 @@ const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https:/
 
 export async function relaySponsoredClaim(companyContractId: string, encoded: string) {
   if (!validAccountId(companyContractId)) throw new Error("Invalid company account");
+  await verifiedCompanyCode(companyContractId);
   const block = await provider.viewBlock({ finality: "final" });
   const claim = inspectSponsoredClaim(encoded, companyContractId, BigInt(block.header.height));
   const [config, grant, accessKey] = await Promise.all([

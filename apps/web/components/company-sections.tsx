@@ -16,9 +16,9 @@ export function OwnershipSection({ totals, holdings }: { totals: Totals; holding
     </tbody></table>{holdings.length === 0 && <p>No units issued yet.</p>}</section>;
 }
 
-export function GrantsSection({ id, grants }: { id: string; grants: Grant[] }) {
+export function GrantsSection({ id, grants, companyVerified }: { id: string; grants: Grant[]; companyVerified: boolean }) {
   return <section id="grants"><h2>Contributor grants</h2><div className="cards">
-    {grants.map(g => <article key={g.id}><h3><Link href={`/company/${id}/grants/${g.id}`}>Grant #{g.id}</Link></h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>Start {new Date(g.boundaries[0] * 1000).toUTCString()} · cliff {new Date(g.boundaries[12] * 1000).toUTCString()} · fully vested {new Date(g.boundaries[48] * 1000).toUTCString()}</p><p>{g.cancelled_at ? `Cancelled ${new Date(g.cancelled_at * 1000).toUTCString()}; vested rights remain` : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} /></article>)}
+    {grants.map(g => <article key={g.id}><h3><Link href={`/company/${id}/grants/${g.id}`}>Grant #{g.id}</Link></h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>Start {new Date(g.boundaries[0] * 1000).toUTCString()} · cliff {new Date(g.boundaries[12] * 1000).toUTCString()} · fully vested {new Date(g.boundaries[48] * 1000).toUTCString()}</p><p>{g.cancelled_at ? `Cancelled ${new Date(g.cancelled_at * 1000).toUTCString()}; vested rights remain` : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} companyVerified={companyVerified} /></article>)}
   </div>{grants.length === 0 && <p>No grants yet.</p>}</section>;
 }
 

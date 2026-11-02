@@ -14,20 +14,22 @@ export default async function CompanySectionPage({ params }: { params: Promise<{
   if (!validAccountId(id) || !sections.some(value => value === section)) notFound();
   try {
     const company = await readCompany(id);
+    const governanceVerified = company.companyAssessment.verified && company.daoAssessment.verified;
     const governance = (initialAction: "founder" | "grant" | "approve") => <GovernancePanel id={id} totals={company.totals}
-      config={company.config} policy={company.daoPolicy} daoVerified={company.daoAssessment.verified}
+      config={company.config} policy={company.daoPolicy} governanceVerified={governanceVerified}
       proposals={company.proposals} grants={company.grants} distributions={company.distributions} initialAction={initialAction} />;
     return <main><header><div><Link href={`/company/${id}`}>← {id}</Link><h1>{section[0].toUpperCase() + section.slice(1)}</h1>
       <p>NEAR testnet · DAO {company.config.dao_id} · ledger revision {company.totals.ledger_revision}</p></div></header>
       <CompanyNavigation id={id} />
       {company.config.paused && <p role="alert">Company is paused. New actions are unavailable.</p>}
+      {!company.companyAssessment.verified && <p role="alert">Company verification failed: {company.companyAssessment.reason}</p>}
       {!company.daoAssessment.verified && <p role="alert">DAO verification failed: {company.daoAssessment.reason}</p>}
       {section === "ownership" && <><OwnershipSection totals={company.totals} holdings={company.holdings} />{governance("founder")}</>}
-      {section === "grants" && <><GrantsSection id={id} grants={company.grants} />{governance("grant")}</>}
+      {section === "grants" && <><GrantsSection id={id} grants={company.grants} companyVerified={company.companyAssessment.verified} />{governance("grant")}</>}
       {section === "approvals" && governance("founder")}
       {section === "distributions" && <><DistributionsSection id={id} distributions={company.distributions}
         daoId={company.config.dao_id} tokenId={company.config.settlement_token_id} treasuryBalance={company.treasuryBalance} />
-        <DistributionOperator id={id} config={company.config} policy={company.daoPolicy} daoVerified={company.daoAssessment.verified}
+        <DistributionOperator id={id} config={company.config} policy={company.daoPolicy} governanceVerified={governanceVerified}
           totals={company.totals} distributions={company.distributions} />{governance("approve")}</>}
     </main>;
   } catch (error) {
