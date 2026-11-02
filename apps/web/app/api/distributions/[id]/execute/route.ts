@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { enqueueDistribution } from "../../../../../lib/payments";
 import { validAccountId } from "../../../../../lib/near";
 import { accountFromSession, assertRequestOrigin, authOrigin } from "../../../../../lib/auth";
-import { type CompanyConfig, type DaoPolicy, view } from "../../../../../lib/near";
+import { type CompanyConfig, verifiedDaoPolicy, view } from "../../../../../lib/near";
 import { getDatabase } from "../../../../../lib/db";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ async function authorized(request: Request, companyId: string): Promise<boolean>
   if (!actor) return false;
   if (request.method !== "GET") assertRequestOrigin(request, authOrigin(request));
   const config = await view<CompanyConfig>(companyId, "get_config");
-  const policy = await view<DaoPolicy>(config.dao_id, "get_policy");
+  const policy = await verifiedDaoPolicy(config.dao_id);
   return policy.roles.some(role => role.name === "council" && role.kind.Group?.includes(actor));
 }
 

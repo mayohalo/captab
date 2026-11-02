@@ -8,6 +8,7 @@
     "test:vesting": "pnpm --filter @captab/web test:vesting",
     "test:receipts": "pnpm --filter @captab/web test:receipts",
     "test:auth": "pnpm --filter @captab/web test:auth",
+    "test:dao": "pnpm --filter @captab/web test:dao",
     "test:payments": "pnpm --filter @captab/web test:payments",
     "test:sponsor": "pnpm --filter @captab/web test:sponsor",
     "test:sandbox": "bash scripts/build-sputnik.sh && cargo build -p captab-company -p captab-test-token --target wasm32-unknown-unknown --release && cargo test -p captab-company --test sandbox",

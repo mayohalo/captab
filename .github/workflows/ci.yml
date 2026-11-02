@@ -35,6 +35,7 @@ jobs:
           pnpm test:vesting
           pnpm test:receipts
           pnpm test:auth
+          pnpm test:dao
           pnpm test:payments
           pnpm test:sponsor
       - name: Build web app

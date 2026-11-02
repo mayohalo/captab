@@ -8,6 +8,7 @@ test("setup inspects the configured company, DAO, and settlement token", async (
   await page.getByRole("button", { name: "Inspect on-chain setup" }).click();
   await expect(page.getByRole("heading", { name: "Company contract" })).toBeVisible();
   await expect(page.getByText("Council accounts: 3 (expected)")).toBeVisible();
+  await expect(page.getByText("Pinned Sputnik code and two-of-three council policy verified.")).toBeVisible();
   await expect(page.getByText("TESTUSD · 6 decimals")).toBeVisible();
   await page.getByRole("link", { name: "Open company governance" }).click();
   await expect(page.getByRole("heading", { name: "Ownership" })).toBeVisible();
@@ -43,4 +44,11 @@ test("personal ownership has a safe disconnected state", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "My ownership" })).toBeVisible();
   await expect(page.getByText("Connect the NEAR account that holds your units or grants.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
+});
+
+test("unverified DAO code cannot enable governance controls", async ({ page }) => {
+  await page.goto("/company/unsafe.testnet");
+  await expect(page.getByRole("alert").filter({ hasText: "DAO verification failed" })).toBeVisible();
+  await expect(page.locator("#governance").getByRole("button", { name: "Review proposal" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Queue ready and failed recipients" })).toBeDisabled();
 });

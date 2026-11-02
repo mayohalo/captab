@@ -35,8 +35,9 @@ function assertTransactionSucceeded(status: unknown) {
   }
 }
 
-export function GovernancePanel({ id, totals, config, policy, proposals, grants, distributions }: {
+export function GovernancePanel({ id, totals, config, policy, daoVerified, proposals, grants, distributions }: {
   id: string; totals: Totals; config: CompanyConfig; policy: DaoPolicy | null;
+  daoVerified: boolean;
   proposals: DaoProposal[]; grants: Grant[]; distributions: Distribution[];
 }) {
   const router = useRouter();
@@ -54,7 +55,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
   const selected = distributions.find(d => String(d.id) === distributionId);
   const selectedGrant = grants.find(grant => String(grant.id) === grantId);
   const council = policy?.roles.find(role => role.name === "council")?.kind.Group ?? [];
-  const isCouncil = Boolean(account && council.includes(account));
+  const isCouncil = Boolean(daoVerified && account && council.includes(account));
 
   useEffect(() => {
     let active = true;
@@ -77,6 +78,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
   function prepare() {
     try {
       if (!policy) throw new Error("DAO policy is unavailable; proposal bond cannot be verified.");
+      if (!daoVerified) throw new Error("DAO code or two-of-three policy is not verified.");
       if (config.paused) throw new Error("Company is paused.");
       let next: Prepared;
       const actionId = crypto.randomUUID();
@@ -181,7 +183,7 @@ export function GovernancePanel({ id, totals, config, policy, proposals, grants,
   return <section id="governance">
     <h2>Governance</h2>
     <p>Sputnik DAO {config.dao_id}. A proposal needs two council approvals under the configured demo policy. The company changes only after the DAO executes the call.</p>
-    {!policy ? <p role="alert">DAO policy could not be read. Proposal submission is unavailable.</p> : <>
+    {!policy || !daoVerified ? <p role="alert">DAO code and two-of-three policy must be verified before proposal submission.</p> : <>
       <p>Proposal bond: {policy.proposal_bond} yoctoNEAR · {account ? `${account}${isCouncil ? " (council)" : ""}` : "Wallet disconnected"}</p>
       {!account && <button onClick={connect}>Connect to propose or vote</button>}
       <div className="governance-form">

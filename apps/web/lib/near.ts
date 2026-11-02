@@ -1,11 +1,12 @@
 import { JsonRpcProvider } from "near-api-js";
+import { assessDemoDao, type DaoAssessment, type DaoPolicy } from "./dao-policy";
 
 export const network = "testnet";
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 
 export type Totals = { dao_id: string; authorized_units: string; issued_total: string; pool_available: string; grant_reserved: string; fully_diluted_total: string; unallocated_units: string; ledger_revision: number; holder_count: number };
 export type CompanyConfig = { dao_id: string; snapshot_operator_id: string; settlement_token_id: string; authorized_units: string; paused: boolean };
-export type DaoPolicy = { proposal_bond: string; roles: { name: string; kind: { Group?: string[] } }[] };
+export type { DaoPolicy, DaoAssessment } from "./dao-policy";
 export type DaoProposal = { id: number; proposer: string; description: string; kind: Record<string, unknown>; status: string; vote_counts: Record<string, number[]> };
 export type Holding = { account_id: string; issued_units: string };
 export type Grant = { id: number; recipient: string; original_units: string; entitlement_cap: string; issued_units: string; vested_units: string; claimable_units: string; boundaries: number[]; cancelled_at: number | null };
@@ -22,6 +23,16 @@ export async function view<T>(contractId: string, method: string, args: Record<s
   return result;
 }
 
+export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
+  const [policy, code] = await Promise.all([
+    view<DaoPolicy>(daoId, "get_policy"),
+    provider.viewContractCode({ contractId: daoId }),
+  ]);
+  const assessment = assessDemoDao(policy, code.hash);
+  if (!assessment.verified) throw new Error(assessment.reason);
+  return policy;
+}
+
 export async function readCompany(contractId: string) {
   const [totals, config, holdings, grants, distributions] = await Promise.all([
     view<Totals>(contractId, "get_totals"),
@@ -31,16 +42,19 @@ export async function readCompany(contractId: string) {
     view<Distribution[]>(contractId, "list_distributions", { from_index: 0, limit: 20 }),
   ]);
   let daoPolicy: DaoPolicy | null = null;
+  let daoAssessment: DaoAssessment = { verified: false, reason: "DAO policy could not be verified." };
   let proposals: DaoProposal[] = [];
   try {
-    const [policy, lastId] = await Promise.all([
+    const [policy, lastId, code] = await Promise.all([
       view<DaoPolicy>(config.dao_id, "get_policy"),
       view<number>(config.dao_id, "get_last_proposal_id"),
+      provider.viewContractCode({ contractId: config.dao_id }),
     ]);
     daoPolicy = policy;
+    daoAssessment = assessDemoDao(policy, code.hash);
     proposals = await view<DaoProposal[]>(config.dao_id, "get_proposals", { from_index: Math.max(0, lastId - 20), limit: 20 });
   } catch { /* Company views remain available while DAO reads are unavailable. */ }
-  return { totals, config, holdings, grants, distributions, daoPolicy, proposals };
+  return { totals, config, holdings, grants, distributions, daoPolicy, daoAssessment, proposals };
 }
 
 export function formatUnits(value: string): string { return BigInt(value).toLocaleString("en-US"); }

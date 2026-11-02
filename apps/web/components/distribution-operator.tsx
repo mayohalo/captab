@@ -9,8 +9,8 @@ import { observeTransaction } from "../lib/observe";
 
 type Job = { recipient_id: string; attempt_id: number; submission_state: string; tx_hash: string | null; last_error: string | null };
 
-export function DistributionOperator({ id, config, policy, totals, distributions }: {
-  id: string; config: CompanyConfig; policy: DaoPolicy | null; totals: Totals; distributions: Distribution[];
+export function DistributionOperator({ id, config, policy, daoVerified, totals, distributions }: {
+  id: string; config: CompanyConfig; policy: DaoPolicy | null; daoVerified: boolean; totals: Totals; distributions: Distribution[];
 }) {
   const router = useRouter();
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);
@@ -21,7 +21,7 @@ export function DistributionOperator({ id, config, policy, totals, distributions
   const [busy, setBusy] = useState(false);
   const [jobs, setJobs] = useState<Record<number, Job[]>>({});
   const isOperator = account === config.snapshot_operator_id;
-  const isCouncil = Boolean(account && policy?.roles.some(role => role.name === "council" && role.kind.Group?.includes(account)));
+  const isCouncil = Boolean(daoVerified && account && policy?.roles.some(role => role.name === "council" && role.kind.Group?.includes(account)));
 
   useEffect(() => {
     let active = true;
@@ -119,7 +119,7 @@ export function DistributionOperator({ id, config, policy, totals, distributions
       {distribution.entitlements.map(row => <div className="payment-row" key={row.account_id}>
         <span>{row.account_id} · {row.amount} · {row.payment_status} · attempt {row.attempt_id}</span>
       </div>)}
-      <><button disabled={busy || config.paused} onClick={() => void queue(distribution.id)}>Queue ready and failed recipients</button>
+      <><button disabled={busy || config.paused || !daoVerified || !isCouncil} onClick={() => void queue(distribution.id)}>Queue ready and failed recipients</button>
         <button disabled={busy} onClick={() => void refreshJobs(distribution.id).catch(error => setStatus(error instanceof Error ? error.message : "Queue status unavailable"))}>Refresh queue</button>
         {jobs[distribution.id]?.map(job => <p key={`${job.recipient_id}-${job.attempt_id}`}>
           {job.recipient_id} · attempt {job.attempt_id} · {job.submission_state}{job.tx_hash ? ` · ${job.tx_hash}` : ""}{job.last_error ? ` · ${job.last_error}` : ""}

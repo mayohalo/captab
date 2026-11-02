@@ -3,6 +3,8 @@ import { createServer } from "node:http";
 const port = 14555;
 const company = "company.testnet";
 const dao = "board.testnet";
+const unsafeCompany = "unsafe.testnet";
+const unsafeDao = "unsafe-board.testnet";
 const token = "testusd.testnet";
 const boundaries = Array.from({ length: 49 }, (_, month) => Math.floor(Date.UTC(2025, month, 1) / 1000));
 const totals = {
@@ -38,7 +40,8 @@ const distributions = [{
 const policy = {
   proposal_bond: "100000000000000000000000", roles: [{ name: "council", kind: { Group: [
     "council-a.testnet", "council-b.testnet", "council-c.testnet",
-  ] } }],
+  ] }, permissions: ["*:VoteApprove"], vote_policy: {} }],
+  default_vote_policy: { weight_kind: "RoleWeight", quorum: "0", threshold: { Ratio: [1, 2] } },
 };
 const methods = new Map([
   [`${company}:get_totals`, totals], [`${company}:get_config`, config],
@@ -46,6 +49,12 @@ const methods = new Map([
   [`${company}:list_distributions`, distributions], [`${dao}:get_policy`, policy],
   [`${dao}:get_last_proposal_id`, 0], [`${dao}:get_proposals`, []],
   [`${token}:ft_metadata`, { spec: "ft-1.0.0", name: "Test USD", symbol: "TESTUSD", decimals: 6 }],
+  [`${unsafeCompany}:get_totals`, { ...totals, dao_id: unsafeDao }],
+  [`${unsafeCompany}:get_config`, { ...config, dao_id: unsafeDao }],
+  [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
+  [`${unsafeCompany}:list_distributions`, distributions],
+  [`${unsafeDao}:get_policy`, policy], [`${unsafeDao}:get_last_proposal_id`, 0],
+  [`${unsafeDao}:get_proposals`, []],
 ]);
 
 createServer(async (request, response) => {
@@ -61,8 +70,9 @@ createServer(async (request, response) => {
     const params = rpc.params ?? {};
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);
     let result;
-    if (params.request_type === "view_code" && params.account_id === company) {
-      result = { code_base64: "", hash: "fixture-company-code-hash" };
+    if (params.request_type === "view_code" && [company, dao, unsafeDao].includes(params.account_id)) {
+      result = { code_base64: "", hash: params.account_id === dao
+        ? "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq" : "fixture-company-code-hash" };
     } else if (params.request_type === "call_function") {
       const key = `${params.account_id}:${params.method_name}`;
       if (!methods.has(key)) throw new Error(`Unsupported contract method ${key}`);
