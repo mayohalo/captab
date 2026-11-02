@@ -12,7 +12,7 @@ Current status: the company contract implements DAO-governed ownership, contribu
 
 Rust is pinned to 1.88.0 in `rust-toolchain.toml`; pnpm is pinned to 10.16.1. Run unit tests with `pnpm test:contract`, schedule tests with `pnpm test:vesting`, and full chain tests with `pnpm test:sandbox`. The sandbox script fetches official Sputnik DAO source at commit `5434a59dec23ee0c49df8c8c4350c208a7e75b0b`, builds it with Rust 1.88.0, and verifies the WASM SHA-256 `a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722`. Build the company WASM with `pnpm build:contract`. Install frontend dependencies with `pnpm install`, then run it with `pnpm --filter @captab/web dev`.
 
-The [Sandbox storage stress test](docs/STORAGE_LIMITS.md) measures 517,428 bytes for a company at the demo's holder, grant, distribution, and action limits, including contract code, and verifies a payout callback at those limits.
+The [Sandbox storage stress test](docs/STORAGE_LIMITS.md) measures 518,478 bytes for a company at the demo's holder, grant, distribution, and action limits, including contract code, and verifies a payout callback at those limits. The public company config exposes schema version 1 and those immutable limits for setup and deployment verification.
 
 The setup and distribution screens read the DAO's current settlement-token balance alongside the proposed funding budget. If that token view is unavailable, the balance is labeled unavailable while the company's authoritative ledger and distributions remain visible.
 

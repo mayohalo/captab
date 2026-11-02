@@ -6,6 +6,7 @@ const company = "company.testnet";
 const claimableCompany = "claimable.testnet";
 const dao = "board.testnet";
 const unsafeCompany = "unsafe.testnet";
+const legacyCompany = "legacy.testnet";
 const pausedCompany = "paused.testnet";
 const unsafeDao = "unsafe-board.testnet";
 const token = "testusd.testnet";
@@ -16,8 +17,10 @@ const totals = {
   unallocated_units: "2000000", ledger_revision: 4, holder_count: 3,
 };
 const config = {
+  schema_version: 1,
   dao_id: dao, snapshot_operator_id: "operator.testnet", settlement_token_id: token,
   authorized_units: "10000000", paused: false,
+  limits: { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 },
 };
 const holdings = [
   { account_id: "founder-a.testnet", issued_units: "3600000" },
@@ -84,6 +87,9 @@ const methods = new Map([
   [`${unsafeCompany}:list_holdings`, holdings], [`${unsafeCompany}:list_grants`, grants],
   [`${unsafeCompany}:get_grant`, grants], [`${unsafeCompany}:get_distribution`, distributions],
   [`${unsafeCompany}:list_distributions`, distributions],
+  [`${legacyCompany}:get_company`, { config: { ...config, schema_version: 0 }, totals }],
+  [`${legacyCompany}:list_holdings`, holdings], [`${legacyCompany}:list_grants`, grants],
+  [`${legacyCompany}:list_distributions`, distributions],
   [`${pausedCompany}:get_totals`, totals], [`${pausedCompany}:get_config`, { ...config, paused: true }],
   [`${pausedCompany}:get_company`, { config: { ...config, paused: true }, totals }],
   [`${pausedCompany}:list_holdings`, holdings], [`${pausedCompany}:list_grants`, grants],

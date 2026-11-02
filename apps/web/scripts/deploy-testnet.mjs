@@ -72,12 +72,16 @@ if (companyAccount.code_hash !== emptyHash && companyAccount.code_hash !== compa
 }
 
 const expectedConfig = { dao_id: daoId, snapshot_operator_id: operatorId, settlement_token_id: tokenId, authorized_units: units };
+const expectedLimits = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
+const matchesDemoConfig = value => value?.schema_version === 1 &&
+  Object.entries(expectedConfig).every(([key, expected]) => String(value[key]) === expected) &&
+  Object.entries(expectedLimits).every(([key, expected]) => value.limits?.[key] === expected);
 let config = null;
 if (companyAccount.code_hash === companyCodeHash) {
   try { config = await provider.callFunction({ contractId: companyId, method: "get_config", args: {} }); }
   catch { /* Code may be deployed but not initialized. */ }
 }
-if (config && Object.entries(expectedConfig).some(([key, value]) => String(config[key]) !== value)) {
+if (config && !matchesDemoConfig(config)) {
   throw new Error("Existing company initialization differs from requested configuration");
 }
 const alreadyInitialized = Boolean(config);
@@ -116,7 +120,7 @@ const [verifiedCode, verifiedConfig, totals, accessKeys] = await Promise.all([
   provider.callFunction({ contractId: companyId, method: "get_totals", args: {} }),
   provider.viewAccessKeyList({ accountId: companyId }),
 ]);
-if (verifiedCode.hash !== companyCodeHash || Object.entries(expectedConfig).some(([key, value]) => String(verifiedConfig[key]) !== value) ||
+if (verifiedCode.hash !== companyCodeHash || !matchesDemoConfig(verifiedConfig) ||
     totals.dao_id !== daoId || String(totals.authorized_units) !== units ||
     (!alreadyInitialized && (String(totals.issued_total) !== "0" || Number(totals.ledger_revision) !== 0))) {
   throw new Error("Deployment verification failed; inspect transaction receipts before retrying");
@@ -149,6 +153,7 @@ const manifest = {
   dao: { sourceCommit: "5434a59dec23ee0c49df8c8c4350c208a7e75b0b", sha256: pinnedDaoSha256, codeHash: daoCodeHash,
     council: members, defaultVotePolicy: vote },
   company: { sha256: companyDigest.toString("hex"), codeHash: companyCodeHash, authorizedUnits: units,
+    schemaVersion: verifiedConfig.schema_version, limits: verifiedConfig.limits,
     remainingAccessKeys: accessKeys.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })) },
   token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, sha256: tokenDigest.toString("hex"), codeHash: tokenCodeHash, storageRegistration, storageBalance },
   transactions, verifiedAt: new Date().toISOString(),

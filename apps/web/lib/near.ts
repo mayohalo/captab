@@ -5,8 +5,11 @@ export const network = "testnet";
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 
 export type Totals = { dao_id: string; authorized_units: string; issued_total: string; pool_available: string; grant_reserved: string; fully_diluted_total: string; unallocated_units: string; ledger_revision: number; holder_count: number };
-export type CompanyConfig = { dao_id: string; snapshot_operator_id: string; settlement_token_id: string; authorized_units: string; paused: boolean };
+export type CompanyConfig = { schema_version: number; dao_id: string; snapshot_operator_id: string; settlement_token_id: string;
+  authorized_units: string; paused: boolean; limits: { max_holders: number; max_grants: number; max_distributions: number;
+    max_actions: number; vesting_boundaries: number } };
 export type CompanySnapshot = { config: CompanyConfig; totals: Totals };
+const demoLimits = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
 export type { DaoPolicy, DaoAssessment } from "./dao-policy";
 export type DaoProposal = { id: number; proposer: string; description: string; kind: Record<string, unknown>; status: string; vote_counts: Record<string, number[]> };
 export type Holding = { account_id: string; issued_units: string };
@@ -42,6 +45,10 @@ export async function readCompany(contractId: string) {
     view<Distribution[]>(contractId, "list_distributions", { from_index: 0, limit: 20 }),
   ]);
   const { totals, config } = company;
+  if (config.schema_version !== 1 || Object.entries(demoLimits).some(([key, value]) =>
+    config.limits?.[key as keyof typeof demoLimits] !== value)) {
+    throw new Error("Unsupported company schema or demo limits.");
+  }
   const grants = grantPages.flat();
   let daoPolicy: DaoPolicy | null = null;
   let daoAssessment: DaoAssessment = { verified: false, reason: "DAO policy could not be verified." };

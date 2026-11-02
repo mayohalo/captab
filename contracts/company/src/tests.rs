@@ -125,6 +125,12 @@ fn combined_company_and_paged_entitlement_views_match_ledger_state() {
     assert_eq!(vesting.claimable_units.0, 25);
     c.claim_vested(grant_id);
     let company = c.get_company();
+    assert_eq!(company.config.schema_version, 1);
+    assert_eq!(company.config.limits.max_holders, 20);
+    assert_eq!(company.config.limits.max_grants, 100);
+    assert_eq!(company.config.limits.max_distributions, 20);
+    assert_eq!(company.config.limits.max_actions, 200);
+    assert_eq!(company.config.limits.vesting_boundaries, 49);
     assert_eq!(company.config.dao_id, aid("board.testnet"));
     assert_eq!(company.totals.issued_total.0, 225);
     assert_eq!(company.totals.grant_reserved.0, 75);

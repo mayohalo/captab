@@ -13,6 +13,7 @@ const VESTING_BOUNDARIES: usize = 49;
 const MAX_DISTRIBUTIONS: usize = 20;
 const MAX_AUTHORIZED_UNITS: u128 = 1_000_000_000_000_000;
 const MAX_DISTRIBUTION_BUDGET: u128 = 1_000_000_000_000_000_000;
+const SCHEMA_VERSION: u32 = 1;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -149,12 +150,24 @@ pub struct LedgerView {
 
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct DemoLimitsView {
+    pub max_holders: u32,
+    pub max_grants: u32,
+    pub max_distributions: u32,
+    pub max_actions: u32,
+    pub vesting_boundaries: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct CompanyConfigView {
+    pub schema_version: u32,
     pub dao_id: AccountId,
     pub snapshot_operator_id: AccountId,
     pub settlement_token_id: AccountId,
     pub authorized_units: U128,
     pub paused: bool,
+    pub limits: DemoLimitsView,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -243,11 +256,19 @@ impl Company {
 
     pub fn get_config(&self) -> CompanyConfigView {
         CompanyConfigView {
+            schema_version: SCHEMA_VERSION,
             dao_id: self.dao_id.clone(),
             snapshot_operator_id: self.snapshot_operator_id.clone(),
             settlement_token_id: self.settlement_token_id.clone(),
             authorized_units: U128(self.authorized_units),
             paused: self.paused,
+            limits: DemoLimitsView {
+                max_holders: MAX_HOLDERS as u32,
+                max_grants: MAX_GRANTS as u32,
+                max_distributions: MAX_DISTRIBUTIONS as u32,
+                max_actions: MAX_ACTIONS,
+                vesting_boundaries: VESTING_BOUNDARIES as u32,
+            },
         }
     }
 

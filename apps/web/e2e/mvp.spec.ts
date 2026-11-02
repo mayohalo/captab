@@ -78,11 +78,18 @@ test("setup inspects the configured company, DAO, and settlement token", async (
   await page.getByLabel("Company contract account").fill("company.testnet");
   await page.getByRole("button", { name: "Inspect on-chain setup" }).click();
   await expect(page.getByRole("heading", { name: "Company contract" })).toBeVisible();
+  await expect(page.getByText(/Schema v1 · limits 20 holders, 100 grants, 20 distributions, 200 actions/)).toBeVisible();
   await expect(page.getByText("Council accounts: 3 (expected)")).toBeVisible();
   await expect(page.getByText("Pinned Sputnik code and two-of-three council policy verified.")).toBeVisible();
   await expect(page.getByText("TESTUSD · 6 decimals")).toBeVisible();
   await page.getByRole("link", { name: "Open company governance" }).click();
   await expect(page.getByRole("heading", { name: "Ownership" })).toBeVisible();
+});
+
+test("setup rejects an unsupported company schema", async ({ page }) => {
+  await page.goto("/setup?company=legacy.testnet");
+  await expect(page.getByText("Unsupported company schema or demo limits.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open company governance" })).toHaveCount(0);
 });
 
 test("ownership, vesting, and a failed payout render from chain views", async ({ page }) => {

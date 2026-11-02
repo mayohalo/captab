@@ -77,6 +77,11 @@ async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::er
     assert_eq!(config["dao_id"], dao.id().as_str());
     assert_eq!(config["snapshot_operator_id"], operator.id().as_str());
     assert_eq!(config["settlement_token_id"], token.id().as_str());
+    assert_eq!(config["schema_version"], 1);
+    assert_eq!(config["limits"], json!({
+        "max_holders": 20, "max_grants": 100, "max_distributions": 20,
+        "max_actions": 200, "vesting_boundaries": 49,
+    }));
     let combined: Value = company.view("get_company").await?.json()?;
     assert_eq!(combined["config"], config);
     assert_eq!(combined["totals"]["issued_total"], "0");
