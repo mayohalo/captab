@@ -23,15 +23,15 @@ function assertTransactionSucceeded(status: unknown) {
   }
 }
 
-export function GovernancePanel({ id, totals, config, policy, daoVerified, proposals, grants, distributions }: {
+export function GovernancePanel({ id, totals, config, policy, daoVerified, proposals, grants, distributions, initialAction = "founder" }: {
   id: string; totals: Totals; config: CompanyConfig; policy: DaoPolicy | null;
-  daoVerified: boolean;
+  daoVerified: boolean; initialAction?: ProposalAction;
   proposals: DaoProposal[]; grants: Grant[]; distributions: Distribution[];
 }) {
   const router = useRouter();
   const [wallet, setWallet] = useState<NearWalletBase | null>(null);
   const [account, setAccount] = useState<string | null>(null);
-  const [action, setAction] = useState<ProposalAction>("founder");
+  const [action, setAction] = useState<ProposalAction>(initialAction);
   const [recipient, setRecipient] = useState("");
   const [units, setUnits] = useState("");
   const [startIso, setStartIso] = useState("");

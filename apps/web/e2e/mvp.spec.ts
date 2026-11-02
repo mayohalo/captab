@@ -80,6 +80,23 @@ test("ownership, vesting, and a failed payout render from chain views", async ({
   await expect(page.getByText("contributor.testnet · 41493776 · Failed · attempt 1")).toBeVisible();
 });
 
+test("dedicated company workflow routes open ledger, grant, approval, and distribution details", async ({ page }) => {
+  await page.goto("/company/company.testnet");
+  await page.getByRole("navigation", { name: "Company" }).getByRole("link", { name: "Ownership", exact: true }).click();
+  await expect(page).toHaveURL(/\/company\/company\.testnet\/ownership$/);
+  await expect(page.getByRole("heading", { name: "Ownership", level: 1 })).toBeVisible();
+  await page.getByRole("navigation", { name: "Company" }).getByRole("link", { name: "Grants" }).click();
+  await expect(page.getByRole("heading", { name: "Grants", level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Grant #20" }).click();
+  await expect(page.getByRole("heading", { name: "Grant #20", level: 1 })).toBeVisible();
+  await page.getByRole("navigation", { name: "Company" }).getByRole("link", { name: "Approvals" }).click();
+  await expect(page.getByRole("heading", { name: "Approvals", level: 1 })).toBeVisible();
+  await page.getByRole("navigation", { name: "Company" }).getByRole("link", { name: "Distributions" }).click();
+  await expect(page.getByRole("heading", { name: "Distributions", level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Distribution #0" }).click();
+  await expect(page.getByRole("heading", { name: "Distribution #0", level: 1 })).toBeVisible();
+});
+
 test("governance review binds a founder action to the current revision", async ({ page }) => {
   await page.goto("/company/company.testnet");
   const governance = page.locator("#governance");
