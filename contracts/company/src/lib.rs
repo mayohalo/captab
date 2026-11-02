@@ -157,6 +157,13 @@ pub struct CompanyConfigView {
     pub paused: bool,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct CompanyView {
+    pub config: CompanyConfigView,
+    pub totals: LedgerView,
+}
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -241,6 +248,13 @@ impl Company {
             settlement_token_id: self.settlement_token_id.clone(),
             authorized_units: U128(self.authorized_units),
             paused: self.paused,
+        }
+    }
+
+    pub fn get_company(&self) -> CompanyView {
+        CompanyView {
+            config: self.get_config(),
+            totals: self.get_totals(),
         }
     }
 
@@ -594,6 +608,22 @@ impl Company {
             })
     }
 
+    pub fn list_entitlements(
+        &self,
+        distribution_id: u64,
+        from_index: u32,
+        limit: u32,
+    ) -> Vec<EntitlementView> {
+        assert!(limit <= MAX_HOLDERS as u32, "page limit exceeded");
+        self.get_distribution(distribution_id)
+            .expect("distribution not found")
+            .entitlements
+            .into_iter()
+            .skip(from_index as usize)
+            .take(limit as usize)
+            .collect()
+    }
+
     pub fn list_distributions(&self, from_index: u32, limit: u32) -> Vec<DistributionView> {
         assert!(limit <= 20, "page limit exceeded");
         self.distribution_ids
@@ -741,6 +771,10 @@ impl Company {
         self.grants
             .get(&grant_id)
             .map(|grant| Self::grant_view(grant, env::block_timestamp_ms() / 1000))
+    }
+
+    pub fn get_vesting_status(&self, grant_id: u64) -> Option<GrantView> {
+        self.get_grant(grant_id)
     }
 
     pub fn list_grants(&self, from_index: u32, limit: u32) -> Vec<GrantView> {

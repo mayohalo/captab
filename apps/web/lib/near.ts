@@ -6,6 +6,7 @@ const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https:/
 
 export type Totals = { dao_id: string; authorized_units: string; issued_total: string; pool_available: string; grant_reserved: string; fully_diluted_total: string; unallocated_units: string; ledger_revision: number; holder_count: number };
 export type CompanyConfig = { dao_id: string; snapshot_operator_id: string; settlement_token_id: string; authorized_units: string; paused: boolean };
+export type CompanySnapshot = { config: CompanyConfig; totals: Totals };
 export type { DaoPolicy, DaoAssessment } from "./dao-policy";
 export type DaoProposal = { id: number; proposer: string; description: string; kind: Record<string, unknown>; status: string; vote_counts: Record<string, number[]> };
 export type Holding = { account_id: string; issued_units: string };
@@ -34,13 +35,13 @@ export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
 }
 
 export async function readCompany(contractId: string) {
-  const [totals, config, holdings, grantPages, distributions] = await Promise.all([
-    view<Totals>(contractId, "get_totals"),
-    view<CompanyConfig>(contractId, "get_config"),
+  const [company, holdings, grantPages, distributions] = await Promise.all([
+    view<CompanySnapshot>(contractId, "get_company"),
     view<Holding[]>(contractId, "list_holdings", { from_index: 0, limit: 20 }),
     Promise.all([0, 20, 40, 60, 80].map(from_index => view<Grant[]>(contractId, "list_grants", { from_index, limit: 20 }))),
     view<Distribution[]>(contractId, "list_distributions", { from_index: 0, limit: 20 }),
   ]);
+  const { totals, config } = company;
   const grants = grantPages.flat();
   let daoPolicy: DaoPolicy | null = null;
   let daoAssessment: DaoAssessment = { verified: false, reason: "DAO policy could not be verified." };

@@ -77,6 +77,9 @@ async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::er
     assert_eq!(config["dao_id"], dao.id().as_str());
     assert_eq!(config["snapshot_operator_id"], operator.id().as_str());
     assert_eq!(config["settlement_token_id"], token.id().as_str());
+    let combined: Value = company.view("get_company").await?.json()?;
+    assert_eq!(combined["config"], config);
+    assert_eq!(combined["totals"]["issued_total"], "0");
 
     let unauthorized = outsider
         .call(company.id(), "issue_founder_units")
@@ -143,6 +146,11 @@ async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::er
         founder.id().as_str()
     );
     assert_eq!(distribution["entitlements"][0]["amount"], "120");
+    let entitlements: Value = company.view("list_entitlements")
+        .args_json(json!({"distribution_id": 0, "from_index": 0, "limit": 1}))
+        .await?.json()?;
+    assert_eq!(entitlements.as_array().unwrap().len(), 1);
+    assert_eq!(entitlements[0]["amount"], "120");
     Ok(())
 }
 
@@ -493,6 +501,10 @@ async fn seeded_demo_lifecycle_settles_exact_amounts_after_retry(
     let claim = contributor.call(company.id(), "claim_vested")
         .args_json(json!({"grant_id": 0})).transact().await?;
     assert!(claim.is_success(), "cliff claim: {claim:?}");
+    let vesting: Value = company.view("get_vesting_status")
+        .args_json(json!({"grant_id": 0})).await?.json()?;
+    assert_eq!(vesting["issued_units"], "25000");
+    assert_eq!(vesting["claimable_units"], "0");
     let totals: Value = company.view("get_totals").await?.json()?;
     assert_eq!(totals["issued_total"], "6025000");
     assert_eq!(totals["pool_available"], "1900000");

@@ -111,6 +111,36 @@ fn assert_accounting_from_views(company: &Company) {
 }
 
 #[test]
+fn combined_company_and_paged_entitlement_views_match_ledger_state() {
+    let mut c = company();
+    set_caller("board.testnet");
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(100));
+    c.increase_pool("pool".into(), 2, U128(100));
+    let schedule = boundaries();
+    let grant_id = c.create_grant("grant".into(), 3, aid("employee.testnet"), U128(100), schedule.clone());
+    set_caller_at("employee.testnet", schedule[12]);
+    let vesting = c.get_vesting_status(grant_id).unwrap();
+    assert_eq!(vesting.vested_units.0, 25);
+    assert_eq!(vesting.claimable_units.0, 25);
+    c.claim_vested(grant_id);
+    let company = c.get_company();
+    assert_eq!(company.config.dao_id, aid("board.testnet"));
+    assert_eq!(company.totals.issued_total.0, 225);
+    assert_eq!(company.totals.grant_reserved.0, 75);
+    assert_eq!(company.totals.holder_count, 3);
+
+    set_caller_at("operator.testnet", schedule[12]);
+    let distribution_id = c.prepare_distribution(5, U128(100), schedule[48]);
+    let first = c.list_entitlements(distribution_id, 0, 2);
+    let last = c.list_entitlements(distribution_id, 2, 2);
+    assert_eq!(first.len(), 2);
+    assert_eq!(last.len(), 1);
+    assert_eq!(first.iter().chain(last.iter()).map(|row| row.amount.0).sum::<u128>(), 100);
+    assert!(c.list_entitlements(distribution_id, 3, 2).is_empty());
+}
+
+#[test]
 fn mixed_ledger_operations_preserve_accounting_after_every_step() {
     let mut company = company();
     set_caller("board.testnet");
