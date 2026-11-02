@@ -11,6 +11,7 @@ const legacyCompany = "legacy.testnet";
 const pausedCompany = "paused.testnet";
 const unsafeDao = "unsafe-board.testnet";
 const token = "testusd.testnet";
+const observedTxHash = "22222222222222222222222222222222";
 const boundaries = Array.from({ length: 49 }, (_, month) => Math.floor(Date.UTC(2025, month, 1) / 1000));
 const totals = {
   dao_id: dao, authorized_units: "10000000", issued_total: "6025000",
@@ -122,6 +123,20 @@ createServer(async (request, response) => {
     if (rpc.method === "status") {
       response.writeHead(200, { "Content-Type": "application/json" });
       response.end(JSON.stringify({ jsonrpc: "2.0", id: rpc.id, result: { chain_id: "testnet" } }));
+      return;
+    }
+    if (rpc.method === "tx" || rpc.method === "EXPERIMENTAL_tx_status") {
+      if (params.tx_hash !== observedTxHash || params.sender_account_id !== "alice.testnet") {
+        throw new Error("Unknown fixture transaction");
+      }
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ jsonrpc: "2.0", id: rpc.id, result: {
+        final_execution_status: "FINAL", status: { SuccessValue: "" },
+        transaction: { hash: observedTxHash, signer_id: "alice.testnet", receiver_id: claimableCompany, actions: [] },
+        receipts_outcome: [{ id: "fixture-observed-receipt", block_hash: "fixture-observed-block", outcome: {
+          executor_id: claimableCompany, logs: [], status: { SuccessValue: "" },
+        } }],
+      } }));
       return;
     }
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);

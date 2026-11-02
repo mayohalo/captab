@@ -1,5 +1,18 @@
 import { expect, test } from "@playwright/test";
 
+test("observation stores only a chain-recognized transaction for the selected company", async ({ request }) => {
+  const endpoint = "/api/transactions/observe";
+  const base = { companyId: "claimable.testnet", signerId: "alice.testnet" };
+  const unknown = await request.post(endpoint, { data: { ...base, txHash: "33333333333333333333333333333333" } });
+  expect(unknown.status()).toBe(502);
+  const wrongSigner = await request.post(endpoint, { data: { ...base, signerId: "mallory.testnet",
+    txHash: "22222222222222222222222222222222" } });
+  expect(wrongSigner.status()).toBe(502);
+  const known = await request.post(endpoint, { data: { ...base, txHash: "22222222222222222222222222222222" } });
+  expect(known.ok()).toBeTruthy();
+  expect((await known.json()).status).toBe("Confirmed");
+});
+
 test("company API audits the full ledger and reports tracked-history coverage", async ({ request }) => {
   const response = await request.get("/api/companies/company.testnet");
   expect(response.ok()).toBeTruthy();
@@ -12,13 +25,13 @@ test("company API audits the full ledger and reports tracked-history coverage", 
     headers: { authorization: "Bearer local-e2e-fixture-secret" },
   });
   expect(worker.ok()).toBeTruthy();
-  expect((await worker.json()).audits).toEqual([{ contractId: "company.testnet", state: "Consistent", issues: [] }]);
+  expect((await worker.json()).audits).toContainEqual({ contractId: "company.testnet", state: "Consistent", issues: [] });
   const refreshed = await (await request.get("/api/companies/company.testnet")).json();
   expect(refreshed.history.lastWorkerAudit.state).toBe("Consistent");
   const again = await request.post("/api/internal/reconcile", {
     headers: { authorization: "Bearer local-e2e-fixture-secret" },
   });
-  expect((await again.json()).audits).toEqual([]);
+  expect((await again.json()).audits.filter((audit: { contractId: string }) => audit.contractId === "company.testnet")).toEqual([]);
 });
 
 test("proposal API rebuilds exact actions from current chain state", async ({ request }) => {

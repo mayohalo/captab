@@ -3,6 +3,7 @@ import { JsonRpcProvider } from "near-api-js";
 import { ensureCompany, getDatabase } from "./db";
 import { assertTestnetNetwork, type CompanyConfig, view } from "./near";
 import { type FinalTransaction, persistFinalTransaction } from "./receipts";
+import { assertObservedTransaction } from "./transaction-identity.mjs";
 
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 
@@ -19,6 +20,8 @@ export type OperationRow = {
 
 export async function registerOperation(contractId: string, txHash: string, signerId: string): Promise<OperationRow> {
   const config = await view<CompanyConfig>(contractId, "get_config");
+  const included = await provider.viewTransactionStatus({ txHash, accountId: signerId, waitUntil: "INCLUDED" });
+  assertObservedTransaction(included, { txHash, signerId, companyId: contractId, daoId: config.dao_id });
   const db = getDatabase();
   const companyId = ensureCompany(db, contractId, config.dao_id);
   db.prepare(`INSERT INTO operations (id, company_id, network, tx_hash, signer_id, status)

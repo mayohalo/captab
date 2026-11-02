@@ -19,6 +19,7 @@ pnpm test:receipts
 pnpm test:vesting
 pnpm test:deployment
 pnpm test:network
+pnpm test:observation
 pnpm test:e2e
 pnpm test:sandbox
 pnpm --dir apps/web build
