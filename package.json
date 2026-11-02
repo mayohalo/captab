@@ -13,6 +13,7 @@
     "test:hash": "pnpm --filter @captab/web test:hash",
     "test:payments": "pnpm --filter @captab/web test:payments",
     "test:sponsor": "pnpm --filter @captab/web test:sponsor",
+    "test:deployment": "pnpm --filter @captab/web test:deployment",
     "test:sandbox": "bash scripts/build-sputnik.sh && cargo build -p captab-company -p captab-test-token --target wasm32-unknown-unknown --release && cargo test -p captab-company --test sandbox",
     "build:contract": "cargo build -p captab-company --target wasm32-unknown-unknown --release",
     "deploy:testnet": "pnpm --filter @captab/web deploy:testnet",

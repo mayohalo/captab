@@ -32,7 +32,7 @@ Copy `apps/web/.env.example` to `apps/web/.env.local`. Set the actual account ID
 
 ## 3. Bootstrap the DAO, token, and company
 
-Run each read-only preflight and review the printed account IDs, code hashes, council, token metadata, and action. Each command refuses a non-testnet RPC endpoint or incompatible code already on an account.
+Run each read-only preflight and review the printed account IDs, code hashes, council, token metadata, and action. The company preflight also prints the current account balance and a conservative storage funding estimate based on the live protocol storage price, the release WASM, measured demo state growth, a 100,000-byte buffer, and 1 NEAR of transaction headroom. Fund any printed shortfall before `--apply`; the script refuses deployment writes when the company account is underfunded. Each command refuses a non-testnet RPC endpoint or incompatible code already on an account.
 
 ```sh
 pnpm bootstrap:dao

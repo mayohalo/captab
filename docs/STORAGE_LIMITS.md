@@ -12,3 +12,5 @@ Measured company account storage usage with the release WASM on the local Sandbo
 | All demo object/action limits filled | 518,478 | 114,320 |
 
 The final 518,478 bytes includes contract code and state. The stress test asserts that state growth stays below 1,000,000 bytes and, more importantly, executes funding and the payout callback after all four object/action limits have been reached. This is a measurement for the pinned contracts and test data, not a promise that all future contract revisions or account-ID lengths have the same footprint. Re-run `pnpm test:sandbox` after contract changes and fund the company account with enough NEAR to cover its actual storage on the target network plus transaction headroom.
+
+`pnpm deploy:testnet` computes a conservative funding preflight using the target network's protocol storage price. It adds the local release WASM size when deploying to an empty account, the measured 114,320-byte maximum demo state growth before initialization, a 100,000-byte buffer, and 1 NEAR for transaction fees. This estimate does not replace checking the account's actual storage and balance after deployment.

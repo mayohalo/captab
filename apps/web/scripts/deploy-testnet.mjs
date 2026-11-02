@@ -3,6 +3,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, teraToGas } from "near-api-js";
+import { assessCompanyFunding, DEMO_STATE_GROWTH_BYTES } from "../lib/storage-funding.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -47,13 +48,14 @@ if (daoDigest.toString("hex") !== pinnedDaoSha256) throw new Error("Local Sputni
 
 const provider = new JsonRpcProvider({ url: rpcUrl });
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
-const [daoCode, tokenCode, policy, tokenMetadata, companyAccount, initialStorage] = await Promise.all([
+const [daoCode, tokenCode, policy, tokenMetadata, companyAccount, initialStorage, protocolConfig] = await Promise.all([
   provider.viewContractCode({ contractId: daoId }),
   provider.viewContractCode({ contractId: tokenId }),
   provider.callFunction({ contractId: daoId, method: "get_policy", args: {} }),
   provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {} }),
   provider.viewAccount({ accountId: companyId }),
   provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId } }).catch(() => undefined),
+  provider.experimental_protocolConfig({ finality: "final" }),
 ]);
 if (daoCode.hash !== daoCodeHash) throw new Error("Deployed DAO code hash does not match pinned Sputnik build");
 if (tokenCode.hash !== tokenCodeHash) throw new Error("Deployed token code hash does not match local TESTUSD fixture");
@@ -88,13 +90,27 @@ if (config && !matchesDemoConfig(config)) {
   throw new Error("Existing company initialization differs from requested configuration");
 }
 const alreadyInitialized = Boolean(config);
+const storagePricePerByte = protocolConfig?.runtime_config?.storage_amount_per_byte;
+if (!storagePricePerByte) throw new Error("Testnet protocol storage price is unavailable; cannot assess company funding");
+const funding = assessCompanyFunding({
+  storageUsage: companyAccount.storage_usage,
+  accountBalance: companyAccount.amount,
+  codeBytesToAdd: companyAccount.code_hash === emptyHash ? companyWasm.length : 0,
+  stateGrowthBytes: alreadyInitialized ? 0 : DEMO_STATE_GROWTH_BYTES,
+  storagePricePerByte,
+});
+const needsWrite = companyAccount.code_hash === emptyHash || !alreadyInitialized || !initialStorage;
 console.log(JSON.stringify({ network: "testnet", companyId, daoId, council: members, operatorId, tokenId,
   token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, wasmSha256: tokenDigest.toString("hex"), companyStorage: initialStorage ? "registered" : "missing or unavailable" },
   companyWasmSha256: companyDigest.toString("hex"), daoWasmSha256: daoDigest.toString("hex"),
-  action: config ? "verify existing deployment" : companyAccount.code_hash === emptyHash ? "deploy and initialize" : "initialize existing code" }, null, 2));
+  action: config ? "verify existing deployment" : companyAccount.code_hash === emptyHash ? "deploy and initialize" : "initialize existing code",
+  companyFunding: funding }, null, 2));
 if (!apply) {
   console.log("Preflight only. Pass --apply with the company account key to deploy or initialize.");
   process.exit(0);
+}
+if (needsWrite && !funding.funded) {
+  throw new Error(`Company account needs at least ${funding.shortfallYocto} more yoctoNEAR for projected storage and transaction headroom before deployment writes`);
 }
 
 let company;
@@ -157,7 +173,8 @@ const manifest = {
     council: members, defaultVotePolicy: vote },
   company: { sha256: companyDigest.toString("hex"), codeHash: companyCodeHash, authorizedUnits: units,
     schemaVersion: verifiedConfig.schema_version, limits: verifiedConfig.limits,
-    remainingAccessKeys: accessKeys.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })) },
+    remainingAccessKeys: accessKeys.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })),
+    storageFundingPreflight: funding },
   token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, sha256: tokenDigest.toString("hex"), codeHash: tokenCodeHash, storageRegistration, storageBalance },
   transactions, verifiedAt: new Date().toISOString(),
 };

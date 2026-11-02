@@ -40,6 +40,7 @@ jobs:
           pnpm test:hash
           pnpm test:payments
           pnpm test:sponsor
+          pnpm test:deployment
       - name: Build web app
         run: pnpm --dir apps/web build
       - name: Install Chromium for browser tests
