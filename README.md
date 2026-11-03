@@ -6,6 +6,8 @@ For a reproducible testnet deployment and demo, follow the [runbook](docs/RUNBOO
 
 The [fixture-backed fallback walkthrough](docs/demo/README.md) includes a short video and screenshots of the UI, clearly labeled as local fixtures. Run `pnpm demo:fallback` to regenerate them.
 
+The [release status](docs/RELEASE_STATUS.md) lists local verification evidence and the remaining live testnet gates.
+
 After deployment and rehearsal, `pnpm verify:testnet` performs a read-only release check against the deployment manifest, local WASM artifacts, and live testnet state. It exits nonzero if code, policy, token registration, company accounting, access keys, or storage funding drift.
 
 The company overview links to dedicated `/ownership`, `/grants`, `/approvals`, and `/distributions` workflows, with grant and distribution detail pages. `/me` shows the connected account's holdings, claims, and entitlements; `/activity` shows tracked receipts and DAO proposals.
