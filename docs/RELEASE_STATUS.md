@@ -12,7 +12,7 @@ This is the current release audit against [the implementation plan](../IMPLEMENT
 | Production bundle | `pnpm --dir apps/web build` completed | Verified locally |
 | Cold install and production build | Exact committed tree in an isolated checkout: frozen pnpm install, production web build, and company WASM build passed. A second fresh Cargo target produced the same company WASM SHA-256 (`fbfdf573d050b48f945bb12bb2f33eca097a2d1961d8ccced8896507407f98da`). Build scripts now clear stale WASM target artifacts before compilation. | Verified locally |
 | Deploy from fresh accounts | Requires funded testnet accounts and local deployment keys | Open |
-| Callback failure and worker crash recovery | Unit tests keep in-flight attempts locked and stale worker claims in `NeedsReview`; an actual successful-transfer/failed-callback receipt and full process-restart rehearsal were not produced | Partially verified |
+| Callback failure and worker crash recovery | Unit tests keep in-flight attempts locked. `pnpm test:payments` now restarts the database recovery path in separate Node processes and confirms a stale claim stays `NeedsReview` with one attempt. An actual successful-transfer/failed-callback receipt and end-to-end worker/server restart rehearsal were not produced. | Partially verified |
 | Fallback presentation | [Labeled fixture video and screenshots](demo/README.md); `pnpm demo:fallback` passed | Available; not live-chain evidence |
 | Testnet account funding and deployment | `apps/web/.env.local` and `docs/deployment-manifest.testnet.json` are absent | Open |
 | Live release hash, DAO policy, token registration, storage, accounting, and key audit | `pnpm verify:testnet` is implemented but has no manifest or deployed accounts to check | Open |

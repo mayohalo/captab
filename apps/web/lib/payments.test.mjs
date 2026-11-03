@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { openDatabase, ensureCompany } from "./db.ts";
 import { classifyPayment, markAbandonedClaimsForReview } from "./payment-state.ts";
 
@@ -43,4 +47,45 @@ test("abandoned worker claims become review-only without creating another attemp
     assert.equal(rows[1].submission_state, "Claimed");
     assert.equal(rows.length, 2);
   } finally { db.close(); }
+});
+
+test("a worker restart preserves a stale claim for review across processes", () => {
+  const directory = mkdtempSync(join(tmpdir(), "captab-worker-restart-"));
+  const filename = join(directory, "jobs.sqlite");
+  const dbModule = JSON.stringify(new URL("./db.ts", import.meta.url).href);
+  const stateModule = JSON.stringify(new URL("./payment-state.ts", import.meta.url).href);
+  const runProcess = source => {
+    const child = spawnSync(process.execPath, ["--experimental-strip-types", "--input-type=module", "-e", source, filename], { encoding: "utf8" });
+    assert.equal(child.status, 0, child.stderr || child.stdout);
+  };
+  try {
+    runProcess(`
+      import { openDatabase, ensureCompany } from ${dbModule};
+      const db = openDatabase(process.argv[1]);
+      const companyId = ensureCompany(db, "company.testnet", "dao.testnet");
+      db.prepare("INSERT INTO payment_jobs (company_id, distribution_id, recipient_id, attempt_id, submission_state, updated_at) VALUES (?, 7, 'alice.testnet', 1, 'Claimed', datetime('now', '-121 seconds'))").run(companyId);
+      db.close();
+    `);
+    runProcess(`
+      import assert from "node:assert/strict";
+      import { openDatabase } from ${dbModule};
+      import { markAbandonedClaimsForReview } from ${stateModule};
+      const db = openDatabase(process.argv[1]);
+      assert.equal(markAbandonedClaimsForReview(db).length, 1);
+      const rows = db.prepare("SELECT attempt_id, submission_state, tx_hash FROM payment_jobs").all();
+      assert.deepEqual(rows, [{ attempt_id: 1, submission_state: "NeedsReview", tx_hash: null }]);
+      db.close();
+    `);
+    runProcess(`
+      import assert from "node:assert/strict";
+      import { openDatabase } from ${dbModule};
+      import { markAbandonedClaimsForReview } from ${stateModule};
+      const db = openDatabase(process.argv[1]);
+      assert.deepEqual(markAbandonedClaimsForReview(db), []);
+      assert.equal(db.prepare("SELECT count(*) AS count FROM payment_jobs WHERE submission_state = 'NeedsReview'").get().count, 1);
+      db.close();
+    `);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
