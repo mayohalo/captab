@@ -27,7 +27,11 @@ if (state.code_hash === codeHash) {
   try { metadata = await provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {} }); }
   catch { /* Pinned token code exists but initialization remains pending. */ }
 }
-if (metadata && (metadata.symbol !== "TESTUSD" || metadata.decimals !== 6)) throw new Error("Existing token metadata differs from TESTUSD fixture");
+if (metadata && (metadata.spec !== "ft-1.0.0" || metadata.symbol !== "TESTUSD" || metadata.decimals !== 6)) throw new Error("Existing token metadata differs from TESTUSD fixture");
+if (metadata) {
+  const currentSupply = await provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {} });
+  if (String(currentSupply) !== supply) throw new Error("Existing token supply differs from configured TESTUSD supply");
+}
 console.log(JSON.stringify({ network: "testnet", tokenId, daoId, totalSupplyBaseUnits: supply,
   wasmSha256: digest.toString("hex"), action: metadata ? "verify existing token" : state.code_hash === emptyHash ? "deploy and initialize token" : "initialize pinned token code" }, null, 2));
 if (!apply) { console.log("Preflight only. Pass --apply with the token account key to deploy or initialize."); process.exit(0); }
@@ -52,7 +56,7 @@ const [verifiedCode, verifiedMetadata, totalSupply, daoBalance] = await Promise.
   provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {} }),
   provider.callFunction({ contractId: tokenId, method: "ft_balance_of", args: { account_id: daoId } }),
 ]);
-if (verifiedCode.hash !== codeHash || verifiedMetadata.symbol !== "TESTUSD" || verifiedMetadata.decimals !== 6 ||
+if (verifiedCode.hash !== codeHash || verifiedMetadata.spec !== "ft-1.0.0" || verifiedMetadata.symbol !== "TESTUSD" || verifiedMetadata.decimals !== 6 ||
     String(totalSupply) !== supply || (!metadata && String(daoBalance) !== supply)) {
   throw new Error("Token deployment verification failed; inspect receipts before retrying");
 }

@@ -26,6 +26,7 @@ const companyId = process.env.CAPTAB_COMPANY_ACCOUNT_ID;
 const daoId = process.env.CAPTAB_DAO_ACCOUNT_ID;
 const operatorId = process.env.CAPTAB_OPERATOR_ACCOUNT_ID;
 const tokenId = process.env.CAPTAB_TOKEN_ACCOUNT_ID;
+const tokenSupply = process.env.CAPTAB_TOKEN_SUPPLY ?? "100000000000";
 const units = process.env.CAPTAB_AUTHORIZED_UNITS;
 const companyKey = process.env.CAPTAB_COMPANY_PRIVATE_KEY;
 const validAccount = id => typeof id === "string" && /^(?=.{2,64}$)[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(id);
@@ -33,6 +34,7 @@ if (![companyId, daoId, operatorId, tokenId].every(validAccount) || !/^[1-9][0-9
   throw new Error("Set CAPTAB_COMPANY_ACCOUNT_ID, CAPTAB_DAO_ACCOUNT_ID, CAPTAB_OPERATOR_ACCOUNT_ID, CAPTAB_TOKEN_ACCOUNT_ID, and positive CAPTAB_AUTHORIZED_UNITS");
 }
 if (BigInt(units) > 1_000_000_000_000_000n) throw new Error("Authorized units exceed the contract limit");
+if (!/^[1-9][0-9]*$/.test(tokenSupply)) throw new Error("CAPTAB_TOKEN_SUPPLY must be a positive base-unit amount");
 
 const sha256 = bytes => createHash("sha256").update(bytes).digest();
 const [companyWasm, daoWasm, tokenWasm] = await Promise.all([readFile(companyWasmPath), readFile(daoWasmPath), readFile(tokenWasmPath)]);
@@ -49,11 +51,12 @@ if (daoDigest.toString("hex") !== pinnedDaoSha256) throw new Error("Local Sputni
 
 const provider = new JsonRpcProvider({ url: rpcUrl });
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
-const [daoCode, tokenCode, policy, tokenMetadata, companyAccount, initialStorage, protocolConfig] = await Promise.all([
+const [daoCode, tokenCode, policy, tokenMetadata, actualTokenSupply, companyAccount, initialStorage, protocolConfig] = await Promise.all([
   provider.viewContractCode({ contractId: daoId }),
   provider.viewContractCode({ contractId: tokenId }),
   provider.callFunction({ contractId: daoId, method: "get_policy", args: {} }),
   provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {} }),
+  provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {} }),
   provider.viewAccount({ accountId: companyId }),
   provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId } }).catch(() => undefined),
   provider.experimental_protocolConfig({ finality: "final" }),
@@ -74,6 +77,10 @@ if (previousManifest?.dao?.policy && canonicalJson(policy) !== canonicalJson(pre
 }
 if (!tokenMetadata || tokenMetadata.spec !== "ft-1.0.0" || tokenMetadata.symbol !== "TESTUSD" || tokenMetadata.decimals !== 6) {
   throw new Error("Settlement token lacks valid NEP-141 metadata");
+}
+if (String(actualTokenSupply) !== tokenSupply) throw new Error("Settlement token supply differs from configured TESTUSD supply");
+if (previousManifest?.token?.totalSupply && previousManifest.token.totalSupply !== tokenSupply) {
+  throw new Error("Settlement token supply changed since the deployment manifest; review it before refreshing release evidence");
 }
 const emptyHash = baseEncode(new Uint8Array(32));
 if (companyAccount.code_hash !== emptyHash && companyAccount.code_hash !== companyCodeHash) {
@@ -105,7 +112,8 @@ const funding = assessCompanyFunding({
 });
 const needsWrite = companyAccount.code_hash === emptyHash || !alreadyInitialized || !initialStorage;
 console.log(JSON.stringify({ network: "testnet", companyId, daoId, council: members, operatorId, tokenId,
-  token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, wasmSha256: tokenDigest.toString("hex"), companyStorage: initialStorage ? "registered" : "missing or unavailable" },
+  token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, totalSupply: String(actualTokenSupply),
+    wasmSha256: tokenDigest.toString("hex"), companyStorage: initialStorage ? "registered" : "missing or unavailable" },
   companyWasmSha256: companyDigest.toString("hex"), daoWasmSha256: daoDigest.toString("hex"),
   action: config ? "verify existing deployment" : companyAccount.code_hash === emptyHash ? "deploy and initialize" : "initialize existing code",
   companyFunding: funding }, null, 2));
@@ -179,7 +187,8 @@ const manifest = {
     schemaVersion: verifiedConfig.schema_version, limits: verifiedConfig.limits,
     remainingAccessKeys: accessKeys.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })),
     storageFundingPreflight: funding },
-  token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, sha256: tokenDigest.toString("hex"), codeHash: tokenCodeHash, storageRegistration, storageBalance },
+  token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, totalSupply: String(actualTokenSupply),
+    sha256: tokenDigest.toString("hex"), codeHash: tokenCodeHash, storageRegistration, storageBalance },
   transactions, verifiedAt: new Date().toISOString(),
 };
 await mkdir(dirname(manifestPath), { recursive: true });

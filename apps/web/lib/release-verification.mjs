@@ -34,6 +34,9 @@ export function assessRelease({ manifest, artifacts, chain, funding }) {
   check(chain?.tokenMetadata?.spec === "ft-1.0.0" && chain.tokenMetadata.symbol === "TESTUSD" &&
     chain.tokenMetadata.decimals === 6 && manifest?.token?.symbol === "TESTUSD" && manifest.token.decimals === 6,
   "Settlement token metadata differs from the six-decimal TESTUSD fixture.");
+  check(typeof manifest?.token?.totalSupply === "string" && /^[1-9][0-9]*$/.test(manifest.token.totalSupply) &&
+    String(chain?.tokenSupply) === manifest.token.totalSupply,
+  "Settlement token total supply differs from the frozen manifest.");
   const config = chain?.config;
   check(config?.schema_version === 1 && manifest?.company?.schemaVersion === 1 &&
     config?.dao_id === manifest?.daoId && config?.snapshot_operator_id === manifest?.operatorId &&

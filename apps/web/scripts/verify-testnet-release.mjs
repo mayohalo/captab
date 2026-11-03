@@ -20,12 +20,13 @@ const artifacts = Object.fromEntries(await Promise.all(Object.entries(paths).map
 })));
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
-const [companyCode, daoCode, tokenCode, policy, tokenMetadata, config, totals, accessKeyList, storageBalance, account, protocol] = await Promise.all([
+const [companyCode, daoCode, tokenCode, policy, tokenMetadata, tokenSupply, config, totals, accessKeyList, storageBalance, account, protocol] = await Promise.all([
   provider.viewContractCode({ contractId: manifest.companyId }),
   provider.viewContractCode({ contractId: manifest.daoId }),
   provider.viewContractCode({ contractId: manifest.tokenId }),
   provider.callFunction({ contractId: manifest.daoId, method: "get_policy", args: {} }),
   provider.callFunction({ contractId: manifest.tokenId, method: "ft_metadata", args: {} }),
+  provider.callFunction({ contractId: manifest.tokenId, method: "ft_total_supply", args: {} }),
   provider.callFunction({ contractId: manifest.companyId, method: "get_config", args: {} }),
   provider.callFunction({ contractId: manifest.companyId, method: "get_totals", args: {} }),
   provider.viewAccessKeyList({ accountId: manifest.companyId }),
@@ -37,7 +38,7 @@ const funding = assessCompanyFunding({ storageUsage: account.storage_usage, acco
   codeBytesToAdd: 0, stateGrowthBytes: 0, storagePricePerByte: protocol.runtime_config.storage_amount_per_byte });
 const issues = assessRelease({ manifest, artifacts, funding, chain: {
   companyCodeHash: companyCode.hash, daoCodeHash: daoCode.hash, tokenCodeHash: tokenCode.hash,
-  policy, tokenMetadata, config, totals, storageBalance,
+  policy, tokenMetadata, tokenSupply, config, totals, storageBalance,
   accessKeys: accessKeyList.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })),
 } });
 if (process.env.CAPTAB_COMPANY_CODE_HASH !== manifest.company.codeHash) issues.push("CAPTAB_COMPANY_CODE_HASH does not match the release manifest.");
