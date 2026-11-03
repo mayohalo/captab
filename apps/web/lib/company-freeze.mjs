@@ -1,4 +1,5 @@
 import { canonicalJson } from "./release-verification.mjs";
+import { Account, PublicKey, actions } from "near-api-js";
 
 export function publicAccessKeys(accessKeyList) {
   return accessKeyList.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission }));
@@ -22,4 +23,20 @@ export function assessCompanyFreeze({ manifest, codeHash, accessKeys, deployment
   }
   if (manifest?.company?.frozen === true) issues.push("Company is already marked frozen in the manifest.");
   return issues;
+}
+
+export async function removeCompanyDeploymentKey({ provider, companyId, privateKey, publicKey, expectedCodeHash }) {
+  const company = new Account(companyId, provider, privateKey);
+  const result = await company.signAndSendTransaction({ receiverId: companyId,
+    actions: [actions.deleteKey(PublicKey.fromString(publicKey))], waitUntil: "FINAL" });
+  const finalQuery = { finality: "final" };
+  const [code, keys] = await Promise.all([
+    provider.viewContractCode({ contractId: companyId, blockQuery: finalQuery }),
+    provider.viewAccessKeyList({ accountId: companyId, finalityQuery: finalQuery }),
+  ]);
+  const remainingAccessKeys = publicAccessKeys(keys);
+  if (code.hash !== expectedCodeHash || remainingAccessKeys.some(key => key.permission === "FullAccess" || key.publicKey === publicKey)) {
+    throw new Error("Post-removal chain state is unexpected; inspect the key-removal receipt before refreshing the manifest");
+  }
+  return { txHash: result.transaction.hash, remainingAccessKeys };
 }

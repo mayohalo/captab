@@ -4,6 +4,35 @@ use near_workspaces::{Account, AccountDetailsPatch, Contract};
 use serde_json::{json, Value};
 
 #[tokio::test]
+async fn deployment_key_can_be_removed_without_changing_company_code(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/wasm32-unknown-unknown/release/captab_company.wasm"))?;
+    let worker = near_workspaces::sandbox().await?;
+    let company = worker.dev_deploy(&wasm).await?;
+    let dao = worker.dev_create_account().await?;
+    let operator = worker.dev_create_account().await?;
+    let token = worker.dev_create_account().await?;
+    assert!(company.call("new").args_json(json!({
+        "dao_id": dao.id(), "snapshot_operator_id": operator.id(),
+        "settlement_token_id": token.id(), "authorized_units": "1000"
+    })).transact().await?.is_success());
+
+    let script = concat!(env!("CARGO_MANIFEST_DIR"), "/../../apps/web/scripts/sandbox-freeze-company.mjs");
+    let output = std::process::Command::new("node")
+        .arg(script)
+        .env("SANDBOX_RPC_URL", worker.rpc_addr())
+        .env("SANDBOX_COMPANY_ID", company.id().as_str())
+        .env("SANDBOX_COMPANY_KEY", company.as_account().secret_key().to_string())
+        .output()?;
+    assert!(output.status.success(), "freeze helper failed: {}", String::from_utf8_lossy(&output.stderr));
+    let frozen: Value = serde_json::from_slice(&output.stdout)?;
+    assert_eq!(frozen["remainingAccessKeys"], json!([]));
+    let config: Value = company.view("get_config").await?.json()?;
+    assert_eq!(config["dao_id"], dao.id().as_str());
+    Ok(())
+}
+
+#[tokio::test]
 async fn zero_balance_contributor_claims_through_signed_delegate(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/wasm32-unknown-unknown/release/captab_company.wasm"))?;

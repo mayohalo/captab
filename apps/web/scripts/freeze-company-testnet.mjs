@@ -3,8 +3,8 @@ import { spawnSync } from "node:child_process";
 import { readFile, rename, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Account, JsonRpcProvider, KeyPair, PublicKey, actions } from "near-api-js";
-import { assessCompanyFreeze, publicAccessKeys } from "../lib/company-freeze.mjs";
+import { JsonRpcProvider, KeyPair } from "near-api-js";
+import { assessCompanyFreeze, publicAccessKeys, removeCompanyDeploymentKey } from "../lib/company-freeze.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -48,19 +48,10 @@ if (!apply) {
 }
 if (!privateKey) throw new Error("Set CAPTAB_COMPANY_PRIVATE_KEY locally before --apply");
 
-const company = new Account(companyId, provider, privateKey);
-const result = await company.signAndSendTransaction({ receiverId: companyId,
-  actions: [actions.deleteKey(PublicKey.fromString(signingPublicKey))], waitUntil: "FINAL" });
-const [verifiedCode, verifiedKeys] = await Promise.all([
-  provider.viewContractCode({ contractId: companyId, blockQuery: finalQuery }),
-  provider.viewAccessKeyList({ accountId: companyId, finalityQuery: finalQuery }),
-]);
-const remainingAccessKeys = publicAccessKeys(verifiedKeys);
-if (verifiedCode.hash !== manifest.company.codeHash || remainingAccessKeys.some(key => key.permission === "FullAccess" || key.publicKey === signingPublicKey)) {
-  throw new Error("Post-removal chain state is unexpected; inspect the key-removal receipt before refreshing the manifest");
-}
+const { txHash, remainingAccessKeys } = await removeCompanyDeploymentKey({ provider, companyId, privateKey,
+  publicKey: signingPublicKey, expectedCodeHash: manifest.company.codeHash });
 const updated = { ...manifest, company: { ...manifest.company, frozen: true, remainingAccessKeys },
-  transactions: { ...manifest.transactions, keyRemoval: result.transaction.hash }, verifiedAt: new Date().toISOString() };
+  transactions: { ...manifest.transactions, keyRemoval: txHash }, verifiedAt: new Date().toISOString() };
 const temporaryPath = `${manifestPath}.${randomUUID()}.tmp`;
 await writeFile(temporaryPath, `${JSON.stringify(updated, null, 2)}\n`);
 await rename(temporaryPath, manifestPath);
