@@ -7,6 +7,9 @@ license.workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+sandbox-failed-callback = []
+
 [dependencies]
 near-sdk = { version = "=5.17.2", features = ["legacy"] }
 

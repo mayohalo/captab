@@ -255,6 +255,67 @@ async fn bounded_storage_still_allows_payment_callback_at_demo_limits() -> Resul
 }
 
 #[tokio::test]
+async fn successful_token_transfer_with_failed_callback_stays_locked(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let company_wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/callback-failure/wasm32-unknown-unknown/release/captab_company.wasm"))?;
+    let token_wasm = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/wasm32-unknown-unknown/release/captab_test_token.wasm"))?;
+    let worker = near_workspaces::sandbox().await?;
+    let company = worker.dev_deploy(&company_wasm).await?;
+    let token = worker.dev_deploy(&token_wasm).await?;
+    let dao = worker.dev_create_account().await?;
+    let operator = worker.dev_create_account().await?;
+    let holder = worker.dev_create_account().await?;
+    assert!(token.call("new").args_json(json!({"owner_id": dao.id(), "total_supply": "100"})).transact().await?.is_success());
+    for account_id in [company.id(), holder.id()] {
+        assert!(dao.call(token.id(), "storage_deposit")
+            .args_json(json!({"account_id": account_id, "registration_only": true}))
+            .deposit(NearToken::from_millinear(10)).transact().await?.is_success());
+    }
+    assert!(company.call("new").args_json(json!({
+        "dao_id": dao.id(), "snapshot_operator_id": operator.id(),
+        "settlement_token_id": token.id(), "authorized_units": "100"
+    })).transact().await?.is_success());
+    assert!(dao.call(company.id(), "issue_founder_units").args_json(json!({
+        "action_id": "issue-holder", "expected_revision": 0, "recipient": holder.id(), "units": "100"
+    })).transact().await?.is_success());
+    assert!(operator.call(company.id(), "prepare_distribution").args_json(json!({
+        "expected_revision": 1, "budget": "100", "expires_at": 4_102_444_800u64
+    })).transact().await?.is_success());
+    let prepared: Value = company.view("get_distribution").args_json(json!({"distribution_id": 0})).await?.json()?;
+    assert!(dao.call(company.id(), "approve_distribution").args_json(json!({
+        "action_id": "approve-0", "distribution_id": 0, "schedule_hash": prepared["schedule_hash"]
+    })).transact().await?.is_success());
+    assert!(dao.call(token.id(), "ft_transfer_call").args_json(json!({
+        "receiver_id": company.id(), "amount": "100",
+        "msg": json!({"distribution_id": 0, "schedule_hash": prepared["schedule_hash"]}).to_string()
+    })).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?.is_success());
+
+    let payout = operator.call(company.id(), "pay_recipient")
+        .args_json(json!({"distribution_id": 0, "recipient_id": holder.id()}))
+        .max_gas().transact().await?;
+    assert!(payout.receipt_outcomes().iter().any(|receipt| receipt.executor_id.as_str() == token.id().as_str() && receipt.is_success()),
+        "token transfer did not succeed: {payout:?}");
+    assert!(payout.receipt_outcomes().iter().any(|receipt| receipt.executor_id.as_str() == company.id().as_str() && receipt.is_failure()),
+        "fault-injected callback did not fail: {payout:?}");
+    let balance: Value = token.view("ft_balance_of").args_json(json!({"account_id": holder.id()})).await?.json()?;
+    assert_eq!(balance, "100");
+    let locked: Value = company.view("get_distribution").args_json(json!({"distribution_id": 0})).await?.json()?;
+    assert_eq!(locked["available_escrow"], "0");
+    assert_eq!(locked["in_flight_total"], "100");
+    assert_eq!(locked["paid_total"], "0");
+    assert_eq!(locked["entitlements"][0]["payment_status"], "InFlight");
+    assert_eq!(locked["entitlements"][0]["attempt_id"], 1);
+
+    let retry = operator.call(company.id(), "pay_recipient")
+        .args_json(json!({"distribution_id": 0, "recipient_id": holder.id()}))
+        .max_gas().transact().await?;
+    assert!(!retry.is_success(), "in-flight payment was retried: {retry:?}");
+    let after_retry: Value = token.view("ft_balance_of").args_json(json!({"account_id": holder.id()})).await?.json()?;
+    assert_eq!(after_retry, "100");
+    Ok(())
+}
+
+#[tokio::test]
 async fn funded_payout_failure_and_retry_follow_token_receipts(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let company_wasm = std::fs::read(concat!(

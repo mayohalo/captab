@@ -4,7 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, teraToGas } from "near-api-js";
 import { assessCompanyFunding, DEMO_STATE_GROWTH_BYTES } from "../lib/storage-funding.mjs";
-import { canonicalJson } from "../lib/release-verification.mjs";
+import { assertReleaseCompanyWasm, canonicalJson } from "../lib/release-verification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -38,6 +38,7 @@ if (!/^[1-9][0-9]*$/.test(tokenSupply)) throw new Error("CAPTAB_TOKEN_SUPPLY mus
 
 const sha256 = bytes => createHash("sha256").update(bytes).digest();
 const [companyWasm, daoWasm, tokenWasm] = await Promise.all([readFile(companyWasmPath), readFile(daoWasmPath), readFile(tokenWasmPath)]);
+assertReleaseCompanyWasm(companyWasm);
 const companyDigest = sha256(companyWasm);
 const daoDigest = sha256(daoWasm);
 const companyCodeHash = baseEncode(companyDigest);

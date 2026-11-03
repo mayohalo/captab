@@ -1,6 +1,13 @@
 const PINNED_DAO_SOURCE = "5434a59dec23ee0c49df8c8c4350c208a7e75b0b";
 const PINNED_DAO_SHA256 = "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722";
 const DEMO_LIMITS = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
+const CALLBACK_FAULT_MARKER = Buffer.from("sandbox-injected payment callback failure");
+
+export function assertReleaseCompanyWasm(bytes) {
+  if (Buffer.from(bytes).includes(CALLBACK_FAULT_MARKER)) {
+    throw new Error("Fault-injection company WASM cannot be deployed or verified as a release artifact.");
+  }
+}
 
 export function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assessRelease } from "./release-verification.mjs";
+import { assertReleaseCompanyWasm, assessRelease } from "./release-verification.mjs";
 
 const limits = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
 const vote = { weight_kind: "RoleWeight", quorum: "0", threshold: { Ratio: [1, 2] } };
@@ -64,4 +64,9 @@ test("release check catches settlement-token supply drift", () => {
   const changed = structuredClone(snapshot);
   changed.chain.tokenSupply = "99999999999";
   assert.match(assessRelease(changed).join(" "), /total supply differs/);
+});
+
+test("fault-injection WASM cannot pass release artifact checks", () => {
+  assert.doesNotThrow(() => assertReleaseCompanyWasm(Buffer.from("ordinary release contract")));
+  assert.throws(() => assertReleaseCompanyWasm(Buffer.from("sandbox-injected payment callback failure")), /Fault-injection company WASM/);
 });

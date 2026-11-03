@@ -4,7 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { JsonRpcProvider, baseEncode } from "near-api-js";
 import { assessCompanyFunding } from "../lib/storage-funding.mjs";
-import { assessRelease } from "../lib/release-verification.mjs";
+import { assertReleaseCompanyWasm, assessRelease } from "../lib/release-verification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -15,7 +15,9 @@ const paths = {
   token: "target/wasm32-unknown-unknown/release/captab_test_token.wasm",
 };
 const artifacts = Object.fromEntries(await Promise.all(Object.entries(paths).map(async ([name, path]) => {
-  const digest = createHash("sha256").update(await readFile(resolve(root, path))).digest();
+  const bytes = await readFile(resolve(root, path));
+  if (name === "company") assertReleaseCompanyWasm(bytes);
+  const digest = createHash("sha256").update(bytes).digest();
   return [name, { sha256: digest.toString("hex"), codeHash: baseEncode(digest) }];
 })));
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });

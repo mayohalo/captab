@@ -563,6 +563,10 @@ impl Company {
         recipient_id: AccountId,
         attempt_id: u64,
     ) {
+        #[cfg(all(feature = "sandbox-failed-callback", target_arch = "wasm32"))]
+        if matches!(env::promise_result(0), PromiseResult::Successful(_)) {
+            env::panic_str("sandbox-injected payment callback failure");
+        }
         let mut distribution = self
             .distributions
             .get(&distribution_id)
