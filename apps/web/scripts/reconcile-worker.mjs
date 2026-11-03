@@ -8,6 +8,7 @@ try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error)
 const baseUrl = process.env.CAPTAB_BASE_URL ?? "http://127.0.0.1:3000";
 const secret = process.env.CAPTAB_WORKER_SECRET;
 if (!secret) throw new Error("Set CAPTAB_WORKER_SECRET before starting the reconciliation worker.");
+const once = process.argv.includes("--once");
 
 for (;;) {
   try {
@@ -25,6 +26,8 @@ for (;;) {
     if (result.submission?.reason?.includes("review required")) console.error(result.submission.reason);
   } catch (error) {
     console.error("Reconciliation attempt failed:", error instanceof Error ? error.message : error);
+    if (once) { process.exitCode = 1; break; }
   }
+  if (once) break;
   await delay(30_000);
 }

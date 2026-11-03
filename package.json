@@ -5,6 +5,7 @@
   "scripts": {
     "test:contract": "cargo test -p captab-company --lib",
     "test:e2e": "pnpm --filter @captab/web test:e2e",
+    "test:worker-restart": "pnpm --filter @captab/web test:worker-restart",
     "demo:fallback": "pnpm --filter @captab/web demo:fallback",
     "test:vesting": "pnpm --filter @captab/web test:vesting",
     "test:receipts": "pnpm --filter @captab/web test:receipts",

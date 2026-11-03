@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { distributionHash } from "../lib/distribution-hash.ts";
 
-const port = 14555;
+const port = Number(process.env.CAPTAB_FIXTURE_RPC_PORT ?? 14555);
 const company = "company.testnet";
 const claimableCompany = "claimable.testnet";
 const dao = "board.testnet";
