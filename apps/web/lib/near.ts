@@ -4,6 +4,7 @@ import { requireTestnet } from "./network-guard.mjs";
 
 export const network = "testnet";
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const finalBlockQuery = { finality: "final" as const };
 export const assertTestnetNetwork = () => requireTestnet(provider);
 
 export type Totals = { dao_id: string; authorized_units: string; issued_total: string; pool_available: string; grant_reserved: string; fully_diluted_total: string; unallocated_units: string; ledger_revision: number; holder_count: number };
@@ -26,7 +27,7 @@ export function validAccountId(id: string): boolean { return accountPattern.test
 export async function view<T>(contractId: string, method: string, args: Record<string, unknown> = {}): Promise<T> {
   if (!validAccountId(contractId)) throw new Error("Invalid NEAR account ID");
   await assertTestnetNetwork();
-  const result = await provider.callFunction({ contractId, method, args }) as T | undefined;
+  const result = await provider.callFunction({ contractId, method, args, blockQuery: finalBlockQuery }) as T | undefined;
   if (result === undefined) throw new Error(`${method} returned no result`);
   return result;
 }
@@ -35,7 +36,7 @@ export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
   await assertTestnetNetwork();
   const [policy, code] = await Promise.all([
     view<DaoPolicy>(daoId, "get_policy"),
-    provider.viewContractCode({ contractId: daoId }),
+    provider.viewContractCode({ contractId: daoId, blockQuery: finalBlockQuery }),
   ]);
   const assessment = assessDemoDao(policy, code.hash);
   if (!assessment.verified) throw new Error(assessment.reason);
@@ -47,7 +48,7 @@ export async function assessCompanyCode(contractId: string): Promise<CompanyCode
   const expected = process.env.CAPTAB_COMPANY_CODE_HASH;
   if (!expected) return { verified: false, reason: "Expected company code hash is not configured.", codeHash: null };
   try {
-    const code = await provider.viewContractCode({ contractId });
+    const code = await provider.viewContractCode({ contractId, blockQuery: finalBlockQuery });
     return code.hash === expected
       ? { verified: true, reason: "Company code matches the configured release build.", codeHash: code.hash }
       : { verified: false, reason: "Company code does not match the configured release build.", codeHash: code.hash };
@@ -82,7 +83,7 @@ export async function readCompany(contractId: string) {
     const [policy, lastId, code] = await Promise.all([
       view<DaoPolicy>(config.dao_id, "get_policy"),
       view<number>(config.dao_id, "get_last_proposal_id"),
-      provider.viewContractCode({ contractId: config.dao_id }),
+      provider.viewContractCode({ contractId: config.dao_id, blockQuery: finalBlockQuery }),
     ]);
     daoPolicy = policy;
     daoAssessment = assessDemoDao(policy, code.hash);

@@ -51,15 +51,16 @@ const tokenCodeHash = baseEncode(tokenDigest);
 if (daoDigest.toString("hex") !== pinnedDaoSha256) throw new Error("Local Sputnik WASM differs from pinned source");
 
 const provider = new JsonRpcProvider({ url: rpcUrl });
+const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
 const [daoCode, tokenCode, policy, tokenMetadata, actualTokenSupply, companyAccount, initialStorage, protocolConfig] = await Promise.all([
-  provider.viewContractCode({ contractId: daoId }),
-  provider.viewContractCode({ contractId: tokenId }),
-  provider.callFunction({ contractId: daoId, method: "get_policy", args: {} }),
-  provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {} }),
-  provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {} }),
-  provider.viewAccount({ accountId: companyId }),
-  provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId } }).catch(() => undefined),
+  provider.viewContractCode({ contractId: daoId, blockQuery: finalQuery }),
+  provider.viewContractCode({ contractId: tokenId, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: daoId, method: "get_policy", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {}, blockQuery: finalQuery }),
+  provider.viewAccount({ accountId: companyId, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId }, blockQuery: finalQuery }).catch(() => undefined),
   provider.experimental_protocolConfig({ finality: "final" }),
 ]);
 if (daoCode.hash !== daoCodeHash) throw new Error("Deployed DAO code hash does not match pinned Sputnik build");
@@ -95,7 +96,7 @@ const matchesDemoConfig = value => value?.schema_version === 1 &&
   Object.entries(expectedLimits).every(([key, expected]) => value.limits?.[key] === expected);
 let config = null;
 if (companyAccount.code_hash === companyCodeHash) {
-  try { config = await provider.callFunction({ contractId: companyId, method: "get_config", args: {} }); }
+  try { config = await provider.callFunction({ contractId: companyId, method: "get_config", args: {}, blockQuery: finalQuery }); }
   catch { /* Code may be deployed but not initialized. */ }
 }
 if (config && !matchesDemoConfig(config)) {
@@ -131,7 +132,7 @@ async function writableCompany() {
   if (company) return company;
   if (!companyKey) throw new Error("Set CAPTAB_COMPANY_PRIVATE_KEY locally before a deployment or storage-registration write");
   const signerKey = KeyPair.fromString(companyKey);
-  const accessKey = await provider.viewAccessKey({ accountId: companyId, publicKey: signerKey.getPublicKey().toString() });
+  const accessKey = await provider.viewAccessKey({ accountId: companyId, publicKey: signerKey.getPublicKey().toString(), finalityQuery: finalQuery });
   if (accessKey.permission !== "FullAccess") throw new Error("Company deployment key must have full access");
   company = new Account(companyId, provider, companyKey);
   return company;
@@ -147,10 +148,10 @@ if (!config) {
   transactions.initialize = result.transaction.hash;
 }
 const [verifiedCode, verifiedConfig, totals, accessKeys] = await Promise.all([
-  provider.viewContractCode({ contractId: companyId }),
-  provider.callFunction({ contractId: companyId, method: "get_config", args: {} }),
-  provider.callFunction({ contractId: companyId, method: "get_totals", args: {} }),
-  provider.viewAccessKeyList({ accountId: companyId }),
+  provider.viewContractCode({ contractId: companyId, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: companyId, method: "get_config", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: companyId, method: "get_totals", args: {}, blockQuery: finalQuery }),
+  provider.viewAccessKeyList({ accountId: companyId, finalityQuery: finalQuery }),
 ]);
 if (verifiedCode.hash !== companyCodeHash || !matchesDemoConfig(verifiedConfig) ||
     totals.dao_id !== daoId || String(totals.authorized_units) !== units ||
@@ -167,16 +168,16 @@ if (diluted !== BigInt(totals.fully_diluted_total) || BigInt(units) - diluted !=
 let storageRegistration = "unverified";
 let storageBalance = null;
 try {
-  storageBalance = await provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId } });
+  storageBalance = await provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId }, blockQuery: finalQuery });
   storageRegistration = storageBalance ? "registered" : "missing";
 } catch { /* Some test tokens do not expose storage management. */ }
 if (storageRegistration === "missing") {
-  const bounds = await provider.callFunction({ contractId: tokenId, method: "storage_balance_bounds", args: {} });
+  const bounds = await provider.callFunction({ contractId: tokenId, method: "storage_balance_bounds", args: {}, blockQuery: finalQuery });
   if (!bounds?.min || !/^[1-9][0-9]*$/.test(String(bounds.min))) throw new Error("Token storage registration minimum is unavailable");
   const registration = await (await writableCompany()).callFunctionRaw({ contractId: tokenId, methodName: "storage_deposit",
     args: { account_id: companyId, registration_only: true }, gas: teraToGas(30), deposit: BigInt(bounds.min), waitUntil: "FINAL" });
   transactions.storageRegistration = registration.transaction.hash;
-  storageBalance = await provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId } });
+  storageBalance = await provider.callFunction({ contractId: tokenId, method: "storage_balance_of", args: { account_id: companyId }, blockQuery: finalQuery });
   if (!storageBalance) throw new Error("Token registration did not persist");
   storageRegistration = "registered";
 }

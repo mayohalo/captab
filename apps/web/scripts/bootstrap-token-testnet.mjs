@@ -18,18 +18,19 @@ if (![tokenId, daoId].every(id => typeof id === "string" && accountPattern.test(
 }
 const apply = process.argv.includes("--apply");
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
-const state = await provider.viewAccount({ accountId: tokenId });
+const state = await provider.viewAccount({ accountId: tokenId, blockQuery: finalQuery });
 const emptyHash = baseEncode(new Uint8Array(32));
 if (state.code_hash !== emptyHash && state.code_hash !== codeHash) throw new Error("Token account contains different code; use a fresh account");
 let metadata = null;
 if (state.code_hash === codeHash) {
-  try { metadata = await provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {} }); }
+  try { metadata = await provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {}, blockQuery: finalQuery }); }
   catch { /* Pinned token code exists but initialization remains pending. */ }
 }
 if (metadata && (metadata.spec !== "ft-1.0.0" || metadata.symbol !== "TESTUSD" || metadata.decimals !== 6)) throw new Error("Existing token metadata differs from TESTUSD fixture");
 if (metadata) {
-  const currentSupply = await provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {} });
+  const currentSupply = await provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {}, blockQuery: finalQuery });
   if (String(currentSupply) !== supply) throw new Error("Existing token supply differs from configured TESTUSD supply");
 }
 console.log(JSON.stringify({ network: "testnet", tokenId, daoId, totalSupplyBaseUnits: supply,
@@ -38,7 +39,7 @@ if (!apply) { console.log("Preflight only. Pass --apply with the token account k
 const privateKey = process.env.CAPTAB_TOKEN_PRIVATE_KEY;
 if (!privateKey) throw new Error("Set CAPTAB_TOKEN_PRIVATE_KEY locally before --apply");
 const key = KeyPair.fromString(privateKey);
-const access = await provider.viewAccessKey({ accountId: tokenId, publicKey: key.getPublicKey().toString() });
+const access = await provider.viewAccessKey({ accountId: tokenId, publicKey: key.getPublicKey().toString(), finalityQuery: finalQuery });
 if (access.permission !== "FullAccess") throw new Error("Token deployment key must have full access");
 const token = new Account(tokenId, provider, privateKey);
 if (state.code_hash === emptyHash) {
@@ -51,10 +52,10 @@ if (!metadata) {
   console.log("Token initialization transaction:", result.transaction.hash);
 }
 const [verifiedCode, verifiedMetadata, totalSupply, daoBalance] = await Promise.all([
-  provider.viewContractCode({ contractId: tokenId }),
-  provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {} }),
-  provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {} }),
-  provider.callFunction({ contractId: tokenId, method: "ft_balance_of", args: { account_id: daoId } }),
+  provider.viewContractCode({ contractId: tokenId, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: tokenId, method: "ft_metadata", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: tokenId, method: "ft_total_supply", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: tokenId, method: "ft_balance_of", args: { account_id: daoId }, blockQuery: finalQuery }),
 ]);
 if (verifiedCode.hash !== codeHash || verifiedMetadata.spec !== "ft-1.0.0" || verifiedMetadata.symbol !== "TESTUSD" || verifiedMetadata.decimals !== 6 ||
     String(totalSupply) !== supply || (!metadata && String(daoBalance) !== supply)) {

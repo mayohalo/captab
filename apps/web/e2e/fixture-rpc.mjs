@@ -140,6 +140,9 @@ createServer(async (request, response) => {
       return;
     }
     if (rpc.method !== "query") throw new Error(`Unsupported RPC method ${rpc.method}`);
+    if (["call_function", "view_code"].includes(params.request_type) && params.finality !== "final") {
+      throw new Error(`Contract reads must use finality=final: ${params.request_type}`);
+    }
     let result;
     if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, alteredCompany, dao, unsafeDao].includes(params.account_id)) {
       result = { code_base64: "", hash: params.account_id === dao

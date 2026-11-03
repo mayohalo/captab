@@ -15,7 +15,8 @@ export async function relaySponsoredClaim(companyContractId: string, encoded: st
   const [config, grant, accessKey] = await Promise.all([
     view<CompanyConfig>(companyContractId, "get_config"),
     view<Grant | null>(companyContractId, "get_grant", { grant_id: claim.grantId }),
-    provider.viewAccessKey({ accountId: claim.senderId, publicKey: claim.publicKey }),
+    provider.viewAccessKey({ accountId: claim.senderId, publicKey: claim.publicKey,
+      finalityQuery: { finality: "final" } }),
   ]);
   if (config.paused || !grant || grant.recipient !== claim.senderId || BigInt(grant.claimable_units) <= 0n) throw new Error("Grant is not claimable by signer");
   if (accessKey.permission !== "FullAccess") throw new Error("Delegate signer must have a full-access key");

@@ -1,10 +1,7 @@
 import Link from "next/link";
-import { JsonRpcProvider } from "near-api-js";
-import { readCompany, validAccountId } from "../../lib/near";
+import { readCompany, validAccountId, view } from "../../lib/near";
 
 export const dynamic = "force-dynamic";
-
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
 
 export default async function SetupPage({ searchParams }: { searchParams: Promise<{ company?: string }> }) {
   const { company } = await searchParams;
@@ -17,12 +14,8 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
     if (!validAccountId(selected)) error = "Enter a valid NEAR testnet account ID.";
     else try {
       inspection = await readCompany(selected);
-      const [code, metadata] = await Promise.all([
-        provider.viewContractCode({ contractId: selected }),
-        provider.callFunction({ contractId: inspection.config.settlement_token_id, method: "ft_metadata", args: {} }),
-      ]);
-      codeHash = code.hash;
-      token = metadata as { symbol?: string; decimals?: number };
+      codeHash = inspection.companyAssessment.codeHash;
+      token = await view<{ symbol?: string; decimals?: number }>(inspection.config.settlement_token_id, "ft_metadata");
     } catch (cause) { error = cause instanceof Error ? cause.message : "Company inspection failed"; }
   }
   const council = inspection?.daoPolicy?.roles.find(role => role.name === "council")?.kind.Group ?? [];

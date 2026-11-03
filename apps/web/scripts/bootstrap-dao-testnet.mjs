@@ -19,13 +19,14 @@ if (!daoId || !accountPattern.test(daoId) || members.length !== 3 || new Set(mem
 }
 const apply = process.argv.includes("--apply");
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
-const daoState = await provider.viewAccount({ accountId: daoId });
+const daoState = await provider.viewAccount({ accountId: daoId, blockQuery: finalQuery });
 const emptyHash = baseEncode(new Uint8Array(32));
 if (daoState.code_hash !== emptyHash && daoState.code_hash !== codeHash) throw new Error("DAO account contains different code; use a fresh account");
 let policy = null;
 if (daoState.code_hash === codeHash) {
-  try { policy = await provider.callFunction({ contractId: daoId, method: "get_policy", args: {} }); }
+  try { policy = await provider.callFunction({ contractId: daoId, method: "get_policy", args: {}, blockQuery: finalQuery }); }
   catch { /* Pinned code exists but initialization remains pending. */ }
 }
 if (policy) {
@@ -43,7 +44,7 @@ if (!apply) { console.log("Preflight only. Pass --apply with the DAO account key
 const privateKey = process.env.CAPTAB_DAO_PRIVATE_KEY;
 if (!privateKey) throw new Error("Set CAPTAB_DAO_PRIVATE_KEY locally before --apply");
 const key = KeyPair.fromString(privateKey);
-const access = await provider.viewAccessKey({ accountId: daoId, publicKey: key.getPublicKey().toString() });
+const access = await provider.viewAccessKey({ accountId: daoId, publicKey: key.getPublicKey().toString(), finalityQuery: finalQuery });
 if (access.permission !== "FullAccess") throw new Error("DAO deployment key must have full access");
 const dao = new Account(daoId, provider, privateKey);
 if (daoState.code_hash === emptyHash) {
@@ -58,8 +59,8 @@ if (!policy) {
   console.log("Sputnik initialization transaction:", result.transaction.hash);
 }
 const [verifiedCode, verifiedPolicy] = await Promise.all([
-  provider.viewContractCode({ contractId: daoId }),
-  provider.callFunction({ contractId: daoId, method: "get_policy", args: {} }),
+  provider.viewContractCode({ contractId: daoId, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: daoId, method: "get_policy", args: {}, blockQuery: finalQuery }),
 ]);
 const role = verifiedPolicy?.roles?.find(role => role.name === "council");
 const actual = role?.kind?.Group;

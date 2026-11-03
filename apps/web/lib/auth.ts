@@ -43,7 +43,8 @@ export async function verifyChallenge(input: { challengeId: string; nonce: strin
   if (nonce.length !== 32 || createHash("sha256").update(nonce).digest("hex") !== row.challenge_nonce_hash) throw new Error("Challenge nonce mismatch");
   const message = challengeMessage(row.account_id, row.domain, row.challenge_expires_at);
   if (!verifyNep413({ message, nonce, recipient: new URL(origin).host, publicKey: input.publicKey, signature: input.signature })) throw new Error("Invalid wallet signature");
-  const accessKey = await provider.viewAccessKey({ accountId: row.account_id, publicKey: input.publicKey });
+  const accessKey = await provider.viewAccessKey({ accountId: row.account_id, publicKey: input.publicKey,
+    finalityQuery: { finality: "final" } });
   if (accessKey.permission !== "FullAccess") throw new Error("Signing key is not a full-access key");
   const sessionExpiresAt = new Date(Date.now() + sessionHours * 60 * 60_000).toISOString();
   const changed = db.prepare(`UPDATE sessions SET verified_at = ?, session_expires_at = ?

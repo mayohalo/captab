@@ -21,19 +21,20 @@ const artifacts = Object.fromEntries(await Promise.all(Object.entries(paths).map
   return [name, { sha256: digest.toString("hex"), codeHash: baseEncode(digest) }];
 })));
 const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
 const [companyCode, daoCode, tokenCode, policy, tokenMetadata, tokenSupply, config, totals, accessKeyList, storageBalance, account, protocol] = await Promise.all([
-  provider.viewContractCode({ contractId: manifest.companyId }),
-  provider.viewContractCode({ contractId: manifest.daoId }),
-  provider.viewContractCode({ contractId: manifest.tokenId }),
-  provider.callFunction({ contractId: manifest.daoId, method: "get_policy", args: {} }),
-  provider.callFunction({ contractId: manifest.tokenId, method: "ft_metadata", args: {} }),
-  provider.callFunction({ contractId: manifest.tokenId, method: "ft_total_supply", args: {} }),
-  provider.callFunction({ contractId: manifest.companyId, method: "get_config", args: {} }),
-  provider.callFunction({ contractId: manifest.companyId, method: "get_totals", args: {} }),
-  provider.viewAccessKeyList({ accountId: manifest.companyId }),
-  provider.callFunction({ contractId: manifest.tokenId, method: "storage_balance_of", args: { account_id: manifest.companyId } }),
-  provider.viewAccount({ accountId: manifest.companyId }),
+  provider.viewContractCode({ contractId: manifest.companyId, blockQuery: finalQuery }),
+  provider.viewContractCode({ contractId: manifest.daoId, blockQuery: finalQuery }),
+  provider.viewContractCode({ contractId: manifest.tokenId, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: manifest.daoId, method: "get_policy", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: manifest.tokenId, method: "ft_metadata", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: manifest.tokenId, method: "ft_total_supply", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: manifest.companyId, method: "get_config", args: {}, blockQuery: finalQuery }),
+  provider.callFunction({ contractId: manifest.companyId, method: "get_totals", args: {}, blockQuery: finalQuery }),
+  provider.viewAccessKeyList({ accountId: manifest.companyId, finalityQuery: finalQuery }),
+  provider.callFunction({ contractId: manifest.tokenId, method: "storage_balance_of", args: { account_id: manifest.companyId }, blockQuery: finalQuery }),
+  provider.viewAccount({ accountId: manifest.companyId, blockQuery: finalQuery }),
   provider.experimental_protocolConfig({ finality: "final" }),
 ]);
 const funding = assessCompanyFunding({ storageUsage: account.storage_usage, accountBalance: account.amount,
