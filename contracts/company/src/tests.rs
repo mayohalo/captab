@@ -724,3 +724,42 @@ fn stale_payment_callback_cannot_settle_current_attempt() {
     );
     c.on_payment_result(id, aid("alice.testnet"), 0);
 }
+
+#[test]
+fn failed_callback_after_successful_transfer_never_unlocks_payment() {
+    let (mut c, id, hash) = approved_distribution();
+    set_caller("testusd.testnet");
+    let msg = near_sdk::serde_json::json!({"distribution_id":id,"schedule_hash":hash}).to_string();
+    assert_eq!(c.ft_on_transfer(aid("board.testnet"), U128(1_000), msg).0, 0);
+    set_caller("executor.testnet");
+    c.pay_recipient(id, aid("alice.testnet"));
+
+    let mut callback = VMContextBuilder::new();
+    callback.current_account_id(aid("company.testnet"));
+    callback.predecessor_account_id(aid("company.testnet"));
+    testing_env!(
+        callback.build(),
+        near_sdk::test_vm_config(),
+        near_sdk::RuntimeFeesConfig::test(),
+        Default::default(),
+        vec![PromiseResult::Successful(vec![])]
+    );
+    let callback_failed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        c.on_payment_result(id, aid("alice.testnet"), 0);
+    }));
+    assert!(callback_failed.is_err());
+
+    let after = c.get_distribution(id).unwrap();
+    assert_eq!(after.entitlements[0].payment_status, PaymentStatus::InFlight);
+    assert_eq!(after.entitlements[0].attempt_id, 1);
+    assert_eq!(after.available_escrow.0, 0);
+    assert_eq!(after.in_flight_total.0, 1_000);
+    assert_eq!(after.paid_total.0, 0);
+
+    set_caller_at("executor.testnet", 100_000);
+    let retry_blocked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        c.pay_recipient(id, aid("alice.testnet"));
+    }));
+    assert!(retry_blocked.is_err());
+    assert_eq!(c.get_distribution(id).unwrap().entitlements[0].attempt_id, 1);
+}
