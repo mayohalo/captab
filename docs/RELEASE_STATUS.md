@@ -15,7 +15,7 @@ This is the current release audit against [the implementation plan](../IMPLEMENT
 | Callback failure and worker crash recovery | A Rust unit test injects a failed callback after a successful token result and confirms the entitlement remains in flight, escrow stays reserved, and later retries fail. `pnpm test:payments` restarts the database recovery path in separate Node processes and confirms a stale claim stays `NeedsReview` with one attempt. An actual successful-transfer/failed-callback receipt and end-to-end worker/server restart rehearsal were not produced. | Partially verified |
 | Fallback presentation | [Labeled fixture video and screenshots](demo/README.md); `pnpm demo:fallback` passed | Available; not live-chain evidence |
 | Testnet account funding and deployment | `apps/web/.env.local` and `docs/deployment-manifest.testnet.json` are absent | Open |
-| Live release hash, DAO policy, token registration, storage, accounting, and key audit | `pnpm verify:testnet` is implemented but has no manifest or deployed accounts to check | Open |
+| Live release hash, complete DAO policy, token registration, storage, accounting, and key audit | `pnpm verify:testnet` compares the full recorded DAO policy as well as the named invariants, but has no manifest or deployed accounts to check | Open |
 | Wallet-signed browser journeys and sponsored claim | Browser tests use a development fixture adapter; Sandbox signs a delegate action on a local chain | Open on testnet |
 | Live payout rehearsal and receipt links | Runbook defines exact founder, grant, distribution, staged failure, and retry sequence; no testnet transaction hashes exist | Open |
 | Final key removal, live video, and submission | Require the verified deployment and completed rehearsal | Open |

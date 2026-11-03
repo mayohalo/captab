@@ -2,9 +2,9 @@ const PINNED_DAO_SOURCE = "5434a59dec23ee0c49df8c8c4350c208a7e75b0b";
 const PINNED_DAO_SHA256 = "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722";
 const DEMO_LIMITS = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
 
-function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object") return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+export function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
   return JSON.stringify(value);
 }
 
@@ -22,13 +22,15 @@ export function assessRelease({ manifest, artifacts, chain, funding }) {
   const council = chain?.policy?.roles?.find(role => role.name === "council");
   const members = council?.kind?.Group;
   check(Array.isArray(members) && members.length === 3 && new Set(members).size === 3 &&
-    canonical([...members].sort()) === canonical([...(manifest?.dao?.council ?? [])].sort()) &&
+    canonicalJson([...members].sort()) === canonicalJson([...(manifest?.dao?.council ?? [])].sort()) &&
     council.permissions?.includes("*:VoteApprove") && Object.keys(council.vote_policy ?? {}).length === 0,
   "DAO council or permissions differ from the frozen three-member policy.");
   const vote = chain?.policy?.default_vote_policy;
   check(vote?.weight_kind === "RoleWeight" && String(vote?.quorum) === "0" &&
-    canonical(vote?.threshold?.Ratio) === "[1,2]" && canonical(vote) === canonical(manifest?.dao?.defaultVotePolicy),
+    canonicalJson(vote?.threshold?.Ratio) === "[1,2]" && canonicalJson(vote) === canonicalJson(manifest?.dao?.defaultVotePolicy),
   "DAO voting policy differs from the frozen two-of-three policy.");
+  check(Boolean(manifest?.dao?.policy) && canonicalJson(chain?.policy) === canonicalJson(manifest.dao.policy),
+    "DAO full policy differs from the frozen manifest.");
   check(chain?.tokenMetadata?.spec === "ft-1.0.0" && chain.tokenMetadata.symbol === "TESTUSD" &&
     chain.tokenMetadata.decimals === 6 && manifest?.token?.symbol === "TESTUSD" && manifest.token.decimals === 6,
   "Settlement token metadata differs from the six-decimal TESTUSD fixture.");
@@ -52,8 +54,8 @@ export function assessRelease({ manifest, artifacts, chain, funding }) {
   check(manifest?.token?.storageRegistration === "registered" && Boolean(chain?.storageBalance),
     "Company is not confirmed registered with the settlement token.");
   const expectedKeys = manifest?.company?.remainingAccessKeys;
-  check(Array.isArray(expectedKeys) && canonical([...expectedKeys].sort((a, b) => a.publicKey.localeCompare(b.publicKey))) ===
-    canonical([...(chain?.accessKeys ?? [])].sort((a, b) => a.publicKey.localeCompare(b.publicKey))),
+  check(Array.isArray(expectedKeys) && canonicalJson([...expectedKeys].sort((a, b) => a.publicKey.localeCompare(b.publicKey))) ===
+    canonicalJson([...(chain?.accessKeys ?? [])].sort((a, b) => a.publicKey.localeCompare(b.publicKey))),
   "Company access keys differ from the manifest; review key rotation or removal.");
   check(funding?.funded === true, "Company balance is below projected storage and fee headroom.");
   return issues;

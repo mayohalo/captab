@@ -4,6 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, teraToGas } from "near-api-js";
 import { assessCompanyFunding, DEMO_STATE_GROWTH_BYTES } from "../lib/storage-funding.mjs";
+import { canonicalJson } from "../lib/release-verification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -67,6 +68,9 @@ if (!Array.isArray(members) || members.length !== 3 || new Set(members).size !==
     Object.keys(council.vote_policy ?? {}).length !== 0 || vote?.weight_kind !== "RoleWeight" || String(vote?.quorum) !== "0" ||
     JSON.stringify(vote?.threshold?.Ratio) !== JSON.stringify([1, 2])) {
   throw new Error("DAO policy is not the pinned three-member two-vote council policy");
+}
+if (previousManifest?.dao?.policy && canonicalJson(policy) !== canonicalJson(previousManifest.dao.policy)) {
+  throw new Error("DAO policy changed since the deployment manifest; review it before refreshing release evidence");
 }
 if (!tokenMetadata || tokenMetadata.spec !== "ft-1.0.0" || tokenMetadata.symbol !== "TESTUSD" || tokenMetadata.decimals !== 6) {
   throw new Error("Settlement token lacks valid NEP-141 metadata");
@@ -170,7 +174,7 @@ if (storageRegistration === "missing") {
 const manifest = {
   network: "testnet", companyId, daoId, operatorId, tokenId,
   dao: { sourceCommit: "5434a59dec23ee0c49df8c8c4350c208a7e75b0b", sha256: pinnedDaoSha256, codeHash: daoCodeHash,
-    council: members, defaultVotePolicy: vote },
+    council: members, defaultVotePolicy: vote, policy },
   company: { sha256: companyDigest.toString("hex"), codeHash: companyCodeHash, authorizedUnits: units,
     schemaVersion: verifiedConfig.schema_version, limits: verifiedConfig.limits,
     remainingAccessKeys: accessKeys.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })),
