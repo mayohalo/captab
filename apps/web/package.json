@@ -20,10 +20,11 @@
     "test:deployment": "node --test lib/storage-funding.test.mjs",
     "test:network": "node --test lib/network-guard.test.mjs",
     "test:observation": "node --test lib/transaction-identity.test.mjs lib/observed-status.test.mjs",
-    "test:release": "node --test lib/release-verification.test.mjs",
+    "test:release": "node --test lib/release-verification.test.mjs lib/company-freeze.test.mjs",
     "reconcile:worker": "node scripts/reconcile-worker.mjs",
     "deploy:testnet": "node scripts/deploy-testnet.mjs",
     "verify:testnet": "node scripts/verify-testnet-release.mjs",
+    "freeze:company": "node scripts/freeze-company-testnet.mjs",
     "bootstrap:dao": "node scripts/bootstrap-dao-testnet.mjs",
     "bootstrap:token": "node scripts/bootstrap-token-testnet.mjs"
   },

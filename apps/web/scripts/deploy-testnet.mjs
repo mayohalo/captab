@@ -29,6 +29,11 @@ const tokenId = process.env.CAPTAB_TOKEN_ACCOUNT_ID;
 const tokenSupply = process.env.CAPTAB_TOKEN_SUPPLY ?? "100000000000";
 const units = process.env.CAPTAB_AUTHORIZED_UNITS;
 const companyKey = process.env.CAPTAB_COMPANY_PRIVATE_KEY;
+const suppliedPublicKey = companyKey ? KeyPair.fromString(companyKey).getPublicKey().toString() : null;
+const deploymentPublicKey = previousManifest?.company?.deploymentPublicKey ?? suppliedPublicKey;
+if (suppliedPublicKey && previousManifest?.company?.deploymentPublicKey && suppliedPublicKey !== previousManifest.company.deploymentPublicKey) {
+  throw new Error("Configured company deployment key differs from the manifest");
+}
 const validAccount = id => typeof id === "string" && /^(?=.{2,64}$)[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(id);
 if (![companyId, daoId, operatorId, tokenId].every(validAccount) || !/^[1-9][0-9]*$/.test(units ?? "")) {
   throw new Error("Set CAPTAB_COMPANY_ACCOUNT_ID, CAPTAB_DAO_ACCOUNT_ID, CAPTAB_OPERATOR_ACCOUNT_ID, CAPTAB_TOKEN_ACCOUNT_ID, and positive CAPTAB_AUTHORIZED_UNITS");
@@ -123,6 +128,7 @@ if (!apply) {
   console.log("Preflight only. Pass --apply with the company account key to deploy or initialize.");
   process.exit(0);
 }
+if (!deploymentPublicKey) throw new Error("A first deployment manifest requires the company deployment key identity");
 if (needsWrite && !funding.funded) {
   throw new Error(`Company account needs at least ${funding.shortfallYocto} more yoctoNEAR for projected storage and transaction headroom before deployment writes`);
 }
@@ -165,6 +171,9 @@ const diluted = issued + pool + reserved;
 if (diluted !== BigInt(totals.fully_diluted_total) || BigInt(units) - diluted !== BigInt(totals.unallocated_units)) {
   throw new Error("Company supply accounting does not reconcile; inspect contract state before continuing");
 }
+if (previousManifest?.company?.frozen && accessKeys.keys.some(key => key.access_key.permission === "FullAccess")) {
+  throw new Error("A frozen company has regained a full-access key; investigate before refreshing the manifest");
+}
 let storageRegistration = "unverified";
 let storageBalance = null;
 try {
@@ -187,6 +196,7 @@ const manifest = {
     council: members, defaultVotePolicy: vote, policy },
   company: { sha256: companyDigest.toString("hex"), codeHash: companyCodeHash, authorizedUnits: units,
     schemaVersion: verifiedConfig.schema_version, limits: verifiedConfig.limits,
+    deploymentPublicKey, frozen: previousManifest?.company?.frozen === true,
     remainingAccessKeys: accessKeys.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })),
     storageFundingPreflight: funding },
   token: { symbol: tokenMetadata.symbol, decimals: tokenMetadata.decimals, totalSupply: String(actualTokenSupply),

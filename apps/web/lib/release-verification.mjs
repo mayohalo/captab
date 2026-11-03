@@ -15,7 +15,7 @@ export function canonicalJson(value) {
   return JSON.stringify(value);
 }
 
-export function assessRelease({ manifest, artifacts, chain, funding }) {
+export function assessRelease({ manifest, artifacts, chain, funding, requireFrozen = false }) {
   const issues = [];
   const check = (condition, message) => { if (!condition) issues.push(message); };
   check(manifest?.network === "testnet", "Manifest network is not testnet.");
@@ -64,9 +64,23 @@ export function assessRelease({ manifest, artifacts, chain, funding }) {
   check(manifest?.token?.storageRegistration === "registered" && Boolean(chain?.storageBalance),
     "Company is not confirmed registered with the settlement token.");
   const expectedKeys = manifest?.company?.remainingAccessKeys;
+  check(typeof manifest?.company?.deploymentPublicKey === "string" && /^(ed25519|secp256k1):/.test(manifest.company.deploymentPublicKey),
+    "Company deployment key identity is missing from the manifest.");
   check(Array.isArray(expectedKeys) && canonicalJson([...expectedKeys].sort((a, b) => a.publicKey.localeCompare(b.publicKey))) ===
     canonicalJson([...(chain?.accessKeys ?? [])].sort((a, b) => a.publicKey.localeCompare(b.publicKey))),
   "Company access keys differ from the manifest; review key rotation or removal.");
+  if (manifest?.company?.frozen !== true) {
+    check(Array.isArray(chain?.accessKeys) && chain.accessKeys.some(key =>
+      key.publicKey === manifest?.company?.deploymentPublicKey && key.permission === "FullAccess"),
+    "Company deployment key is absent but the manifest is not frozen.");
+  }
+  if (requireFrozen || manifest?.company?.frozen === true) {
+    check(manifest?.company?.frozen === true, "Company has not been marked frozen after deployment-key removal.");
+    check(Array.isArray(chain?.accessKeys) && !chain.accessKeys.some(key => key.permission === "FullAccess"),
+      "Frozen company still has a full-access key.");
+    check(Array.isArray(chain?.accessKeys) && !chain.accessKeys.some(key => key.publicKey === manifest?.company?.deploymentPublicKey),
+      "Company deployment key remains on-chain.");
+  }
   check(funding?.funded === true, "Company balance is below projected storage and fee headroom.");
   return issues;
 }

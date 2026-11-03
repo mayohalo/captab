@@ -25,6 +25,7 @@
     "build:callback-fixture": "CARGO_TARGET_DIR=target/callback-failure cargo clean --release --target wasm32-unknown-unknown && CARGO_TARGET_DIR=target/callback-failure cargo build -p captab-company --features sandbox-failed-callback --target wasm32-unknown-unknown --release",
     "deploy:testnet": "pnpm --filter @captab/web deploy:testnet",
     "verify:testnet": "pnpm --filter @captab/web verify:testnet",
+    "freeze:company": "pnpm --filter @captab/web freeze:company",
     "bootstrap:dao": "pnpm --filter @captab/web bootstrap:dao",
     "bootstrap:token": "pnpm --filter @captab/web bootstrap:token"
   }

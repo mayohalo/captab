@@ -18,7 +18,7 @@ This is the current release audit against [the implementation plan](../IMPLEMENT
 | Live release hash, complete DAO policy, token total supply and registration, storage, accounting, and key audit | `pnpm verify:testnet` compares the full recorded DAO policy and TESTUSD supply as well as the named invariants, but has no manifest or deployed accounts to check | Open |
 | Wallet-signed browser journeys and sponsored claim | Browser tests use a development fixture adapter; Sandbox signs a delegate action on a local chain | Open on testnet |
 | Live payout rehearsal and receipt links | Runbook defines exact founder, grant, distribution, staged failure, and retry sequence; no testnet transaction hashes exist | Open |
-| Final key removal, live video, and submission | Require the verified deployment and completed rehearsal | Open |
+| Final key removal, live video, and submission | `pnpm freeze:company` now provides a read-only preflight and guarded final key-removal path; the live release, recorded video, and submission still require funded accounts and a completed rehearsal | Open |
 
 The remaining live sequence is: prepare funded accounts and local keys; run the three read-only preflights and deployments in [the runbook](RUNBOOK.md); set the deployed company code hash; execute the seeded scenario with three council wallets, contributor and operator wallets, worker, executor, and relayer; inspect final receipt chains and on-chain balances; run `pnpm verify:testnet`; then review deployment-key removal, refresh the manifest, record the live demo, and package the submission. The user has confirmed that funded accounts and keys are not configured yet. Do not put private keys in this file or the manifest.
 

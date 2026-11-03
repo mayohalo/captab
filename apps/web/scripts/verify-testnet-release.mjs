@@ -39,7 +39,7 @@ const [companyCode, daoCode, tokenCode, policy, tokenMetadata, tokenSupply, conf
 ]);
 const funding = assessCompanyFunding({ storageUsage: account.storage_usage, accountBalance: account.amount,
   codeBytesToAdd: 0, stateGrowthBytes: 0, storagePricePerByte: protocol.runtime_config.storage_amount_per_byte });
-const issues = assessRelease({ manifest, artifacts, funding, chain: {
+const issues = assessRelease({ manifest, artifacts, funding, requireFrozen: process.argv.includes("--require-frozen"), chain: {
   companyCodeHash: companyCode.hash, daoCodeHash: daoCode.hash, tokenCodeHash: tokenCode.hash,
   policy, tokenMetadata, tokenSupply, config, totals, storageBalance,
   accessKeys: accessKeyList.keys.map(key => ({ publicKey: key.public_key, permission: key.access_key.permission })),

@@ -10,6 +10,7 @@ const snapshot = {
   manifest: {
     network: "testnet", companyId: "company.testnet", daoId: "dao.testnet", operatorId: "operator.testnet", tokenId: "token.testnet",
     company: { ...artifact("company"), authorizedUnits: "1000", schemaVersion: 1, limits,
+      deploymentPublicKey: "ed25519:key", frozen: false,
       remainingAccessKeys: [{ publicKey: "ed25519:key", permission: "FullAccess" }] },
     dao: { ...artifact("dao"), sourceCommit: "5434a59dec23ee0c49df8c8c4350c208a7e75b0b",
       sha256: "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722", council: members, defaultVotePolicy: vote,
@@ -69,4 +70,18 @@ test("release check catches settlement-token supply drift", () => {
 test("fault-injection WASM cannot pass release artifact checks", () => {
   assert.doesNotThrow(() => assertReleaseCompanyWasm(Buffer.from("ordinary release contract")));
   assert.throws(() => assertReleaseCompanyWasm(Buffer.from("sandbox-injected payment callback failure")), /Fault-injection company WASM/);
+});
+
+test("final release requires the deployment key and all full-access keys to be gone", () => {
+  assert.match(assessRelease({ ...snapshot, requireFrozen: true }).join(" "), /not been marked frozen/);
+  const unrecordedRemoval = structuredClone(snapshot);
+  unrecordedRemoval.manifest.company.remainingAccessKeys = [];
+  unrecordedRemoval.chain.accessKeys = [];
+  assert.match(assessRelease(unrecordedRemoval).join(" "), /deployment key is absent but the manifest is not frozen/);
+  const frozen = structuredClone(snapshot);
+  frozen.manifest.company.frozen = true;
+  assert.match(assessRelease(frozen).join(" "), /still has a full-access key/);
+  frozen.manifest.company.remainingAccessKeys = [];
+  frozen.chain.accessKeys = [];
+  assert.deepEqual(assessRelease({ ...frozen, requireFrozen: true }), []);
 });
