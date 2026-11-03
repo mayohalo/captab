@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "test:e2e": "playwright test",
+    "demo:fallback": "playwright test --config playwright.demo.config.ts",
     "test:vesting": "node --experimental-strip-types --test lib/vesting.test.mjs",
     "test:receipts": "node --experimental-strip-types --test lib/receipts.test.mjs",
     "test:payments": "node --experimental-strip-types --test lib/payments.test.mjs",
