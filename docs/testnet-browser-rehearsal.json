@@ -1,0 +1,43 @@
+{
+  "network": "testnet",
+  "companyId": "captab-company-101e85b169dd3522.testnet",
+  "daoId": "captab-dao-101e85b169dd3522.testnet",
+  "walletMode": "Local Playwright test wallet bridge; keys stay in ignored local bundle and signing occurs in the Node test process",
+  "thirdPartyWalletCompatibilityVerified": false,
+  "governance": [
+    {
+      "action": "pause",
+      "proposalId": 6,
+      "proposalTransaction": "6ekVUH6L7vbsWH4aeSjdG99RCbgKjB8W3hbPLQfdCU7v",
+      "voteTransactions": ["9F1KBfKMoMLu7uj86uyG4T7ZD98fcPVbrdHsuQ3GBXJV", "GL8m4DFKDoFvBMqVyNUVXkbJXsquUMUSWq5FLCa4giXK"],
+      "finalStatus": "Approved"
+    },
+    {
+      "action": "resume",
+      "proposalId": 7,
+      "proposalTransaction": "CpkKMtFCpVVYGrHAnc1bbApbrPJdUYvQnKtJw1SaMYJU",
+      "voteTransactions": ["EdUA2SDkQLU43NQedBdX2b6AaZhTpvrqFPLm36bF3o9W", "6Cm5sUxTaCBTtJ9DBhDFJidTSGnDiC8yHQnH6Jh5TVaU"],
+      "finalStatus": "Approved"
+    }
+  ],
+  "sponsoredClaim": {
+    "grantProposalId": 8,
+    "grantProposalTransaction": "AHUbthZ5ZtauqMet2GTaQynoYp6xJUwdi2t712ub8GCZ",
+    "grantVoteTransactions": ["5FbFYbCTYg9LJ4kjEKcHCVPPQq76zMfQJnewWV16JGz3", "4SYRTbd7YhUAwKsG3VEK4vDQGNomobNBJSJC3WSRPbTD"],
+    "grantId": 1,
+    "grantUnits": "400",
+    "recipient": "contributor.captab-101e85b169dd3522.testnet",
+    "claimTransaction": "AAeXAhfrj6k76LiCSMDSwCA8f2kpMzAoRhqAZYiKz7Hh",
+    "claimExplorerUrl": "https://testnet.nearblocks.io/txns/AAeXAhfrj6k76LiCSMDSwCA8f2kpMzAoRhqAZYiKz7Hh",
+    "claimedUnits": "100",
+    "workerObservation": "Confirmed"
+  },
+  "finalCompanyState": {
+    "paused": false,
+    "issuedTotal": "6025100",
+    "poolAvailable": "1899600",
+    "grantReserved": "75300",
+    "fullyDilutedTotal": "8000000",
+    "ledgerRevision": 7
+  }
+}

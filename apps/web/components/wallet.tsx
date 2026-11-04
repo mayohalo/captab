@@ -8,8 +8,10 @@ import { describeObservation } from "../lib/observed-status.mjs";
 let connector: NearConnector | undefined;
 declare global { interface Window { __CAPTAB_E2E_CONNECTOR__?: NearConnector } }
 export function getConnector() {
-  if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_CAPTAB_E2E_WALLET === "enabled" &&
-      typeof window !== "undefined" && window.__CAPTAB_E2E_CONNECTOR__) return window.__CAPTAB_E2E_CONNECTOR__;
+  if (process.env.NEXT_PUBLIC_CAPTAB_E2E_WALLET === "enabled" && typeof window !== "undefined" &&
+      ["localhost", "127.0.0.1"].includes(window.location.hostname) && window.__CAPTAB_E2E_CONNECTOR__) {
+    return window.__CAPTAB_E2E_CONNECTOR__;
+  }
   if (!connector) connector = new NearConnector({ network: "testnet" });
   return connector;
 }
