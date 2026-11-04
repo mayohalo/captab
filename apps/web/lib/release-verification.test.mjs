@@ -61,6 +61,14 @@ test("release check catches DAO policy drift outside council voting", () => {
   assert.match(assessRelease(changed).join(" "), /DAO full policy differs/);
 });
 
+test("DAO member and permission order does not count as policy drift", () => {
+  const reordered = structuredClone(snapshot);
+  reordered.chain.policy.roles[0].kind.Group.reverse();
+  reordered.chain.policy.roles[0].permissions = ["*:AddProposal", "*:VoteApprove"];
+  reordered.manifest.dao.policy.roles[0].permissions = ["*:VoteApprove", "*:AddProposal"];
+  assert.deepEqual(assessRelease(reordered), []);
+});
+
 test("release check catches settlement-token supply drift", () => {
   const changed = structuredClone(snapshot);
   changed.chain.tokenSupply = "99999999999";

@@ -4,7 +4,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, teraToGas } from "near-api-js";
 import { assessCompanyFunding, DEMO_STATE_GROWTH_BYTES } from "../lib/storage-funding.mjs";
-import { assertReleaseCompanyWasm, canonicalJson } from "../lib/release-verification.mjs";
+import { assertReleaseCompanyWasm, canonicalDaoPolicy } from "../lib/release-verification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -79,7 +79,7 @@ if (!Array.isArray(members) || members.length !== 3 || new Set(members).size !==
     JSON.stringify(vote?.threshold) !== JSON.stringify([1, 2])) {
   throw new Error("DAO policy is not the pinned three-member two-vote council policy");
 }
-if (previousManifest?.dao?.policy && canonicalJson(policy) !== canonicalJson(previousManifest.dao.policy)) {
+if (previousManifest?.dao?.policy && canonicalDaoPolicy(policy) !== canonicalDaoPolicy(previousManifest.dao.policy)) {
   throw new Error("DAO policy changed since the deployment manifest; review it before refreshing release evidence");
 }
 if (!tokenMetadata || tokenMetadata.spec !== "ft-1.0.0" || tokenMetadata.symbol !== "TESTUSD" || tokenMetadata.decimals !== 6) {

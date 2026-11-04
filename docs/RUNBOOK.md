@@ -96,6 +96,8 @@ Use the company page's typed governance controls; each DAO action is a real prop
 
 The final expected amounts are 5,975.103734 TESTUSD for founder A, 3,983.402490 for founder B, and 41.493776 for the contributor. Confirm these against on-chain entitlements and `ft_balance_of`, not only the activity page. The activity page currently includes app-submitted transactions; external activity may be absent.
 
+The local-key testnet rehearsal can be repeated stage by stage against the configured accounts: `pnpm rehearse:testnet --seed-equity`, `--grant-claim`, `--snapshot-fund`, `--payment-prep`, `--retry-contributor`, then `--verify-payouts`. Between the payment-prep and retry stages, run `pnpm --filter @captab/web reconcile:worker --once` until the first contributor attempt is `Failed` and both founders are `Settled`; after retry, run it until the contributor is `Settled`. Start the built web server before `--payment-prep`. `--verify-payouts` compares chain balances and worker jobs and writes public receipt evidence to `docs/testnet-rehearsal.json`. This script signs with the test-only local key bundle; a separate browser pass with imported wallet keys is still required to establish wallet compatibility.
+
 To halt new activity, use the approvals screen to submit a DAO **Pause company** proposal and obtain two council votes. Pause blocks new claims, snapshots, funding acceptance, and payout attempts but lets in-flight callbacks settle. The same screen offers **Resume company** while paused and **Cancel unfunded distribution** for an unused schedule; cancellation cannot withdraw a funded escrow. Verify the resulting contract state and receipts before resuming the demo.
 
 ## 5. Review and recovery

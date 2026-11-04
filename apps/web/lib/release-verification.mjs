@@ -15,6 +15,19 @@ export function canonicalJson(value) {
   return JSON.stringify(value);
 }
 
+export function canonicalDaoPolicy(policy) {
+  if (!policy || typeof policy !== "object") return canonicalJson(policy);
+  const normalized = structuredClone(policy);
+  if (Array.isArray(normalized.roles)) {
+    normalized.roles = normalized.roles.map(role => ({ ...role,
+      kind: role.kind && typeof role.kind === "object" && Array.isArray(role.kind.Group)
+        ? { ...role.kind, Group: [...role.kind.Group].sort() } : role.kind,
+      permissions: Array.isArray(role.permissions) ? [...role.permissions].sort() : role.permissions,
+    })).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  }
+  return canonicalJson(normalized);
+}
+
 export function assessRelease({ manifest, artifacts, chain, funding, requireFrozen = false }) {
   const issues = [];
   const check = (condition, message) => { if (!condition) issues.push(message); };
@@ -36,7 +49,7 @@ export function assessRelease({ manifest, artifacts, chain, funding, requireFroz
   check(vote?.weight_kind === "RoleWeight" && String(vote?.quorum) === "0" &&
     canonicalJson(vote?.threshold) === "[1,2]" && canonicalJson(vote) === canonicalJson(manifest?.dao?.defaultVotePolicy),
   "DAO voting policy differs from the frozen two-of-three policy.");
-  check(Boolean(manifest?.dao?.policy) && canonicalJson(chain?.policy) === canonicalJson(manifest.dao.policy),
+  check(Boolean(manifest?.dao?.policy) && canonicalDaoPolicy(chain?.policy) === canonicalDaoPolicy(manifest.dao.policy),
     "DAO full policy differs from the frozen manifest.");
   check(chain?.tokenMetadata?.spec === "ft-1.0.0" && chain.tokenMetadata.symbol === "TESTUSD" &&
     chain.tokenMetadata.decimals === 6 && manifest?.token?.symbol === "TESTUSD" && manifest.token.decimals === 6,

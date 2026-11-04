@@ -1,0 +1,59 @@
+{
+  "network": "testnet",
+  "companyId": "captab-company-101e85b169dd3522.testnet",
+  "tokenId": "captab-token-101e85b169dd3522.testnet",
+  "distributionId": 0,
+  "checkedAt": "2026-10-25T14:22:34.813Z",
+  "budgetBaseUnits": "10000000000",
+  "paidBaseUnits": "10000000000",
+  "entitlements": [
+    {
+      "accountId": "contributor.captab-101e85b169dd3522.testnet",
+      "amountBaseUnits": "41493776",
+      "status": "Paid",
+      "attemptId": 2
+    },
+    {
+      "accountId": "foundera.captab-101e85b169dd3522.testnet",
+      "amountBaseUnits": "5975103734",
+      "status": "Paid",
+      "attemptId": 1
+    },
+    {
+      "accountId": "founderb.captab-101e85b169dd3522.testnet",
+      "amountBaseUnits": "3983402490",
+      "status": "Paid",
+      "attemptId": 1
+    }
+  ],
+  "paymentJobs": [
+    {
+      "accountId": "contributor.captab-101e85b169dd3522.testnet",
+      "attemptId": 1,
+      "state": "Failed",
+      "transactionHash": "3LaFRfpVNhoz2mMwFQ24ysNd8eeS8L7BBg7otP2s6ewf",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/3LaFRfpVNhoz2mMwFQ24ysNd8eeS8L7BBg7otP2s6ewf"
+    },
+    {
+      "accountId": "contributor.captab-101e85b169dd3522.testnet",
+      "attemptId": 2,
+      "state": "Settled",
+      "transactionHash": "59XfZEHbBXtFVNWPHQcQSFyQ7DSC4Lm4fgaJuHwPAiQy",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/59XfZEHbBXtFVNWPHQcQSFyQ7DSC4Lm4fgaJuHwPAiQy"
+    },
+    {
+      "accountId": "foundera.captab-101e85b169dd3522.testnet",
+      "attemptId": 1,
+      "state": "Settled",
+      "transactionHash": "DFj77QurbryvmF47k9EVAS1KWzMyi1JAQq4CH3nWsvYv",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/DFj77QurbryvmF47k9EVAS1KWzMyi1JAQq4CH3nWsvYv"
+    },
+    {
+      "accountId": "founderb.captab-101e85b169dd3522.testnet",
+      "attemptId": 1,
+      "state": "Settled",
+      "transactionHash": "35NBSJHu9ZapVAkh3MfvEFoCR3Rn3oZzZk5X3i4Cqegj",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/35NBSJHu9ZapVAkh3MfvEFoCR3Rn3oZzZk5X3i4Cqegj"
+    }
+  ]
+}
