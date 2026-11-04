@@ -27,7 +27,7 @@ if (manifest.company?.frozen === true) {
   process.exit(0);
 }
 verifyRelease();
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
 const companyId = manifest.companyId;
 const finalQuery = { finality: "final" };

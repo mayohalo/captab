@@ -27,6 +27,7 @@
     "verify:testnet": "pnpm --filter @captab/web verify:testnet",
     "freeze:company": "pnpm --filter @captab/web freeze:company",
     "bootstrap:dao": "pnpm --filter @captab/web bootstrap:dao",
-    "bootstrap:token": "pnpm --filter @captab/web bootstrap:token"
+    "bootstrap:token": "pnpm --filter @captab/web bootstrap:token",
+    "accounts:testnet": "pnpm --filter @captab/web accounts:testnet"
   }
 }

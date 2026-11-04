@@ -33,7 +33,21 @@ Install Chromium once with `pnpm --filter @captab/web exec playwright install ch
 
 Create and fund separate testnet accounts for three council members, the DAO, company, token, snapshot operator, payout executor, and sponsor relayer. The company, DAO, and token accounts must be pre-created with full-access deployment keys. The three council keys stay in member wallets. The DAO holds the initial TESTUSD supply; the company needs enough NEAR for contract storage and token registration. The executor and relayer need enough NEAR for transaction fees.
 
-Copy `apps/web/.env.example` to `apps/web/.env.local`. Set the actual account IDs and keys, `CAPTAB_COUNCIL_ACCOUNTS`, and `CAPTAB_AUTH_ORIGIN` to the browser's exact origin. Set `CAPTAB_WORKER_SECRET` to a random value. `CAPTAB_TOKEN_SUPPLY` is in six-decimal token base units; the sample `100000000000` is 100,000 TESTUSD. `CAPTAB_AUTHORIZED_UNITS=10000000` matches the demo cap. Deployment scripts load `.env.local` without printing secrets.
+For a fresh, separate set of testnet-only accounts, run `pnpm accounts:testnet --init` once. It generates keys and writes `apps/web/.env.local` plus `apps/web/.data/testnet-accounts.json` with owner-only permissions; both paths are ignored by Git. The root account funds the operator, executor, relayer, council, and demo-recipient subaccounts. The company, DAO, and token each use their own faucet-funded account because contract storage needs several NEAR. Provision them in this order:
+
+```sh
+pnpm accounts:testnet --faucet-root
+pnpm accounts:testnet --faucet-role dao
+pnpm accounts:testnet --faucet-role company
+pnpm accounts:testnet --faucet-role token
+pnpm accounts:testnet --create-subaccounts
+pnpm accounts:testnet --fund-council
+pnpm accounts:testnet --verify
+```
+
+The provisioner checks each account before a write and verifies public keys and finalized balances afterward. If a command reports an uncertain transaction, inspect its hash and rerun only after checking the on-chain account; the creation and council-funding commands skip already completed work. Back up the ignored key bundle securely. Import the three council keys into separate testnet wallet profiles for browser signing; the provisioner creates the on-chain accounts but cannot import keys into a user's wallet session. Never send a private key in chat or commit either local file.
+
+Alternatively, create and fund accounts manually, then copy `apps/web/.env.example` to `apps/web/.env.local`. Set the actual account IDs and keys, `CAPTAB_COUNCIL_ACCOUNTS`, and `CAPTAB_AUTH_ORIGIN` to the browser's exact origin. Set `CAPTAB_WORKER_SECRET` to a random value. `CAPTAB_TOKEN_SUPPLY` is in six-decimal token base units; the sample `100000000000` is 100,000 TESTUSD. `CAPTAB_AUTHORIZED_UNITS=10000000` matches the demo cap. Deployment scripts load `.env.local` without printing secrets. The default RPC is FastNear testnet because the former public NEAR endpoint returned a deprecation error during this release.
 
 ## 3. Bootstrap the DAO, token, and company
 

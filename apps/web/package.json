@@ -26,7 +26,8 @@
     "verify:testnet": "node scripts/verify-testnet-release.mjs",
     "freeze:company": "node scripts/freeze-company-testnet.mjs",
     "bootstrap:dao": "node scripts/bootstrap-dao-testnet.mjs",
-    "bootstrap:token": "node scripts/bootstrap-token-testnet.mjs"
+    "bootstrap:token": "node scripts/bootstrap-token-testnet.mjs",
+    "accounts:testnet": "node scripts/configure-testnet-accounts.mjs"
   },
   "dependencies": {
     "@hot-labs/near-connect": "^0.11.4",

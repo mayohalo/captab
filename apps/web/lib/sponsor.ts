@@ -5,7 +5,7 @@ import { type CompanyConfig, type Grant, validAccountId, verifiedCompanyCode, vi
 import { inspectSponsoredClaim } from "./sponsor-policy";
 import { reserveSponsorRequest } from "./sponsor-rate";
 
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 
 export async function relaySponsoredClaim(companyContractId: string, encoded: string) {
   if (!validAccountId(companyContractId)) throw new Error("Invalid company account");

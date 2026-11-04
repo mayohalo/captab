@@ -2,7 +2,7 @@ export const PINNED_SPUTNIK_CODE_HASH = "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn
 
 export type DaoPolicy = {
   proposal_bond: string;
-  default_vote_policy?: { weight_kind?: string; quorum?: string | number; threshold?: { Ratio?: number[] } };
+  default_vote_policy?: { weight_kind?: string; quorum?: string | number; threshold?: number[] };
   roles: { name: string; kind: { Group?: string[] }; permissions?: string[]; vote_policy?: Record<string, unknown> }[];
 };
 
@@ -20,7 +20,7 @@ export function assessDemoDao(policy: DaoPolicy | null, codeHash: string | null)
     return { verified: false, reason: "DAO council permissions or vote overrides differ from the demo policy." };
   }
   const vote = policy.default_vote_policy;
-  const ratio = vote?.threshold?.Ratio;
+  const ratio = vote?.threshold;
   if (vote?.weight_kind !== "RoleWeight" || String(vote.quorum) !== "0" || !Array.isArray(ratio) || ratio.length !== 2 || ratio[0] !== 1 || ratio[1] !== 2) {
     return { verified: false, reason: "DAO approval threshold is not the required two of three." };
   }

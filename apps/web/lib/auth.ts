@@ -4,7 +4,7 @@ import { getDatabase } from "./db";
 import { challengeMessage, verifyNep413 } from "./auth-crypto";
 import { assertTestnetNetwork, validAccountId } from "./near";
 
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 const challengeMinutes = 5;
 const sessionHours = 12;
 

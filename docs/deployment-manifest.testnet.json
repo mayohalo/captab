@@ -1,0 +1,118 @@
+{
+  "network": "testnet",
+  "companyId": "captab-company-101e85b169dd3522.testnet",
+  "daoId": "captab-dao-101e85b169dd3522.testnet",
+  "operatorId": "operator.captab-101e85b169dd3522.testnet",
+  "tokenId": "captab-token-101e85b169dd3522.testnet",
+  "dao": {
+    "sourceCommit": "5434a59dec23ee0c49df8c8c4350c208a7e75b0b",
+    "sha256": "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722",
+    "codeHash": "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq",
+    "council": [
+      "council1.captab-101e85b169dd3522.testnet",
+      "council3.captab-101e85b169dd3522.testnet",
+      "council2.captab-101e85b169dd3522.testnet"
+    ],
+    "defaultVotePolicy": {
+      "weight_kind": "RoleWeight",
+      "quorum": "0",
+      "threshold": [
+        1,
+        2
+      ]
+    },
+    "policy": {
+      "roles": [
+        {
+          "name": "all",
+          "kind": "Everyone",
+          "permissions": [
+            "*:AddProposal"
+          ],
+          "vote_policy": {}
+        },
+        {
+          "name": "council",
+          "kind": {
+            "Group": [
+              "council1.captab-101e85b169dd3522.testnet",
+              "council3.captab-101e85b169dd3522.testnet",
+              "council2.captab-101e85b169dd3522.testnet"
+            ]
+          },
+          "permissions": [
+            "*:Finalize",
+            "*:VoteApprove",
+            "*:VoteRemove",
+            "*:AddProposal",
+            "*:VoteReject"
+          ],
+          "vote_policy": {}
+        }
+      ],
+      "default_vote_policy": {
+        "weight_kind": "RoleWeight",
+        "quorum": "0",
+        "threshold": [
+          1,
+          2
+        ]
+      },
+      "proposal_bond": "1000000000000000000000000",
+      "proposal_period": "604800000000000",
+      "bounty_bond": "1000000000000000000000000",
+      "bounty_forgiveness_period": "86400000000000"
+    }
+  },
+  "company": {
+    "sha256": "56e0b34873106db4ad6ac2ae81bd43f2aa5a05dea516a76658cbdafa453ee688",
+    "codeHash": "6r8niDNCvLzzzBeLq5tAYe18SjVKqMJKmCQKZb6dSvQP",
+    "authorizedUnits": "10000000",
+    "schemaVersion": 1,
+    "limits": {
+      "max_holders": 20,
+      "max_grants": 100,
+      "max_distributions": 20,
+      "max_actions": 200,
+      "vesting_boundaries": 49
+    },
+    "deploymentPublicKey": "ed25519:7m6S7A5gZBra1EAYPZe25ev1HtkY5C7YBapRdB2An5hc",
+    "frozen": false,
+    "remainingAccessKeys": [
+      {
+        "publicKey": "ed25519:7m6S7A5gZBra1EAYPZe25ev1HtkY5C7YBapRdB2An5hc",
+        "permission": "FullAccess"
+      }
+    ],
+    "storageFundingPreflight": {
+      "projectedBytes": 618478,
+      "currentBytes": 182,
+      "codeBytes": 403976,
+      "stateBytes": 114320,
+      "bufferBytes": 100000,
+      "storagePricePerByte": "10000000000000000000",
+      "accountBalanceYocto": "10000000000000000000000000",
+      "requiredYocto": "7184780000000000000000000",
+      "shortfallYocto": "0",
+      "funded": true
+    }
+  },
+  "token": {
+    "symbol": "TESTUSD",
+    "decimals": 6,
+    "totalSupply": "100000000000",
+    "sha256": "a662a11e8c24510cea0292b829a199f12738201b9914dbfeab7de42c2df88adf",
+    "codeHash": "CCVuZGpR6jBEP6aYdd3TVkysiVPePhErcHnXfnomE53L",
+    "storageRegistration": "registered",
+    "storageBalance": {
+      "total": "1250000000000000000000",
+      "available": "0"
+    }
+  },
+  "transactions": {
+    "deploy": "B9L3wEwUGW1jvP93pSEFbrZowhgvsQitckyuV14SeBfb",
+    "initialize": "8zZYW2HirT19HUSBxrKL4KuyNcr5vgZctnZ92kh1uHZV",
+    "storageRegistration": "2RBuvoijrG5VdJ6YGXKGHAYYujfzditZjfBhgYff3hR3"
+  },
+  "verifiedAt": "2026-10-25T14:09:16.008Z"
+}

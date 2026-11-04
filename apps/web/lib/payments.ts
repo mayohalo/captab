@@ -68,7 +68,7 @@ export async function submitNextPayment() {
       updateJob(db, job, "Queued", null, "Executor credentials are not configured");
       return { submitted: false, reason: "Executor credentials are not configured" };
     }
-    const account = new Account(accountId, new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" }), privateKey as `ed25519:${string}`);
+    const account = new Account(accountId, new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" }), privateKey as `ed25519:${string}`);
     signingStarted = true;
     const result = await account.callFunctionRaw({ contractId: job.contract_id, methodName: "pay_recipient",
       args: { distribution_id: job.distribution_id, recipient_id: job.recipient_id }, gas: teraToGas(90), deposit: 0n, waitUntil: "INCLUDED_FINAL" });

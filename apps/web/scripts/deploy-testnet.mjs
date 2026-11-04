@@ -21,7 +21,7 @@ try {
 }
 const pinnedDaoSha256 = "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722";
 const apply = process.argv.includes("--apply");
-const rpcUrl = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org";
+const rpcUrl = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com";
 const companyId = process.env.CAPTAB_COMPANY_ACCOUNT_ID;
 const daoId = process.env.CAPTAB_DAO_ACCOUNT_ID;
 const operatorId = process.env.CAPTAB_OPERATOR_ACCOUNT_ID;
@@ -76,7 +76,7 @@ const vote = policy?.default_vote_policy;
 if (!Array.isArray(members) || members.length !== 3 || new Set(members).size !== 3 ||
     !Array.isArray(council.permissions) || !council.permissions.includes("*:VoteApprove") ||
     Object.keys(council.vote_policy ?? {}).length !== 0 || vote?.weight_kind !== "RoleWeight" || String(vote?.quorum) !== "0" ||
-    JSON.stringify(vote?.threshold?.Ratio) !== JSON.stringify([1, 2])) {
+    JSON.stringify(vote?.threshold) !== JSON.stringify([1, 2])) {
   throw new Error("DAO policy is not the pinned three-member two-vote council policy");
 }
 if (previousManifest?.dao?.policy && canonicalJson(policy) !== canonicalJson(previousManifest.dao.policy)) {

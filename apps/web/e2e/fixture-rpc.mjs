@@ -68,7 +68,7 @@ const policy = {
   proposal_bond: "100000000000000000000000", roles: [{ name: "council", kind: { Group: [
     "council-a.testnet", "council-b.testnet", "council-c.testnet",
   ] }, permissions: ["*:VoteApprove"], vote_policy: {} }],
-  default_vote_policy: { weight_kind: "RoleWeight", quorum: "0", threshold: { Ratio: [1, 2] } },
+  default_vote_policy: { weight_kind: "RoleWeight", quorum: "0", threshold: [1, 2] },
 };
 const proposal = { id: 0, proposer: "council-b.testnet", description: "Issue 100 founder units",
   kind: { FunctionCall: { receiver_id: company, actions: [{ method_name: "issue_founder_units",

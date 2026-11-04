@@ -17,7 +17,7 @@ if (![tokenId, daoId].every(id => typeof id === "string" && accountPattern.test(
   throw new Error("Set CAPTAB_TOKEN_ACCOUNT_ID, CAPTAB_DAO_ACCOUNT_ID, and positive CAPTAB_TOKEN_SUPPLY (base units)");
 }
 const apply = process.argv.includes("--apply");
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
 const state = await provider.viewAccount({ accountId: tokenId, blockQuery: finalQuery });

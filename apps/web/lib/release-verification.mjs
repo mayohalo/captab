@@ -34,7 +34,7 @@ export function assessRelease({ manifest, artifacts, chain, funding, requireFroz
   "DAO council or permissions differ from the frozen three-member policy.");
   const vote = chain?.policy?.default_vote_policy;
   check(vote?.weight_kind === "RoleWeight" && String(vote?.quorum) === "0" &&
-    canonicalJson(vote?.threshold?.Ratio) === "[1,2]" && canonicalJson(vote) === canonicalJson(manifest?.dao?.defaultVotePolicy),
+    canonicalJson(vote?.threshold) === "[1,2]" && canonicalJson(vote) === canonicalJson(manifest?.dao?.defaultVotePolicy),
   "DAO voting policy differs from the frozen two-of-three policy.");
   check(Boolean(manifest?.dao?.policy) && canonicalJson(chain?.policy) === canonicalJson(manifest.dao.policy),
     "DAO full policy differs from the frozen manifest.");

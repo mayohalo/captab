@@ -18,7 +18,7 @@ if (!daoId || !accountPattern.test(daoId) || members.length !== 3 || new Set(mem
   throw new Error("Set CAPTAB_DAO_ACCOUNT_ID and three distinct CAPTAB_COUNCIL_ACCOUNTS");
 }
 const apply = process.argv.includes("--apply");
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
 const daoState = await provider.viewAccount({ accountId: daoId, blockQuery: finalQuery });
@@ -35,7 +35,7 @@ if (policy) {
   if (!Array.isArray(actual) || actual.length !== 3 || actual.some(id => !members.includes(id)) ||
       !role.permissions?.includes("*:VoteApprove") || policy.default_vote_policy?.weight_kind !== "RoleWeight" ||
       String(policy.default_vote_policy?.quorum) !== "0" ||
-      JSON.stringify(policy.default_vote_policy?.threshold?.Ratio) !== JSON.stringify([1, 2]) ||
+      JSON.stringify(policy.default_vote_policy?.threshold) !== JSON.stringify([1, 2]) ||
       Object.keys(role.vote_policy ?? {}).length !== 0) throw new Error("Existing DAO policy differs from requested two-vote council");
 }
 console.log(JSON.stringify({ network: "testnet", daoId, members, sourceCommit: "5434a59dec23ee0c49df8c8c4350c208a7e75b0b",
@@ -67,7 +67,7 @@ const actual = role?.kind?.Group;
 if (verifiedCode.hash !== codeHash || !Array.isArray(actual) || actual.length !== 3 || actual.some(id => !members.includes(id)) ||
     !role.permissions?.includes("*:VoteApprove") || verifiedPolicy.default_vote_policy?.weight_kind !== "RoleWeight" ||
     String(verifiedPolicy.default_vote_policy?.quorum) !== "0" ||
-    JSON.stringify(verifiedPolicy.default_vote_policy?.threshold?.Ratio) !== JSON.stringify([1, 2]) ||
+    JSON.stringify(verifiedPolicy.default_vote_policy?.threshold) !== JSON.stringify([1, 2]) ||
     Object.keys(role.vote_policy ?? {}).length !== 0) {
   throw new Error("DAO deployment verification failed; inspect receipts before retrying");
 }

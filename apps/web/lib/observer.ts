@@ -5,7 +5,7 @@ import { assertTestnetNetwork, type CompanyConfig, view } from "./near";
 import { type FinalTransaction, persistFinalTransaction } from "./receipts";
 import { assertObservedTransaction } from "./transaction-identity.mjs";
 
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 
 export type OperationRow = {
   id: string;

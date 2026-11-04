@@ -20,7 +20,7 @@ const artifacts = Object.fromEntries(await Promise.all(Object.entries(paths).map
   const digest = createHash("sha256").update(bytes).digest();
   return [name, { sha256: digest.toString("hex"), codeHash: baseEncode(digest) }];
 })));
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 const finalQuery = { finality: "final" };
 if (await provider.getNetworkId() !== "testnet") throw new Error("RPC endpoint is not NEAR testnet");
 const [companyCode, daoCode, tokenCode, policy, tokenMetadata, tokenSupply, config, totals, accessKeyList, storageBalance, account, protocol] = await Promise.all([

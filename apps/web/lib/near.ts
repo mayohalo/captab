@@ -3,7 +3,7 @@ import { assessDemoDao, type DaoAssessment, type DaoPolicy } from "./dao-policy"
 import { requireTestnet } from "./network-guard.mjs";
 
 export const network = "testnet";
-const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org" });
+const provider = new JsonRpcProvider({ url: process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com" });
 const finalBlockQuery = { finality: "final" as const };
 export const assertTestnetNetwork = () => requireTestnet(provider);
 

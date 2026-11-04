@@ -3,7 +3,7 @@ import test from "node:test";
 import { assertReleaseCompanyWasm, assessRelease } from "./release-verification.mjs";
 
 const limits = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
-const vote = { weight_kind: "RoleWeight", quorum: "0", threshold: { Ratio: [1, 2] } };
+const vote = { weight_kind: "RoleWeight", quorum: "0", threshold: [1, 2] };
 const members = ["a.testnet", "b.testnet", "c.testnet"];
 const artifact = (name) => ({ sha256: `${name}-sha`, codeHash: `${name}-code` });
 const snapshot = {
