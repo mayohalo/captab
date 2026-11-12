@@ -1,0 +1,39 @@
+1
+00:00:00,400 --> 00:00:03,500
+Captab: your cap table, from day zero to unicorn.
+
+2
+00:00:04,000 --> 00:00:06,100
+Every issuance starts as a DAO proposal.
+
+3
+00:00:06,100 --> 00:00:08,200
+Two of three board members approve, then the contract verifies and executes.
+
+4
+00:00:08,600 --> 00:00:12,600
+One on-chain ledger tracks founders, the contributor pool and free capacity.
+
+5
+00:00:13,000 --> 00:00:15,300
+Contributor grants vest monthly after a 12-month cliff.
+
+6
+00:00:15,300 --> 00:00:17,800
+Claims are sponsored, so a contributor holding 0 NEAR can still claim.
+
+7
+00:00:18,200 --> 00:00:20,800
+Payouts come from a frozen snapshot the DAO approved and funded exactly.
+
+8
+00:00:20,800 --> 00:00:23,400
+A failed payment returns to escrow, and the retry pays exactly once.
+
+9
+00:00:23,800 --> 00:00:27,200
+Live today: founders, grants, payouts. Next: investor rounds and share tokens.
+
+10
+00:00:27,600 --> 00:00:29,800
+Captab. From day zero to unicorn, governed on NEAR.
