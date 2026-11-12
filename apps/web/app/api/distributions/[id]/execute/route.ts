@@ -4,6 +4,7 @@ import { validAccountId } from "../../../../../lib/near";
 import { accountFromSession, assertRequestOrigin, authOrigin } from "../../../../../lib/auth";
 import { type CompanyConfig, verifiedCompanyCode, verifiedDaoPolicy, view } from "../../../../../lib/near";
 import { getDatabase } from "../../../../../lib/db";
+import { councilMembers } from "../../../../../lib/dao-policy";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ async function authorized(request: Request, companyId: string): Promise<boolean>
   if (request.method !== "GET") assertRequestOrigin(request, authOrigin(request));
   const config = await view<CompanyConfig>(companyId, "get_config");
   const policy = await verifiedDaoPolicy(config.dao_id);
-  return policy.roles.some(role => role.name === "council" && role.kind.Group?.includes(actor));
+  return councilMembers(policy).includes(actor);
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

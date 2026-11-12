@@ -36,6 +36,7 @@ jobs:
           pnpm test:receipts
           pnpm test:auth
           pnpm test:dao
+          pnpm test:planning
           pnpm test:health
           pnpm test:hash
           pnpm test:payments

@@ -22,7 +22,7 @@ export function CompanyView({ id, totals, config, companyAssessment, daoPolicy, 
       <article><span>Available pool</span><strong>{formatUnits(totals.pool_available)}</strong></article>
       <article><span>Unallocated</span><strong>{formatUnits(totals.unallocated_units)}</strong></article>
     </section>
-    <OwnershipSection totals={totals} holdings={holdings} />
+    <OwnershipSection id={id} totals={totals} holdings={holdings} />
     <GrantsSection id={id} grants={grants} companyVerified={companyAssessment.verified} />
     <DistributionsSection id={id} distributions={distributions} daoId={config.dao_id} tokenId={config.settlement_token_id} treasuryBalance={treasuryBalance} />
     <DistributionOperator id={id} config={config} policy={daoPolicy} governanceVerified={governanceVerified} totals={totals} distributions={distributions} />

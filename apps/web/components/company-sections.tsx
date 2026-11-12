@@ -9,8 +9,9 @@ export function CompanyNavigation({ id }: { id: string }) {
     <Link href={`/me?company=${id}`}>My ownership</Link></nav>;
 }
 
-export function OwnershipSection({ totals, holdings }: { totals: Totals; holdings: Holding[] }) {
+export function OwnershipSection({ id, totals, holdings }: { id: string; totals: Totals; holdings: Holding[] }) {
   return <section id="ownership"><h2>Ownership</h2><p>Issued percentages use issued units. Fully diluted percentages include the pool and reserved grants.</p>
+    <p className="export-links">Export cap table at revision {totals.ledger_revision}: <a href={`/api/companies/${id}/export?format=csv`} download>CSV</a> · <a href={`/api/companies/${id}/export?format=json`} download>JSON</a></p>
     <div className="table-scroll" role="region" aria-label="Ownership table" tabIndex={0}><table><thead><tr><th>Account</th><th>Issued units</th><th>Issued</th><th>Fully diluted</th></tr></thead><tbody>
       {holdings.map(h => <tr key={h.account_id}><td>{h.account_id}</td><td>{formatUnits(h.issued_units)}</td><td>{percent(h.issued_units, totals.issued_total)}</td><td>{percent(h.issued_units, totals.fully_diluted_total)}</td></tr>)}
     </tbody></table></div>{holdings.length === 0 && <p>No units issued yet.</p>}</section>;

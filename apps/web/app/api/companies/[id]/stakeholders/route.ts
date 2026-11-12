@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { accountFromSession, assertRequestOrigin, authOrigin } from "../../../../../lib/auth";
 import { ensureCompany, getDatabase } from "../../../../../lib/db";
+import { councilMembers } from "../../../../../lib/dao-policy";
 import { type CompanyConfig, type Grant, type Holding, validAccountId, verifiedCompanyCode, verifiedDaoPolicy, view } from "../../../../../lib/near";
 
 export const runtime = "nodejs";
@@ -9,7 +10,7 @@ async function context(contractId: string, accountId: string) {
   await verifiedCompanyCode(contractId);
   const config = await view<CompanyConfig>(contractId, "get_config");
   const policy = await verifiedDaoPolicy(config.dao_id);
-  const council = policy.roles.some(role => role.name === "council" && role.kind.Group?.includes(accountId));
+  const council = councilMembers(policy).includes(accountId);
   const companyId = ensureCompany(getDatabase(), contractId, config.dao_id);
   return { companyId, council };
 }

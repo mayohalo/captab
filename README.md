@@ -8,7 +8,7 @@
 
 | NEAR primitive | How Captab uses it |
 | --- | --- |
-| [Sputnik DAO](https://github.com/near-daos/sputnik-dao-contract) (pinned commit `5434a59`, WASM hash verified) | A two-of-three board approves every issuance, grant, cancellation, distribution approval, funding transfer, and pause. The company contract trusts only the DAO as the immediate caller. |
+| [Sputnik DAO](https://github.com/near-daos/sputnik-dao-contract) (pinned commit `5434a59`, WASM hash verified) | A board approves every issuance, grant, cancellation, distribution approval, funding transfer, and pause. The company contract trusts only the DAO as the immediate caller. |
 | [NEP-366 meta-transactions](https://github.com/near/NEPs/blob/master/neps/nep-0366.md) | A contributor with **zero NEAR** signs a `claim_vested` delegate action, and a scoped relayer pays the gas. |
 | [NEP-141](https://github.com/near/NEPs/blob/master/neps/nep-0141.md) `ft_transfer_call` | The DAO funds a distribution in a single transfer. The contract accepts only the exact approved budget, from the DAO, once. |
 | Promises and callbacks | Each payout is a separate `ft_transfer` with a private callback. A failed transfer can be retried; a lost callback stays locked rather than risking a double payment. |
@@ -46,6 +46,15 @@ flowchart LR
 2. **Grant and vest.** `create_grant` reserves pool units against 49 approved UTC month boundaries: a 12-month cliff, then monthly vesting to 48 months. The recipient calls `claim_vested` directly or through the sponsored relayer. Cancellation releases only unvested units.
 3. **Distribute.** The operator prepares a snapshot. The contract derives every holder's payout with largest-remainder rounding, so payouts sum exactly to the budget, and hashes the schedule. The DAO approves that hash, then funds it. Payments run one recipient at a time; a failed one can be retried.
 
+### Planning tools (app only)
+
+These help a company plan its next steps. None of them proposes, signs, or changes anything on-chain.
+
+- **Cap table export.** `GET /api/companies/<id>/export?format=csv|json` returns holdings, grants, pool, and totals at one ledger revision. The response headers give the revision and the SHA-256 of the file, so a lawyer or auditor can check they received the same file. It rejects a read during which the ledger changed. Spreadsheet formula characters are neutralized. Download links are on the ownership pages.
+- **Priced-round model** (`/company/<id>/ownership`). Enter a pre-money valuation, an investment, and a pool target to see the price per unit, the new investor units, any pre-money pool top-up, and the before and after table. It warns when the round would need more units than are unallocated. Executing a round needs contract support for investor issuance, which is on the roadmap.
+- **Exit waterfall preview** (`/company/<id>/distributions`). Splits sale proceeds across issued units and grants (accelerated or cancelled unvested units), after optional liquidation preferences (multiple, participating or not). Non-participating holders convert to common when that pays more. Integer math with largest-remainder rounding, the same rule the contract uses for payouts, so the rows sum to the proceeds exactly. Paying this schedule on-chain needs a distribution with an explicit payout list, which is on the roadmap.
+- **Any majority council.** Governance works with any council size on the pinned Sputnik build, as long as only the council can vote and approval needs a majority. The app shows the rule (for example "2 of 3"). Code: [`dao-policy.ts`](apps/web/lib/dao-policy.ts), [`cap-table-export.ts`](apps/web/lib/cap-table-export.ts), [`round-model.ts`](apps/web/lib/round-model.ts), [`waterfall.ts`](apps/web/lib/waterfall.ts). Tests: `pnpm test:dao`, `pnpm test:planning`, and three browser tests.
+
 ## Claims and evidence
 
 Every claim below is backed by a test you can run or a transaction you can open.
@@ -53,7 +62,7 @@ Every claim below is backed by a test you can run or a transaction you can open.
 | Claim | Code | Local proof | Testnet proof |
 | --- | --- | --- | --- |
 | Only the DAO can change ownership | [`assert_dao`](contracts/company/src/lib.rs#L968) | `non_dao_cannot_issue` | Proposals [6](https://testnet.nearblocks.io/txns/6ekVUH6L7vbsWH4aeSjdG99RCbgKjB8W3hbPLQfdCU7v) and [7](https://testnet.nearblocks.io/txns/CpkKMtFCpVVYGrHAnc1bbApbrPJdUYvQnKtJw1SaMYJU) (pause/resume), each executed after [two](https://testnet.nearblocks.io/txns/9F1KBfKMoMLu7uj86uyG4T7ZD98fcPVbrdHsuQ3GBXJV) [votes](https://testnet.nearblocks.io/txns/GL8m4DFKDoFvBMqVyNUVXkbJXsquUMUSWq5FLCa4giXK) |
-| A two-of-three vote is required | Pinned Sputnik policy | Sandbox `real_sputnik_requires_two_votes_and_funds_company` | Same as above |
+| A council majority is required (2 of 3 on testnet) | [`assessDaoPolicy`](apps/web/lib/dao-policy.ts) | Sandbox `real_sputnik_requires_two_votes_and_funds_company`; `pnpm test:dao` | Same as above |
 | Replayed or repurposed actions cannot double-issue | [`was_processed`](contracts/company/src/lib.rs#L1006) | `identical_replay_is_idempotent_even_after_revision_changes`, `action_id_cannot_be_repurposed`, `stale_revision_rejected` | — |
 | Supply invariants hold across every operation | [`unallocated`](contracts/company/src/lib.rs#L983) | `mixed_ledger_operations_preserve_accounting_after_every_step`, `cannot_exceed_authorized_supply` | `pnpm verify:testnet` audits the live ledger |
 | Vesting: cliff, monthly steps, cancellation | [`vested_at`](contracts/company/src/lib.rs#L936) | `grant_reservation_cliff_claim_and_full_vesting`, `cancellation_releases_only_unvested_units`, `another_account_cannot_claim` | — |
@@ -77,7 +86,7 @@ pnpm install
 pnpm test:contract          # 28 Rust unit tests
 pnpm test:sandbox           # 8 NEAR Sandbox tests: pinned Sputnik DAO, token, sponsored claim, payout retry
 pnpm --filter @captab/web exec playwright install chromium
-pnpm test:e2e               # 18 browser tests against fixture chain views
+pnpm test:e2e               # 21 browser tests against fixture chain views
 cp apps/web/.env.example apps/web/.env.local   # point at the testnet company
 pnpm --filter @captab/web dev
 ```

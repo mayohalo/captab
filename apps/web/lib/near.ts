@@ -1,5 +1,5 @@
 import { JsonRpcProvider } from "near-api-js";
-import { assessDemoDao, type DaoAssessment, type DaoPolicy } from "./dao-policy";
+import { assessDaoPolicy, type DaoAssessment, type DaoPolicy } from "./dao-policy";
 import { requireTestnet } from "./network-guard.mjs";
 
 export const network = "testnet";
@@ -38,7 +38,7 @@ export async function verifiedDaoPolicy(daoId: string): Promise<DaoPolicy> {
     view<DaoPolicy>(daoId, "get_policy"),
     provider.viewContractCode({ contractId: daoId, blockQuery: finalBlockQuery }),
   ]);
-  const assessment = assessDemoDao(policy, code.hash);
+  const assessment = assessDaoPolicy(policy, code.hash);
   if (!assessment.verified) throw new Error(assessment.reason);
   return policy;
 }
@@ -86,7 +86,7 @@ export async function readCompany(contractId: string) {
       provider.viewContractCode({ contractId: config.dao_id, blockQuery: finalBlockQuery }),
     ]);
     daoPolicy = policy;
-    daoAssessment = assessDemoDao(policy, code.hash);
+    daoAssessment = assessDaoPolicy(policy, code.hash);
     proposals = await view<DaoProposal[]>(config.dao_id, "get_proposals", { from_index: Math.max(0, lastId - 20), limit: 20 });
   } catch { /* Company views remain available while DAO reads are unavailable. */ }
   let treasuryBalance: string | null = null;

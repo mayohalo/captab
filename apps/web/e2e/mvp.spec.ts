@@ -105,8 +105,8 @@ test("setup inspects the configured company, DAO, and settlement token", async (
   await page.getByRole("button", { name: "Inspect on-chain setup" }).click();
   await expect(page.getByRole("heading", { name: "Company contract" })).toBeVisible();
   await expect(page.getByText(/Schema v1 · limits 20 holders, 100 grants, 20 distributions, 200 actions/)).toBeVisible();
-  await expect(page.getByText("Council accounts: 3 (expected)")).toBeVisible();
-  await expect(page.getByText("Pinned Sputnik code and two-of-three council policy verified.")).toBeVisible();
+  await expect(page.getByText("Council accounts: 3 · approvals required: 2 of 3")).toBeVisible();
+  await expect(page.getByText("Pinned Sputnik code and 2 of 3 council approval verified.")).toBeVisible();
   await expect(page.getByText("TESTUSD · 6 decimals")).toBeVisible();
   await page.getByRole("link", { name: "Open company governance" }).click();
   await expect(page.getByRole("heading", { name: "Ownership" })).toBeVisible();
@@ -308,4 +308,39 @@ test("unverified DAO code cannot enable governance controls", async ({ page }) =
   await expect(page.getByRole("alert").filter({ hasText: "DAO verification failed" })).toBeVisible();
   await expect(page.locator("#governance").getByRole("button", { name: "Review proposal" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Queue ready and failed recipients" })).toBeDisabled();
+});
+
+test("cap table export reconciles to the ledger in CSV and JSON", async ({ request }) => {
+  const csv = await request.get("/api/companies/company.testnet/export?format=csv");
+  expect(csv.ok()).toBeTruthy();
+  expect(csv.headers()["content-type"]).toContain("text/csv");
+  expect(csv.headers()["x-captab-ledger-revision"]).toBe("4");
+  const body = await csv.text();
+  const { createHash } = await import("node:crypto");
+  expect(csv.headers()["x-captab-export-sha256"]).toBe(createHash("sha256").update(body).digest("hex"));
+  expect(body).toContain("holding,founder-a.testnet,3600000,59.7510,45.0000,");
+  expect(body).toContain("pool_available,,1900000,,23.7500,");
+  const json = await (await request.get("/api/companies/company.testnet/export?format=json")).json();
+  expect(json.totals).toMatchObject({ issuedUnits: "6025000", fullyDilutedUnits: "8000000" });
+  expect(json.grants).toHaveLength(21);
+  expect((await request.get("/api/companies/company.testnet/export?format=xlsx")).status()).toBe(400);
+});
+
+test("ownership page models a priced round without proposing anything", async ({ page }) => {
+  await page.goto("/company/company.testnet/ownership");
+  await expect(page.getByRole("link", { name: "CSV" })).toHaveAttribute("href", "/api/companies/company.testnet/export?format=csv");
+  await expect(page.getByTestId("round-summary")).toContainText("Post-money $10,000,000.00 · price per unit $1.000000");
+  await expect(page.getByTestId("round-summary")).toContainText("new investor units 2,000,000");
+  await page.getByLabel("Available pool after the round (% of fully diluted)").fill("25");
+  await expect(page.getByTestId("round-summary")).toContainText("pool top-up 872,727");
+  await expect(page.getByText(/authorized units would have to increase/)).toBeVisible();
+});
+
+test("distributions page previews an exit waterfall with a preference", async ({ page }) => {
+  await page.goto("/company/company.testnet/distributions");
+  await expect(page.getByTestId("waterfall-total")).toHaveText("$10,000,000.00");
+  await page.getByRole("button", { name: "Add liquidation preference" }).click();
+  const table = page.getByRole("region", { name: "Exit waterfall table" });
+  await expect(table.getByRole("row", { name: /contributor\.testnet/ })).toContainText("Preference $2,000,000.00");
+  await expect(page.getByTestId("waterfall-total")).toHaveText("$10,000,000.00");
 });

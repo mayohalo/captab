@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { CompanyNavigation, DistributionsSection, GrantsSection, OwnershipSection } from "../../../../components/company-sections";
 import { GovernancePanel } from "../../../../components/governance-panel";
 import { DistributionOperator } from "../../../../components/distribution-operator";
+import { RoundCalculator } from "../../../../components/round-calculator";
+import { ExitWaterfall } from "../../../../components/exit-waterfall";
 import { readCompany, validAccountId } from "../../../../lib/near";
 
 export const dynamic = "force-dynamic";
@@ -24,13 +26,15 @@ export default async function CompanySectionPage({ params }: { params: Promise<{
       {company.config.paused && <p role="alert">Company is paused. New actions are unavailable.</p>}
       {!company.companyAssessment.verified && <p role="alert">Company verification failed: {company.companyAssessment.reason}</p>}
       {!company.daoAssessment.verified && <p role="alert">DAO verification failed: {company.daoAssessment.reason}</p>}
-      {section === "ownership" && <><OwnershipSection totals={company.totals} holdings={company.holdings} />{governance("founder")}</>}
+      {section === "ownership" && <><OwnershipSection id={id} totals={company.totals} holdings={company.holdings} />
+        <RoundCalculator totals={company.totals} holdings={company.holdings} />{governance("founder")}</>}
       {section === "grants" && <><GrantsSection id={id} grants={company.grants} companyVerified={company.companyAssessment.verified} />{governance("grant")}</>}
       {section === "approvals" && governance("founder")}
       {section === "distributions" && <><DistributionsSection id={id} distributions={company.distributions}
         daoId={company.config.dao_id} tokenId={company.config.settlement_token_id} treasuryBalance={company.treasuryBalance} />
         <DistributionOperator id={id} config={company.config} policy={company.daoPolicy} governanceVerified={governanceVerified}
-          totals={company.totals} distributions={company.distributions} />{governance("approve")}</>}
+          totals={company.totals} distributions={company.distributions} />
+        <ExitWaterfall holdings={company.holdings} grants={company.grants} />{governance("approve")}</>}
     </main>;
   } catch (error) {
     return <main><Link href={`/company/${id}`}>← {id}</Link><h1>Company unavailable</h1>

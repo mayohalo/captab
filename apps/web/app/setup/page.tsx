@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { readCompany, validAccountId, view } from "../../lib/near";
+import { councilMembers, councilRule, describeRule } from "../../lib/dao-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -18,17 +19,18 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
       token = await view<{ symbol?: string; decimals?: number }>(inspection.config.settlement_token_id, "ft_metadata");
     } catch (cause) { error = cause instanceof Error ? cause.message : "Company inspection failed"; }
   }
-  const council = inspection?.daoPolicy?.roles.find(role => role.name === "council")?.kind.Group ?? [];
+  const council = councilMembers(inspection?.daoPolicy ?? null);
+  const rule = councilRule(inspection?.daoPolicy ?? null);
   const proposalStates = inspection?.proposals.map(proposal => proposal.status) ?? [];
   return <main><header><div><Link href="/">CapTable</Link><h1>Company setup</h1><p>NEAR testnet · attach a pre-created Sputnik DAO and company account.</p></div></header>
     <section><h2>Inspect company</h2><form className="governance-form" action="/setup" method="get">
       <label>Company contract account<input name="company" defaultValue={selected} placeholder="company.testnet" required /></label>
       <button>Inspect on-chain setup</button>
     </form></section>
-    {error && <section><p role="alert">{error}</p><p>Deploy the pinned company WASM and initialize it with an existing three-member Sputnik DAO, then inspect again.</p></section>}
+    {error && <section><p role="alert">{error}</p><p>Deploy the pinned company WASM and initialize it with an existing Sputnik DAO whose council approves by majority, then inspect again.</p></section>}
     {inspection && <><section className="cards">
       <article><h2>Company contract</h2><p>{selected}</p><p>Code hash: <code>{codeHash}</code></p><p>Schema v{inspection.config.schema_version} · limits {inspection.config.limits.max_holders} holders, {inspection.config.limits.max_grants} grants, {inspection.config.limits.max_distributions} distributions, {inspection.config.limits.max_actions} actions</p><p>Authorized {inspection.config.authorized_units} units · issued {inspection.totals.issued_total}</p><p>{inspection.config.paused ? "Paused" : "Active"}</p></article>
-      <article><h2>Governance</h2><p>DAO: {inspection.config.dao_id}</p><p>Council accounts: {council.length} {council.length === 3 ? "(expected)" : "(check policy)"}</p><p>{inspection.daoPolicy ? `Proposal bond: ${inspection.daoPolicy.proposal_bond} yoctoNEAR` : "DAO policy unavailable"}</p></article>
+      <article><h2>Governance</h2><p>DAO: {inspection.config.dao_id}</p><p>Council accounts: {council.length} · approvals required: {describeRule(rule)}</p><p>{inspection.daoPolicy ? `Proposal bond: ${inspection.daoPolicy.proposal_bond} yoctoNEAR` : "DAO policy unavailable"}</p></article>
       <p role={inspection.daoAssessment.verified ? undefined : "alert"}>{inspection.daoAssessment.reason}</p>
       <p role={inspection.companyAssessment.verified ? undefined : "alert"}>{inspection.companyAssessment.reason}</p>
       <article><h2>Settlement</h2><p>Token: {inspection.config.settlement_token_id}</p><p>{token?.symbol ?? "Unknown token"} · {token?.decimals ?? "?"} decimals</p><p>DAO token balance: {inspection.treasuryBalance === null ? "unavailable" : `${inspection.treasuryBalance} base units`}</p><p>Snapshot operator: {inspection.config.snapshot_operator_id}</p></article>

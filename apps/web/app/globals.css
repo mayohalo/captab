@@ -3,3 +3,4 @@
 .payment-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #e0e8e2}.payment-row button{white-space:nowrap}@media(max-width:760px){nav{flex-wrap:wrap}.payment-row{align-items:flex-start;flex-direction:column}}
 .account-label{font-size:1rem!important;overflow-wrap:anywhere}
 .cards{grid-template-columns:minmax(0,1fr)}.cards article{min-width:0}.table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain}.table-scroll table{min-width:520px}.table-scroll:focus-visible{outline:2px solid #126e51;outline-offset:2px}
+.preference-row{display:grid;gap:10px;border:1px solid #d8e2db;border-radius:10px;padding:12px}.preference-row legend{font-weight:700;padding:0 6px}.governance-form label.checkbox{display:flex;align-items:center;gap:8px}.export-links a{font-weight:600}

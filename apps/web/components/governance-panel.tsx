@@ -8,6 +8,7 @@ import type { PreparedProposal, ProposalAction, ProposalRequest } from "../lib/p
 import { observeTransaction } from "../lib/observe";
 import { describeObservation } from "../lib/observed-status.mjs";
 import { getConnector } from "./wallet";
+import { councilMembers, councilRule, describeRule } from "../lib/dao-policy";
 
 type PreparedEnvelope = { proposal: PreparedProposal; daoId: string; proposalBond: string; expectedRevision: number; preparedAt: string };
 
@@ -42,7 +43,8 @@ export function GovernancePanel({ id, totals, config, policy, governanceVerified
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const selected = distributions.find(d => String(d.id) === distributionId);
-  const council = policy?.roles.find(role => role.name === "council")?.kind.Group ?? [];
+  const council = councilMembers(policy);
+  const rule = councilRule(policy);
   const isCouncil = Boolean(governanceVerified && account && council.includes(account));
 
   useEffect(() => {
@@ -127,8 +129,8 @@ export function GovernancePanel({ id, totals, config, policy, governanceVerified
 
   return <section id="governance">
     <h2>Governance</h2>
-    <p>Sputnik DAO {config.dao_id}. A proposal needs two council approvals under the configured demo policy. The company changes only after the DAO executes the call.</p>
-    {!policy || !governanceVerified ? <p role="alert">Company code and the DAO's two-of-three policy must be verified before proposal submission.</p> : <>
+    <p>Sputnik DAO {config.dao_id}. A proposal needs {describeRule(rule)} council approvals under the DAO policy. The company changes only after the DAO executes the call.</p>
+    {!policy || !governanceVerified ? <p role="alert">Company code and a majority council policy on the pinned Sputnik build must be verified before proposal submission.</p> : <>
       <p>Proposal bond: {policy.proposal_bond} yoctoNEAR · {account ? `${account}${isCouncil ? " (council)" : ""}` : "Wallet disconnected"}</p>
       {!account && <button onClick={connect}>Connect to propose or vote</button>}
       <div className="governance-form">

@@ -11,6 +11,7 @@ pnpm install
 pnpm test:contract
 pnpm test:auth
 pnpm test:dao
+pnpm test:planning
 pnpm test:health
 pnpm test:hash
 pnpm test:sponsor
@@ -73,7 +74,7 @@ After deployment, copy `company.codeHash` from the manifest into `CAPTAB_COMPANY
 
 After issuance, `pnpm deploy:testnet --apply` can reverify an already initialized, token-registered company without its deployment key. It preserves the deployment and initialization transaction hashes already recorded in the manifest while refreshing the on-chain code, configuration, access-key list, and verification time. A key is still required if deployment, initialization, or token storage registration remains unfinished.
 
-Open `/setup?company=<company-account>` and confirm the DAO, operator, token, code hash, initial totals, and the explicit pinned-Sputnik two-of-three verification message. The app refuses governance and council-only private-data access if the DAO code or policy differs. Set `NEXT_PUBLIC_COMPANY_CONTRACT_ID` to the deployed company account, then start the app and worker in separate terminals:
+Open `/setup?company=<company-account>` and confirm the DAO, operator, token, code hash, initial totals, and the pinned-Sputnik verification message with the council approval rule (2 of 3 for the demo DAO). The app refuses governance and council-only private-data access if the DAO code differs, if any role besides the council can vote on proposals, or if fewer than a majority of the council can approve. Set `NEXT_PUBLIC_COMPANY_CONTRACT_ID` to the deployed company account, then start the app and worker in separate terminals:
 
 ```sh
 pnpm --filter @captab/web dev

@@ -7,6 +7,7 @@ import { type CompanyConfig, type DaoPolicy, type Distribution, type Totals } fr
 import { getConnector } from "./wallet";
 import { observeTransaction } from "../lib/observe";
 import { describeObservation } from "../lib/observed-status.mjs";
+import { councilMembers } from "../lib/dao-policy";
 
 type Job = { recipient_id: string; attempt_id: number; submission_state: string; tx_hash: string | null; last_error: string | null };
 
@@ -22,7 +23,7 @@ export function DistributionOperator({ id, config, policy, governanceVerified, t
   const [busy, setBusy] = useState(false);
   const [jobs, setJobs] = useState<Record<number, Job[]>>({});
   const isOperator = account === config.snapshot_operator_id;
-  const isCouncil = Boolean(governanceVerified && account && policy?.roles.some(role => role.name === "council" && role.kind.Group?.includes(account)));
+  const isCouncil = Boolean(governanceVerified && account && councilMembers(policy).includes(account));
 
   useEffect(() => {
     let active = true;
