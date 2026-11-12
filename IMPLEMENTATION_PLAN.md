@@ -1,6 +1,13 @@
 # CapTable: technical implementation plan
 
-Status: implementation in progress; see README for verified coverage and remaining work. Prepared 25 October 2026.
+Status: MVP implemented and deployed to testnet; see the [README](README.md) for evidence and the [release audit](docs/RELEASE_STATUS.md) for gates. This is the original plan, prepared 25 October 2026, and is kept as written apart from this note.
+
+**Deviations in the build:**
+- **Storage:** SQLite on a single persistent host instead of PostgreSQL, because the demo has one worker.
+- **Contract layout:** one `contracts/company/src/lib.rs` file instead of separate `auth`/`ledger`/`grants`/`distributions`/`events`/`types` modules.
+- **Packages:** domain and NEAR helpers live in `apps/web/lib` instead of `packages/`, and the worker runs as `apps/web/scripts/reconcile-worker.mjs`.
+- **Integrations:** Trezu is not integrated; funding uses direct Sputnik proposals (the planned fallback). History covers app-submitted transactions only (the disclosed fallback in §6).
+- **Deployment key:** the testnet deployment key is kept rather than removed (§10); see the release audit.
 
 The workstreams assume three contributors: a contracts engineer (C), a frontend engineer (F), and a full-stack/integration engineer (I). They describe human/team ownership, not agents already assigned. With one developer, keep the same dependency order and extend the schedule rather than promise the full scope in two weeks.
 
