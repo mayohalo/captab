@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { Holding, Totals } from "../lib/near";
 import { formatBps, formatCents, formatMicros, modelRound, parseMoneyCents, parsePercentBps } from "../lib/round-model";
 
-export function RoundCalculator({ totals, holdings }: { totals: Totals; holdings: Holding[] }) {
+export function RoundCalculator({ totals, holdings, canAmend = false }: { totals: Totals; holdings: Holding[]; canAmend?: boolean }) {
   const [preMoney, setPreMoney] = useState("8000000");
   const [investment, setInvestment] = useState("2000000");
   const [poolTarget, setPoolTarget] = useState("10");
@@ -34,7 +34,7 @@ export function RoundCalculator({ totals, holdings }: { totals: Totals; holdings
       <p data-testid="round-summary">Post-money {formatCents(result.postMoneyCents)} · price per unit {formatMicros(result.pricePerUnitMicros)} ·
         new investor units {result.investorUnits.toLocaleString("en-US")} · pool top-up {result.poolTopUp.toLocaleString("en-US")}</p>
       {result.exceedsAuthorized
-        ? <p role="alert">This round needs {result.newUnitsNeeded.toLocaleString("en-US")} new units but only {result.unallocatedBefore.toLocaleString("en-US")} are unallocated. The company&apos;s authorized units would have to increase first, which the current contract does not support.</p>
+        ? <p role="alert">This round needs {result.newUnitsNeeded.toLocaleString("en-US")} new units but only {result.unallocatedBefore.toLocaleString("en-US")} are unallocated. The company&apos;s authorized units would have to increase first{canAmend ? ": propose \u201cRaise authorized units\u201d under Approvals." : ", which this contract version does not support."}</p>
         : <p>Fits within unallocated capacity: {result.newUnitsNeeded.toLocaleString("en-US")} of {result.unallocatedBefore.toLocaleString("en-US")} units.</p>}
       <div className="table-scroll" role="region" aria-label="Round pro forma table" tabIndex={0}><table>
         <thead><tr><th>Stakeholder</th><th>Units before</th><th>Fully diluted before</th><th>Units after</th><th>Fully diluted after</th></tr></thead>
@@ -43,7 +43,7 @@ export function RoundCalculator({ totals, holdings }: { totals: Totals; holdings
           <tr><td><strong>Fully diluted total</strong></td><td>{result.beforeFullyDiluted.toLocaleString("en-US")}</td><td>100.00%</td>
             <td>{result.afterFullyDiluted.toLocaleString("en-US")}</td><td>100.00%</td></tr></tbody>
       </table></div>
-      <p>Executing a round needs investor issuance and round records in the contract, which are on the roadmap. Today, the board can only issue founder units.</p>
+      <p>{canAmend ? "To execute it, open a round at this price per unit and approve an issuance deal for the investor under Deals." : "Executing a round needs contract schema v2 (rounds and issuance deals). This company can only issue founder units."}</p>
     </>}
   </section>;
 }

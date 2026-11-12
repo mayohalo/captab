@@ -31,3 +31,10 @@ test("distribution hash matches the contract-generated snapshot", () => {
   assert.equal(Buffer.from(distributionHash("company.testnet", value)).toString("hex"), expectedFromContract);
   assert.doesNotThrow(() => assertDistributionHash("company.testnet", value));
 });
+
+test("explicit payout lists hash under their own domain, matching the Rust contract", () => {
+  const value = { ...distribution(), kind: "Explicit" };
+  const explicit = "51cc8f9ff6691a66047262d2e38515567f978524cb951f9032a9b7a0254715a4";
+  assert.equal(Buffer.from(distributionHash("company.testnet", value)).toString("hex"), explicit);
+  assert.notEqual(explicit, expected, "the same rows hash differently as pro rata and explicit");
+});

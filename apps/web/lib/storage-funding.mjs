@@ -1,5 +1,7 @@
-// Measured by the bounded NEAR Sandbox stress test; revisit after contract changes.
-export const DEMO_STATE_GROWTH_BYTES = 114_320;
+// Schema v2: the NEAR Sandbox stress test measured 1,141,581 bytes with 100 holders, 200 grants, and 50
+// 100-row distributions. The extra 108,419 bytes are an allowance for 200 deals and 20 rounds, which the
+// stress test does not fill. Revisit after contract changes.
+export const DEMO_STATE_GROWTH_BYTES = 1_250_000;
 export const STORAGE_BUFFER_BYTES = 100_000;
 export const GAS_HEADROOM_YOCTO = 10n ** 24n;
 

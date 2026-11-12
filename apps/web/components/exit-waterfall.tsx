@@ -7,7 +7,12 @@ import { computeWaterfall, parseMultipleBps, type Preference, type UnvestedTreat
 
 type PreferenceDraft = { accountId: string; invested: string; multiple: string; participating: boolean };
 
-export function ExitWaterfall({ holdings, grants }: { holdings: Holding[]; grants: Grant[] }) {
+/** Converts cents to token base units; null when the token has fewer than two decimals. */
+export function centsToBaseUnits(cents: bigint, decimals: number): bigint | null {
+  return decimals >= 2 ? cents * 10n ** BigInt(decimals - 2) : null;
+}
+
+export function ExitWaterfall({ holdings, grants, tokenDecimals = null }: { holdings: Holding[]; grants: Grant[]; tokenDecimals?: number | null }) {
   const accounts = useMemo(() => holdings.map(holding => holding.account_id).sort(), [holdings]);
   const [proceeds, setProceeds] = useState("10000000");
   const [unvested, setUnvested] = useState<UnvestedTreatment>("accelerate");
@@ -64,7 +69,12 @@ export function ExitWaterfall({ holdings, grants }: { holdings: Holding[]; grant
             <td data-testid="waterfall-total">{formatCents(result.rows.reduce((sum, row) => sum + row.payoutCents, 0n))}</td>
             <td>{formatCents(result.rows.reduce((sum, row) => sum + row.proRataCents, 0n))}</td></tr></tbody>
       </table></div>
-      <p>Today the contract pays distributions pro rata to issued units only. Paying this schedule needs a board-approved distribution with an explicit payout list, which is on the roadmap.</p>
+      {tokenDecimals !== null && tokenDecimals >= 2 ? <>
+        <label className="payout-lines">Payout lines for an &quot;Explicit payout list&quot; proposal (token base units, {tokenDecimals} decimals)
+          <textarea readOnly rows={Math.min(8, result.rows.length + 1)} data-testid="waterfall-payouts"
+            value={result.rows.filter(row => row.payoutCents > 0n).map(row => `${row.accountId} ${centsToBaseUnits(row.payoutCents, tokenDecimals)}`).join("\n")} /></label>
+        <p>Paste these lines into the explicit payout proposal under Approvals. The board approves the exact amounts, then funds them.</p>
+      </> : <p>This contract version pays distributions pro rata to issued units only. Paying this schedule needs schema v2 explicit payout lists.</p>}
     </>}
   </section>;
 }

@@ -22,11 +22,11 @@ const string = (value: string) => {
   return Buffer.concat([u32(bytes.length), bytes]);
 };
 
-/** Mirrors the contract's Borsh tuple in prepare_distribution. */
+/** Mirrors the contract's Borsh tuple in store_distribution; explicit payout lists use their own domain. */
 export function distributionHash(companyId: string, distribution: Distribution): number[] {
   const rows = [...distribution.entitlements].sort((a, b) => a.account_id < b.account_id ? -1 : a.account_id > b.account_id ? 1 : 0);
   const chunks = [
-    string("near:testnet/captable.distribution.v1"),
+    string(distribution.kind === "Explicit" ? "near:testnet/captable.distribution.explicit.v1" : "near:testnet/captable.distribution.v1"),
     string(companyId),
     uint(distribution.id, 8),
     uint(distribution.snapshot_revision, 8),

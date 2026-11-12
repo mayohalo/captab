@@ -26,3 +26,27 @@ test("audits the complete on-chain ledger and fixed payout accounting", () => {
   assert.ok(audit.issues.some(issue => issue.includes("escrow")));
   assert.equal(assessCompanyLedger({ ...snapshot(), revisionAfter: 4 }).state, "Inconclusive");
 });
+
+test("v2 audit reconciles reserved investor units and units locked by accepted deals", () => {
+  const v2 = () => {
+    const value = snapshot();
+    value.totals = { ...value.totals, deal_reserved: "5", unallocated_units: "5" };
+    value.holdings[0].locked_units = "10";
+    value.deals = [
+      { id: 0, kind: "Issue", status: "Approved", units: "5", seller: null, buyer: "carol.testnet" },
+      { id: 1, kind: "Secondary", status: "Accepted", units: "10", seller: "alice.testnet", buyer: "dave.testnet" },
+      { id: 2, kind: "Secondary", status: "Settled", units: "3", seller: "bob.testnet", buyer: "alice.testnet" },
+    ];
+    return value;
+  };
+  assert.deepEqual(assessCompanyLedger(v2()), { state: "Consistent", checkedRevision: 3, issues: [] });
+  const unreserved = v2();
+  unreserved.deals[0].status = "Cancelled";
+  assert.ok(assessCompanyLedger(unreserved).issues.some(issue => issue.includes("Reserved investor units")));
+  const unlocked = v2();
+  unlocked.holdings[0].locked_units = "0";
+  assert.ok(assessCompanyLedger(unlocked).issues.some(issue => issue.includes("locked units differ")));
+  const overLocked = v2();
+  overLocked.holdings[1].locked_units = "21";
+  assert.ok(assessCompanyLedger(overLocked).issues.some(issue => issue.includes("more locked than issued")));
+});

@@ -61,21 +61,48 @@ Every claim below is backed by a test you can run or a transaction you can open.
 
 | Claim | Code | Local proof | Testnet proof |
 | --- | --- | --- | --- |
-| Only the DAO can change ownership | [`assert_dao`](contracts/company/src/lib.rs#L968) | `non_dao_cannot_issue` | Proposals [6](https://testnet.nearblocks.io/txns/6ekVUH6L7vbsWH4aeSjdG99RCbgKjB8W3hbPLQfdCU7v) and [7](https://testnet.nearblocks.io/txns/CpkKMtFCpVVYGrHAnc1bbApbrPJdUYvQnKtJw1SaMYJU) (pause/resume), each executed after [two](https://testnet.nearblocks.io/txns/9F1KBfKMoMLu7uj86uyG4T7ZD98fcPVbrdHsuQ3GBXJV) [votes](https://testnet.nearblocks.io/txns/GL8m4DFKDoFvBMqVyNUVXkbJXsquUMUSWq5FLCa4giXK) |
+| Only the DAO can change ownership | [`assert_dao`](contracts/company/src/lib.rs#L267) | `non_dao_cannot_issue` | Proposals [6](https://testnet.nearblocks.io/txns/6ekVUH6L7vbsWH4aeSjdG99RCbgKjB8W3hbPLQfdCU7v) and [7](https://testnet.nearblocks.io/txns/CpkKMtFCpVVYGrHAnc1bbApbrPJdUYvQnKtJw1SaMYJU) (pause/resume), each executed after [two](https://testnet.nearblocks.io/txns/9F1KBfKMoMLu7uj86uyG4T7ZD98fcPVbrdHsuQ3GBXJV) [votes](https://testnet.nearblocks.io/txns/GL8m4DFKDoFvBMqVyNUVXkbJXsquUMUSWq5FLCa4giXK) |
 | A council majority is required (2 of 3 on testnet) | [`assessDaoPolicy`](apps/web/lib/dao-policy.ts) | Sandbox `real_sputnik_requires_two_votes_and_funds_company`; `pnpm test:dao` | Same as above |
-| Replayed or repurposed actions cannot double-issue | [`was_processed`](contracts/company/src/lib.rs#L1006) | `identical_replay_is_idempotent_even_after_revision_changes`, `action_id_cannot_be_repurposed`, `stale_revision_rejected` | — |
-| Supply invariants hold across every operation | [`unallocated`](contracts/company/src/lib.rs#L983) | `mixed_ledger_operations_preserve_accounting_after_every_step`, `cannot_exceed_authorized_supply` | `pnpm verify:testnet` audits the live ledger |
-| Vesting: cliff, monthly steps, cancellation | [`vested_at`](contracts/company/src/lib.rs#L936) | `grant_reservation_cliff_claim_and_full_vesting`, `cancellation_releases_only_unvested_units`, `another_account_cannot_claim` | — |
-| Contributor with zero NEAR claims via sponsored relay | [`claim_vested`](contracts/company/src/lib.rs#L763), [`apps/web/lib/sponsor-policy.ts`](apps/web/lib/sponsor-policy.ts) | Sandbox `zero_balance_contributor_claims_through_signed_delegate`; `pnpm test:sponsor` | Grant [proposal 8](https://testnet.nearblocks.io/txns/AHUbthZ5ZtauqMet2GTaQynoYp6xJUwdi2t712ub8GCZ) → [sponsored claim](https://testnet.nearblocks.io/txns/AAeXAhfrj6k76LiCSMDSwCA8f2kpMzAoRhqAZYiKz7Hh) |
-| Payouts sum exactly to the budget, and later issuance cannot change them | [`prepare_distribution`](contracts/company/src/lib.rs#L282) | `snapshot_rounds_exactly_and_survives_later_issuance`, `distribution_hash_matches_typescript_vector` | 10,000.000000 TESTUSD paid as 5,975.103734 + 3,983.402490 + 41.493776 ([evidence](docs/testnet-rehearsal.json)) |
-| Funding is accepted only for the exact approved budget, from the DAO, once | [`ft_on_transfer`](contracts/company/src/lib.rs#L473) | `only_exact_dao_token_funding_is_accepted_once`, `approval_rejects_modified_hash` | Distribution 0 funded, zero escrow left |
-| A failed payment can be retried and never pays twice | [`pay_recipient`](contracts/company/src/lib.rs#L504), [`on_payment_result`](contracts/company/src/lib.rs#L559) | `failed_payment_releases_reservation_and_retry_pays_once`, `in_flight_attempt_blocks_duplicate_transfer`, `stale_payment_callback_cannot_settle_current_attempt`; Sandbox `seeded_demo_lifecycle_settles_exact_amounts_after_retry` | Contributor [attempt 1 failed](https://testnet.nearblocks.io/txns/3LaFRfpVNhoz2mMwFQ24ysNd8eeS8L7BBg7otP2s6ewf) (unregistered) → [attempt 2 paid](https://testnet.nearblocks.io/txns/59XfZEHbBXtFVNWPHQcQSFyQ7DSC4Lm4fgaJuHwPAiQy); founders [A](https://testnet.nearblocks.io/txns/DFj77QurbryvmF47k9EVAS1KWzMyi1JAQq4CH3nWsvYv), [B](https://testnet.nearblocks.io/txns/35NBSJHu9ZapVAkh3MfvEFoCR3Rn3oZzZk5X3i4Cqegj) |
-| A lost callback stays locked instead of risking a double payment | [`on_payment_result`](contracts/company/src/lib.rs#L559) | `failed_callback_after_successful_transfer_never_unlocks_payment`; Sandbox `successful_token_transfer_with_failed_callback_stays_locked` (fault-injection build) | — |
-| Pause stops new actions; in-flight callbacks still settle | [`set_paused`](contracts/company/src/lib.rs#L240) | `pause_rejects_new_funding_but_preserves_in_flight_callback_settlement`, `pause_blocks_new_payment_attempts` | Proposals 6 and 7 |
-| Storage stays bounded at demo limits | [constants](contracts/company/src/lib.rs#L9) | Sandbox `bounded_storage_still_allows_payment_callback_at_demo_limits` ([measurements](docs/STORAGE_LIMITS.md)) | Storage preflight in the manifest |
+| Replayed or repurposed actions cannot double-issue | [`was_processed`](contracts/company/src/lib.rs#L313) | `identical_replay_is_idempotent_even_after_revision_changes`, `action_id_cannot_be_repurposed`, `stale_revision_rejected` | — |
+| Supply invariants hold across every operation | [`unallocated`](contracts/company/src/lib.rs#L292) | `mixed_ledger_operations_preserve_accounting_after_every_step`, `cannot_exceed_authorized_supply` | `pnpm verify:testnet` audits the live ledger |
+| Vesting: cliff, monthly steps, cancellation | [`vested_at`](contracts/company/src/grants.rs#L232) | `grant_reservation_cliff_claim_and_full_vesting`, `cancellation_releases_only_unvested_units`, `another_account_cannot_claim` | — |
+| Contributor with zero NEAR claims via sponsored relay | [`claim_vested`](contracts/company/src/grants.rs#L194), [`apps/web/lib/sponsor-policy.ts`](apps/web/lib/sponsor-policy.ts) | Sandbox `zero_balance_contributor_claims_through_signed_delegate`; `pnpm test:sponsor` | Grant [proposal 8](https://testnet.nearblocks.io/txns/AHUbthZ5ZtauqMet2GTaQynoYp6xJUwdi2t712ub8GCZ) → [sponsored claim](https://testnet.nearblocks.io/txns/AAeXAhfrj6k76LiCSMDSwCA8f2kpMzAoRhqAZYiKz7Hh) |
+| Payouts sum exactly to the budget, and later issuance cannot change them | [`prepare_distribution`](contracts/company/src/distributions.rs#L116) | `snapshot_rounds_exactly_and_survives_later_issuance`, `distribution_hash_matches_typescript_vector` | 10,000.000000 TESTUSD paid as 5,975.103734 + 3,983.402490 + 41.493776 ([evidence](docs/testnet-rehearsal.json)) |
+| Funding is accepted only for the exact approved budget, from the DAO, once | [`ft_on_transfer`](contracts/company/src/lib.rs#L240), [`fund_distribution`](contracts/company/src/distributions.rs) | `only_exact_dao_token_funding_is_accepted_once`, `approval_rejects_modified_hash` | Distribution 0 funded, zero escrow left |
+| A failed payment can be retried and never pays twice | [`pay_recipient`](contracts/company/src/distributions.rs#L237), [`on_payment_result`](contracts/company/src/distributions.rs#L265) | `failed_payment_releases_reservation_and_retry_pays_once`, `in_flight_attempt_blocks_duplicate_transfer`, `stale_payment_callback_cannot_settle_current_attempt`; Sandbox `seeded_demo_lifecycle_settles_exact_amounts_after_retry` | Contributor [attempt 1 failed](https://testnet.nearblocks.io/txns/3LaFRfpVNhoz2mMwFQ24ysNd8eeS8L7BBg7otP2s6ewf) (unregistered) → [attempt 2 paid](https://testnet.nearblocks.io/txns/59XfZEHbBXtFVNWPHQcQSFyQ7DSC4Lm4fgaJuHwPAiQy); founders [A](https://testnet.nearblocks.io/txns/DFj77QurbryvmF47k9EVAS1KWzMyi1JAQq4CH3nWsvYv), [B](https://testnet.nearblocks.io/txns/35NBSJHu9ZapVAkh3MfvEFoCR3Rn3oZzZk5X3i4Cqegj) |
+| A lost callback stays locked instead of risking a double payment | [`on_payment_result`](contracts/company/src/distributions.rs#L265) | `failed_callback_after_successful_transfer_never_unlocks_payment`; Sandbox `successful_token_transfer_with_failed_callback_stays_locked` (fault-injection build) | — |
+| Pause stops new actions; in-flight callbacks still settle | [`set_paused`](contracts/company/src/ledger.rs#L7) | `pause_rejects_new_funding_but_preserves_in_flight_callback_settlement`, `pause_blocks_new_payment_attempts` | Proposals 6 and 7 |
+| Storage stays bounded at demo limits | [constants](contracts/company/src/lib.rs#L24) | Sandbox `bounded_storage_still_allows_payment_callback_at_demo_limits` ([measurements](docs/STORAGE_LIMITS.md)) | Storage preflight in the manifest |
 | Worker crash or restart cannot cause a duplicate payout | [`apps/web/lib/payments.ts`](apps/web/lib/payments.ts) | `pnpm test:payments`, `pnpm test:worker-restart` | — |
 
-Testnet transaction hashes come from the [payout rehearsal](docs/testnet-rehearsal.json) and the [browser rehearsal](docs/testnet-browser-rehearsal.json). Unit test names are in [`contracts/company/src/tests.rs`](contracts/company/src/tests.rs); Sandbox tests are in [`contracts/company/tests/sandbox.rs`](contracts/company/tests/sandbox.rs).
+Testnet transaction hashes come from the [payout rehearsal](docs/testnet-rehearsal.json) and the [browser rehearsal](docs/testnet-browser-rehearsal.json). Unit test names are in [`tests.rs`](contracts/company/src/tests.rs) and [`tests_v2.rs`](contracts/company/src/tests_v2.rs); Sandbox tests are in [`contracts/company/tests/sandbox.rs`](contracts/company/tests/sandbox.rs).
+
+## Contract v2: raising, secondaries, and exit (branch `contract-v2`)
+
+Schema v2 extends the ledger from founding and hiring to raising money, secondary sales, buybacks, and exit. It is built and tested locally and on NEAR Sandbox with the pinned Sputnik DAO and a real NEP-141 token. **It is not deployed to testnet yet**; the live demo above runs schema v1, and the app reads both.
+
+| Capability | Contract method | How it works |
+|---|---|---|
+| Document fingerprints | `doc_hash` on every board action | A SHA-256 of the governing document (charter amendment, grant agreement, purchase agreement) is part of the action's replay digest and its event |
+| Charter amendment | `increase_authorized` | Raises authorized units; they can never be lowered |
+| Pool management | `decrease_pool` | Returns unused pool units to unallocated capacity |
+| Flexible vesting | `create_grant` with `terms` | 1 to 120 monthly boundaries, any cliff (including none), and reservation from the pool or from unallocated capacity (founder vesting) |
+| Acceleration | `accelerate_grant` | The board counts extra completed months, for example on an acquisition |
+| Grant acceptance | `accept_grant` | The recipient signs the grant document's hash on chain |
+| Investor rounds | `create_round`, `close_round` | A round records its price per unit (the valuation trail), units issued, and amount raised |
+| Investor issuance, paid atomically | `approve_deal` (`Issue`) + `ft_transfer_call` | The board reserves units for a named investor at the round price. The investor pays with the settlement token, units are issued in the same receipt, and the money is forwarded to the DAO treasury. A wrong amount, payer, or an expired deal is refunded by the token |
+| Secondary sales | `approve_deal` (`Secondary`), `accept_deal` | The board approves; the seller signs to lock their units; the buyer pays; units move and the seller is paid. No unit moves without both the board and the holder |
+| Buybacks and tender offers | `approve_deal` (`Buyback`) | The seller accepts, the DAO pays through a proposal, and the units are retired |
+| Payout delivery | `forward_proceeds` | If a recipient is not registered with the token, the payment is held and anyone can retry; a lost callback stays locked for review |
+| Explicit payout lists | `prepare_explicit_distribution` | The board sets exact amounts per stakeholder (an exit waterfall with liquidation preferences), then funds them with the existing exact-funding and per-recipient payment machinery |
+| Corrections | `retire_units` | Board-approved retirement of unlocked units |
+| Lost wallets | `reassign_holding` | Moves a holding and its open grants to a new account; blocked while the old account has an unpaid payout or an open deal |
+| Close after exit | `close_company` | Final state once every distribution is paid or cancelled and every deal is settled or cancelled. Nothing can reopen it |
+| Room to grow | limits | 100 holders, 200 grants, 50 distributions, 200 deals, 20 rounds; governance actions are no longer capped, so resume always works. Payout rows live in their own map, so a payment no longer rewrites the whole table |
+
+The app gains a **Deals** page (rounds, deal states, seller acceptance, buyer payment, payout retry), twelve new board actions under Approvals, an "accept grant terms" button, payout lines from the exit preview for an explicit payout proposal, and v2-aware audit, export, and event parsing.
+
+**Evidence:** 74 Rust unit tests (46 for v2, in [`tests_v2.rs`](contracts/company/src/tests_v2.rs)). Sandbox `v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputnik` runs a charter amendment, a seed round with a refunded wrong payment and a paid allocation, a secondary sale whose unregistered seller is paid by a later retry, a DAO-paid buyback, an explicit exit payout, and the close, all through two-of-three Sputnik votes. The stress test fills every v2 limit: a 100-holder snapshot burns 35.8 Tgas and state grows by 1.14 MB ([measurements](docs/STORAGE_LIMITS.md)). The pro-rata schedule hash is unchanged from v1, and the explicit-list hash is checked against the TypeScript implementation. Contract code is split into [`ledger.rs`](contracts/company/src/ledger.rs), [`grants.rs`](contracts/company/src/grants.rs), [`distributions.rs`](contracts/company/src/distributions.rs), and [`deals.rs`](contracts/company/src/deals.rs).
 
 ## Run it
 
@@ -83,10 +110,10 @@ Requires Node 22.23+, pnpm 10.16.1, and Rust 1.88.0 with the `wasm32-unknown-unk
 
 ```sh
 pnpm install
-pnpm test:contract          # 28 Rust unit tests
-pnpm test:sandbox           # 8 NEAR Sandbox tests: pinned Sputnik DAO, token, sponsored claim, payout retry
+pnpm test:contract          # 74 Rust unit tests (28 from v1, 46 for v2)
+pnpm test:sandbox           # 9 NEAR Sandbox tests: pinned Sputnik DAO, token, sponsored claim, payout retry, v2 deals and close
 pnpm --filter @captab/web exec playwright install chromium
-pnpm test:e2e               # 21 browser tests against fixture chain views
+pnpm test:e2e               # 25 browser tests against fixture chain views, including a schema v2 company
 cp apps/web/.env.example apps/web/.env.local   # point at the testnet company
 pnpm --filter @captab/web dev
 ```
@@ -101,7 +128,7 @@ The app connects through [`@hot-labs/near-connect`](apps/web/components/wallet.t
 
 These limits are deliberate for a testnet prototype. The [release audit](docs/RELEASE_STATUS.md) has the full list.
 
-- **Bounded demo state.** The contract allows at most 20 holders, 100 grants, 20 distributions, and 200 governance actions. Pause and resume also count toward the action limit, so a company paused at exactly 200 actions could not be resumed. A production version would exempt resume from the limit.
+- **Bounded demo state.** The deployed v1 contract allows at most 20 holders, 100 grants, 20 distributions, and 200 governance actions. Pause and resume also count toward the action limit, so a v1 company paused at exactly 200 actions could not be resumed. Schema v2 removes the action cap and raises the other limits.
 - **Lost callbacks need a recovery design.** If a token transfer succeeds but its callback fails, the payment stays locked for review. There is no timeout reset and no backend override, by design.
 - **History covers app-submitted transactions only.** Current state is always read from contract views; complete external history would need an indexer.
 - **Single-host worker.** The receipt and payment worker uses persistent SQLite, not ephemeral serverless storage.
@@ -109,8 +136,9 @@ These limits are deliberate for a testnet prototype. The [release audit](docs/RE
 
 ## Roadmap
 
-1. Investor issuance with round records, and a DAO-reviewed wallet replacement flow.
-2. One restricted NEP-141 token per share class, whose balances become the sole on-chain ownership record after a reconciled migration ([design](docs/TOKENIZATION_PLAN.md)). Not implemented.
+1. Deploy schema v2 to fresh testnet accounts and re-run the live rehearsals (investor round, secondary sale, buyback, explicit payout). Built and Sandbox-tested; not deployed.
+2. Stock options with an exercise price, one-click company deployment through a factory or global contract, and a history indexer.
+3. Optionally, one restricted NEP-141 token per share class for wallet visibility ([design](docs/TOKENIZATION_PLAN.md)). With v2 deals, secondary sales already work on the ledger, so the token is no longer a requirement.
 
 ## Repository
 

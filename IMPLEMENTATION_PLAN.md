@@ -4,7 +4,7 @@ Status: MVP implemented and deployed to testnet; see the [README](README.md) for
 
 **Deviations in the build:**
 - **Storage:** SQLite on a single persistent host instead of PostgreSQL, because the demo has one worker.
-- **Contract layout:** one `contracts/company/src/lib.rs` file instead of separate `auth`/`ledger`/`grants`/`distributions`/`events`/`types` modules.
+- **Contract layout:** the deployed v1 contract is one `lib.rs` file. Schema v2 (branch `contract-v2`) splits it into `ledger`, `grants`, `distributions`, and `deals` modules.
 - **Packages:** domain and NEAR helpers live in `apps/web/lib` instead of `packages/`, and the worker runs as `apps/web/scripts/reconcile-worker.mjs`.
 - **Integrations:** Trezu is not integrated; funding uses direct Sputnik proposals (the planned fallback). History covers app-submitted transactions only (the disclosed fallback in §6).
 - **Deployment key:** the testnet deployment key is kept rather than removed (§10); see the release audit.

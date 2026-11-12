@@ -4,7 +4,7 @@ import { type NearWalletBase } from "@hot-labs/near-connect";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { type Distribution, type Grant, type Holding, formatUnits } from "../lib/near";
+import { type Distribution, type Grant, type Holding, formatUnits, grantMilestones } from "../lib/near";
 import { getConnector } from "./wallet";
 import { observeTransaction } from "../lib/observe";
 import { describeObservation } from "../lib/observed-status.mjs";
@@ -91,7 +91,7 @@ export function PersonalView({ companyId, holdings, grants, distributions, compa
       <section><h2>My grants</h2><div className="cards">{ownGrants.map(grant => <article key={grant.id}>
         <h3>Grant #{grant.id}</h3><p>{formatUnits(grant.original_units)} granted · {formatUnits(grant.vested_units)} vested · {formatUnits(grant.issued_units)} claimed</p>
         <p>{formatUnits(grant.claimable_units)} claimable now · {grant.cancelled_at === null ? "active" : "cancelled, vested rights retained"}</p>
-        <p>Cliff {new Date(grant.boundaries[12] * 1000).toUTCString()} · end {new Date(grant.boundaries[48] * 1000).toUTCString()}</p>
+        <p>Cliff {new Date(grantMilestones(grant).cliff * 1000).toUTCString()} · end {new Date(grantMilestones(grant).end * 1000).toUTCString()}</p>
         {BigInt(grant.claimable_units) > 0n && <><button disabled={busy || !companyVerified} onClick={() => void claim(grant.id)}>Claim with wallet gas</button>{wallet?.manifest.features.signDelegateActions && <button disabled={busy || !companyVerified} onClick={() => void claimSponsored(grant.id)}>Sponsored claim</button>}</>}
       </article>)}</div>{ownGrants.length === 0 && <p>No grants for this account.</p>}</section>
       <section><h2>My distributions</h2><div className="cards">{ownEntitlements.map(({ distribution, row }) => <article key={distribution.id}>

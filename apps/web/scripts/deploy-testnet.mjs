@@ -1,3 +1,4 @@
+import { LIMITS_BY_SCHEMA } from "../lib/schema.mjs";
 import { createHash } from "node:crypto";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
@@ -95,8 +96,10 @@ if (companyAccount.code_hash !== emptyHash && companyAccount.code_hash !== compa
 }
 
 const expectedConfig = { dao_id: daoId, snapshot_operator_id: operatorId, settlement_token_id: tokenId, authorized_units: units };
-const expectedLimits = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
-const matchesDemoConfig = value => value?.schema_version === 1 &&
+// New deployments use the current company schema built from this tree.
+const SCHEMA_VERSION = 2;
+const expectedLimits = LIMITS_BY_SCHEMA[SCHEMA_VERSION];
+const matchesDemoConfig = value => value?.schema_version === SCHEMA_VERSION &&
   Object.entries(expectedConfig).every(([key, expected]) => String(value[key]) === expected) &&
   Object.entries(expectedLimits).every(([key, expected]) => value.limits?.[key] === expected);
 let config = null;

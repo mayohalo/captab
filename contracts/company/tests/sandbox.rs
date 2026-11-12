@@ -106,10 +106,11 @@ async fn dao_ownership_and_snapshot_run_on_chain() -> Result<(), Box<dyn std::er
     assert_eq!(config["dao_id"], dao.id().as_str());
     assert_eq!(config["snapshot_operator_id"], operator.id().as_str());
     assert_eq!(config["settlement_token_id"], token.id().as_str());
-    assert_eq!(config["schema_version"], 1);
+    assert_eq!(config["schema_version"], 2);
+    assert_eq!(config["closed"], false);
     assert_eq!(config["limits"], json!({
-        "max_holders": 20, "max_grants": 100, "max_distributions": 20,
-        "max_actions": 200, "vesting_boundaries": 49,
+        "max_holders": 100, "max_grants": 200, "max_distributions": 50, "max_deals": 200, "max_rounds": 20,
+        "max_payout_rows": 100, "max_actions": null, "vesting_boundaries": 49, "max_vesting_boundaries": 121,
     }));
     let combined: Value = company.view("get_company").await?.json()?;
     assert_eq!(combined["config"], config);
@@ -207,9 +208,12 @@ async fn bounded_storage_still_allows_payment_callback_at_demo_limits() -> Resul
     }
     assert!(company.call("new").args_json(json!({
         "dao_id": dao.id(), "snapshot_operator_id": operator.id(),
-        "settlement_token_id": token.id(), "authorized_units": "100000"
+        "settlement_token_id": token.id(), "authorized_units": "1000000"
     })).transact().await?.is_success());
-    for index in 0..20 {
+    const HOLDERS: u64 = 100;
+    const GRANTS: u64 = 200;
+    const DISTRIBUTIONS: u64 = 50;
+    for index in 0..HOLDERS {
         let recipient = if index == 0 { paid_holder.id().to_string() } else { format!("holder-{index}.testnet") };
         let result = dao.call(company.id(), "issue_founder_units")
             .args_json(json!({"action_id": format!("stress-issue-{index}"), "expected_revision": index,
@@ -217,32 +221,35 @@ async fn bounded_storage_still_allows_payment_callback_at_demo_limits() -> Resul
         assert!(result.is_success(), "holder {index}: {result:?}");
     }
     let extra_holder = dao.call(company.id(), "issue_founder_units")
-        .args_json(json!({"action_id": "stress-extra-holder", "expected_revision": 20,
-            "recipient": "holder-20.testnet", "units": "1"})).transact().await?;
-    assert!(!extra_holder.is_success(), "21st holder succeeded");
+        .args_json(json!({"action_id": "stress-extra-holder", "expected_revision": HOLDERS,
+            "recipient": "holder-extra.testnet", "units": "1"})).transact().await?;
+    assert!(!extra_holder.is_success(), "holder over the limit succeeded");
     let holders_bytes = worker.view_account(company.id()).await?.storage_usage;
     assert!(dao.call(company.id(), "increase_pool").args_json(json!({
-        "action_id": "stress-pool", "expected_revision": 20, "units": "10000"
+        "action_id": "stress-pool", "expected_revision": HOLDERS, "units": "100000"
     })).transact().await?.is_success());
     let boundaries: Vec<u64> = (0..=48).map(|month| 1_000 + month * 2_592_000).collect();
-    for index in 0..100 {
+    for index in 0..GRANTS {
         let result = dao.call(company.id(), "create_grant").args_json(json!({
-            "action_id": format!("stress-grant-{index}"), "expected_revision": 21 + index,
+            "action_id": format!("stress-grant-{index}"), "expected_revision": HOLDERS + 1 + index,
             "recipient": paid_holder.id(), "units": "100", "boundaries": boundaries,
         })).max_gas().transact().await?;
         assert!(result.is_success(), "grant {index}: {result:?}");
     }
+    let revision = HOLDERS + 1 + GRANTS;
     let extra_grant = dao.call(company.id(), "create_grant").args_json(json!({
-        "action_id": "stress-extra-grant", "expected_revision": 121,
+        "action_id": "stress-extra-grant", "expected_revision": revision,
         "recipient": paid_holder.id(), "units": "1", "boundaries": boundaries,
     })).max_gas().transact().await?;
-    assert!(!extra_grant.is_success(), "101st grant succeeded");
+    assert!(!extra_grant.is_success(), "grant over the limit succeeded");
     let grants_bytes = worker.view_account(company.id()).await?.storage_usage;
-    for index in 0..20 {
+    let mut max_snapshot_gas = 0;
+    for index in 0..DISTRIBUTIONS {
         let snapshot = operator.call(company.id(), "prepare_distribution").args_json(json!({
-            "expected_revision": 121, "budget": "1000", "expires_at": 4_102_444_800u64,
+            "expected_revision": revision, "budget": "1000", "expires_at": 4_102_444_800u64,
         })).max_gas().transact().await?;
         assert!(snapshot.is_success(), "distribution {index}: {snapshot:?}");
+        max_snapshot_gas = max_snapshot_gas.max(snapshot.total_gas_burnt.as_gas());
         let prepared: Value = company.view("get_distribution").args_json(json!({"distribution_id": index})).await?.json()?;
         let approval = dao.call(company.id(), "approve_distribution").args_json(json!({
             "action_id": format!("stress-approve-{index}"), "distribution_id": index,
@@ -250,23 +257,24 @@ async fn bounded_storage_still_allows_payment_callback_at_demo_limits() -> Resul
         })).transact().await?;
         assert!(approval.is_success(), "approval {index}: {approval:?}");
     }
+    assert!(max_snapshot_gas < 150_000_000_000_000, "a 100-holder snapshot burned {max_snapshot_gas} gas");
     let extra_distribution = operator.call(company.id(), "prepare_distribution").args_json(json!({
-        "expected_revision": 121, "budget": "1000", "expires_at": 4_102_444_800u64,
+        "expected_revision": revision, "budget": "1000", "expires_at": 4_102_444_800u64,
     })).max_gas().transact().await?;
-    assert!(!extra_distribution.is_success(), "21st distribution succeeded");
-    for index in 0..59 {
-        let result = dao.call(company.id(), "set_paused")
-            .args_json(json!({"action_id": format!("stress-action-{index}"), "paused": false}))
-            .transact().await?;
-        assert!(result.is_success(), "action {index}: {result:?}");
+    assert!(!extra_distribution.is_success(), "distribution over the limit succeeded");
+    // More than 350 governance actions are recorded by now; v1 stopped at 200, including resume.
+    for (index, paused) in [true, false].into_iter().enumerate() {
+        let toggle = dao.call(company.id(), "set_paused")
+            .args_json(json!({"action_id": format!("stress-toggle-{index}"), "paused": paused})).transact().await?;
+        assert!(toggle.is_success(), "pause toggle {index}: {toggle:?}");
     }
     let limit_bytes = worker.view_account(company.id()).await?.storage_usage;
-    eprintln!("company storage bytes: deployed={baseline}, holders={holders_bytes}, grants={grants_bytes}, limits={limit_bytes}");
+    eprintln!("company storage bytes: deployed={baseline}, holders={holders_bytes}, grants={grants_bytes}, limits={limit_bytes}; max snapshot gas={max_snapshot_gas}");
     assert!(baseline < holders_bytes && holders_bytes < grants_bytes && grants_bytes < limit_bytes);
-    assert!(limit_bytes - baseline < 1_000_000, "demo state exceeds one megabyte");
-    let extra = dao.call(company.id(), "set_paused")
-        .args_json(json!({"action_id": "stress-over-limit", "paused": false})).transact().await?;
-    assert!(!extra.is_success(), "201st privileged action succeeded");
+    assert!(limit_bytes - baseline < 3_000_000, "demo state exceeds three megabytes");
+    let page: Value = company.view("list_distributions").args_json(json!({"from_index": 45, "limit": 5})).await?.json()?;
+    assert_eq!(page.as_array().unwrap().len(), 5);
+    assert_eq!(page[4]["entitlements"].as_array().unwrap().len() as u64, HOLDERS);
     let prepared: Value = company.view("get_distribution").args_json(json!({"distribution_id": 0})).await?.json()?;
     let funding = dao.call(token.id(), "ft_transfer_call").args_json(json!({
         "receiver_id": company.id(), "amount": "1000",
@@ -278,7 +286,7 @@ async fn bounded_storage_still_allows_payment_callback_at_demo_limits() -> Resul
         .max_gas().transact().await?;
     assert!(payout.is_success(), "payment callback at limits: {payout:?}");
     let settled: Value = company.view("get_distribution").args_json(json!({"distribution_id": 0})).await?.json()?;
-    assert_eq!(settled["paid_total"], "50");
+    assert_eq!(settled["paid_total"], "10");
     assert_eq!(settled["in_flight_total"], "0");
     Ok(())
 }
@@ -906,5 +914,147 @@ async fn real_sputnik_requires_two_votes_and_funds_company(
         .await?
         .json()?;
     assert_eq!(frozen["entitlements"].as_array().unwrap().len(), 1);
+    Ok(())
+}
+
+const DOC_HASH: &str = "1111111111111111111111111111111111111111111111111111111111111111";
+
+async fn view_json(contract: &Contract, method: &str, args: Value) -> Result<Value, Box<dyn std::error::Error>> {
+    Ok(contract.view(method).args_json(args).await?.json()?)
+}
+
+async fn balance(token: &Contract, account: &str) -> Result<u128, Box<dyn std::error::Error>> {
+    let value: Value = token.view("ft_balance_of").args_json(json!({"account_id": account})).await?.json()?;
+    Ok(value.as_str().unwrap().parse()?)
+}
+
+#[tokio::test]
+async fn v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputnik(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let read = |path: &str| std::fs::read(format!("{}/../../{path}", env!("CARGO_MANIFEST_DIR")));
+    let worker = near_workspaces::sandbox().await?;
+    let dao = worker.dev_deploy(&read(".cache/sputnik/target/wasm32-unknown-unknown/release/sputnikdao2.wasm")?).await?;
+    let company = worker.dev_deploy(&read("target/wasm32-unknown-unknown/release/captab_company.wasm")?).await?;
+    let token = worker.dev_deploy(&read("target/wasm32-unknown-unknown/release/captab_test_token.wasm")?).await?;
+    let members = [worker.dev_create_account().await?, worker.dev_create_account().await?, worker.dev_create_account().await?];
+    let operator = worker.dev_create_account().await?;
+    let faucet = worker.dev_create_account().await?;
+    let founder = worker.dev_create_account().await?;
+    let investor = worker.dev_create_account().await?;
+    let council: Vec<_> = members.iter().map(|account| account.id()).collect();
+    assert!(dao.call("new").args_json(json!({
+        "config": {"name": "Captab DAO", "purpose": "Govern test company", "metadata": ""}, "policy": council
+    })).transact().await?.is_success());
+    assert!(token.call("new").args_json(json!({"owner_id": faucet.id(), "total_supply": "10000000000"})).transact().await?.is_success());
+    // The founder is deliberately left unregistered with the token until after their sale settles.
+    for account in [company.id(), dao.id(), investor.id()] {
+        assert!(faucet.call(token.id(), "storage_deposit").args_json(json!({"account_id": account, "registration_only": true}))
+            .deposit(NearToken::from_millinear(10)).transact().await?.is_success());
+    }
+    for (account, amount) in [(dao.id(), "2000000000"), (investor.id(), "2000000000")] {
+        assert!(faucet.call(token.id(), "ft_transfer").args_json(json!({"receiver_id": account, "amount": amount}))
+            .deposit(NearToken::from_yoctonear(1)).transact().await?.is_success());
+    }
+    assert!(company.call("new").args_json(json!({
+        "dao_id": dao.id(), "snapshot_operator_id": operator.id(), "settlement_token_id": token.id(), "authorized_units": "1000"
+    })).transact().await?.is_success());
+    let config: Value = company.view("get_config").await?.json()?;
+    assert_eq!(config["schema_version"], 2);
+    assert_eq!(config["limits"]["max_actions"], Value::Null);
+    let company_id = company.id().as_str();
+    let call = |method: &str, args: Value| dao_function_call(company_id, method, args, "100000000000000", "0");
+
+    // Phase B through the board: a charter amendment, founder units with a document hash.
+    approve_two_of_three(&dao, &members, call("increase_authorized",
+        json!({"action_id": "amend", "expected_revision": 0, "authorized_units": "2000", "doc_hash": DOC_HASH})), "Raise authorized units").await?;
+    approve_two_of_three(&dao, &members, call("issue_founder_units",
+        json!({"action_id": "founder", "expected_revision": 1, "recipient": founder.id(), "units": "1000", "doc_hash": DOC_HASH})), "Issue founder units").await?;
+
+    // Investor round: the board opens a round and approves an allocation; the investor pays and is issued
+    // units in the same receipt, and the payment is forwarded to the DAO treasury.
+    approve_two_of_three(&dao, &members, call("create_round",
+        json!({"action_id": "seed", "round_id": "seed", "price_per_unit": "1000000", "doc_hash": DOC_HASH})), "Open seed round").await?;
+    approve_two_of_three(&dao, &members, call("approve_deal", json!({"action_id": "seed-alloc", "terms": {
+        "kind": "Issue", "buyer": investor.id(), "units": "500", "price": "500000000", "expires_at": 4_102_444_800u64,
+        "round_id": "seed", "doc_hash": DOC_HASH}})), "Approve seed allocation").await?;
+    let dao_before = balance(&token, dao.id().as_str()).await?;
+    let wrong = investor.call(token.id(), "ft_transfer_call").args_json(json!({
+        "receiver_id": company.id(), "amount": "499999999", "msg": json!({"deal_id": 0}).to_string()
+    })).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?;
+    assert!(wrong.is_success(), "a wrong amount is refunded, not failed: {wrong:?}");
+    assert_eq!(balance(&token, investor.id().as_str()).await?, 2_000_000_000, "the token refunded the wrong amount");
+    let paid = investor.call(token.id(), "ft_transfer_call").args_json(json!({
+        "receiver_id": company.id(), "amount": "500000000", "msg": json!({"deal_id": 0}).to_string()
+    })).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?;
+    assert!(paid.is_success(), "investor payment: {paid:?}");
+    assert_eq!(view_json(&company, "get_holding", json!({"account_id": investor.id()})).await?, "500");
+    assert_eq!(balance(&token, dao.id().as_str()).await?, dao_before + 500_000_000, "proceeds reached the DAO");
+    let deal = view_json(&company, "get_deal", json!({"deal_id": 0})).await?;
+    assert_eq!((deal["status"].as_str(), deal["proceeds_pending"].as_str()), (Some("Settled"), Some("0")));
+    let round = view_json(&company, "get_round", json!({"round_id": "seed"})).await?;
+    assert_eq!((round["units_issued"].as_str(), round["amount_raised"].as_str()), (Some("500"), Some("500000000")));
+
+    // Secondary sale: board approval, seller signature, buyer payment. The unregistered seller's proceeds are
+    // held, then delivered by a public retry once the seller registers.
+    approve_two_of_three(&dao, &members, call("approve_deal", json!({"action_id": "sale", "terms": {
+        "kind": "Secondary", "seller": founder.id(), "buyer": investor.id(), "units": "100", "price": "70000000",
+        "expires_at": 4_102_444_800u64, "doc_hash": DOC_HASH}})), "Approve founder secondary").await?;
+    assert!(founder.call(company.id(), "accept_deal").args_json(json!({"deal_id": 1})).transact().await?.is_success());
+    let bought = investor.call(token.id(), "ft_transfer_call").args_json(json!({
+        "receiver_id": company.id(), "amount": "70000000", "msg": json!({"deal_id": 1}).to_string()
+    })).deposit(NearToken::from_yoctonear(1)).max_gas().transact().await?;
+    assert!(bought.is_success(), "secondary payment: {bought:?}");
+    assert_eq!(view_json(&company, "get_holding", json!({"account_id": founder.id()})).await?, "900");
+    assert_eq!(view_json(&company, "get_holding", json!({"account_id": investor.id()})).await?, "600");
+    let held = view_json(&company, "get_deal", json!({"deal_id": 1})).await?;
+    assert_eq!((held["proceeds_pending"].as_str(), held["forward_in_flight"].as_bool()), (Some("70000000"), Some(false)));
+    assert!(faucet.call(token.id(), "storage_deposit").args_json(json!({"account_id": founder.id(), "registration_only": true}))
+        .deposit(NearToken::from_millinear(10)).transact().await?.is_success());
+    let retry = operator.call(company.id(), "forward_proceeds").args_json(json!({"deal_id": 1})).max_gas().transact().await?;
+    assert!(retry.is_success(), "forward retry: {retry:?}");
+    assert_eq!(balance(&token, founder.id().as_str()).await?, 70_000_000);
+    assert_eq!(view_json(&company, "get_deal", json!({"deal_id": 1})).await?["proceeds_pending"], "0");
+
+    // Buyback: the investor signs, the DAO pays through a proposal, and the units are retired.
+    approve_two_of_three(&dao, &members, call("approve_deal", json!({"action_id": "buyback", "terms": {
+        "kind": "Buyback", "seller": investor.id(), "units": "50", "price": "40000000", "expires_at": 4_102_444_800u64}})), "Approve buyback").await?;
+    assert!(investor.call(company.id(), "accept_deal").args_json(json!({"deal_id": 2})).transact().await?.is_success());
+    let investor_before = balance(&token, investor.id().as_str()).await?;
+    approve_two_of_three(&dao, &members, dao_function_call(token.id().as_str(), "ft_transfer_call", json!({
+        "receiver_id": company.id(), "amount": "40000000", "msg": json!({"deal_id": 2}).to_string()
+    }), "150000000000000", "1"), "Pay for buyback").await?;
+    assert_eq!(view_json(&company, "get_holding", json!({"account_id": investor.id()})).await?, "550");
+    assert_eq!(balance(&token, investor.id().as_str()).await?, investor_before + 40_000_000);
+    let totals = view_json(&company, "get_totals", json!({})).await?;
+    assert_eq!((totals["issued_total"].as_str(), totals["unallocated_units"].as_str()), (Some("1450"), Some("550")));
+
+    // Explicit payout list (an exit waterfall): the board sets the amounts, then funds them exactly.
+    let revision = totals["ledger_revision"].as_u64().unwrap();
+    approve_two_of_three(&dao, &members, call("prepare_explicit_distribution", json!({
+        "action_id": "exit", "expected_revision": revision, "budget": "1000000", "expires_at": 4_102_444_800u64,
+        "payouts": [{"account_id": founder.id(), "amount": "400000"}, {"account_id": investor.id(), "amount": "600000"}],
+        "label": "exit", "doc_hash": DOC_HASH})), "Exit payout list").await?;
+    let exit = view_json(&company, "get_distribution", json!({"distribution_id": 0})).await?;
+    assert_eq!((exit["kind"].as_str(), exit["approved"].as_bool()), (Some("Explicit"), Some(true)));
+    approve_two_of_three(&dao, &members, dao_function_call(token.id().as_str(), "ft_transfer_call", json!({
+        "receiver_id": company.id(), "amount": "1000000",
+        "msg": json!({"distribution_id": 0, "schedule_hash": exit["schedule_hash"]}).to_string()
+    }), "120000000000000", "1"), "Fund exit payout").await?;
+    let founder_before = balance(&token, founder.id().as_str()).await?;
+    for recipient in [founder.id(), investor.id()] {
+        let payment = operator.call(company.id(), "pay_recipient")
+            .args_json(json!({"distribution_id": 0, "recipient_id": recipient})).max_gas().transact().await?;
+        assert!(payment.is_success(), "exit payment: {payment:?}");
+    }
+    assert_eq!(balance(&token, founder.id().as_str()).await?, founder_before + 400_000);
+    let paid_exit = view_json(&company, "get_distribution", json!({"distribution_id": 0})).await?;
+    assert_eq!(paid_exit["paid_total"], "1000000");
+
+    // Close: everything is settled, so the board can close the ledger for good.
+    approve_two_of_three(&dao, &members, call("close_company", json!({"action_id": "close", "doc_hash": DOC_HASH})), "Close company").await?;
+    let closed: Value = company.view("get_config").await?.json()?;
+    assert_eq!(closed["closed"], true);
+    let after_close = founder.call(company.id(), "accept_deal").args_json(json!({"deal_id": 1})).transact().await?;
+    assert!(!after_close.is_success(), "a closed company accepts nothing");
     Ok(())
 }

@@ -344,3 +344,101 @@ test("distributions page previews an exit waterfall with a preference", async ({
   await expect(table.getByRole("row", { name: /contributor\.testnet/ })).toContainText("Preference $2,000,000.00");
   await expect(page.getByTestId("waterfall-total")).toHaveText("$10,000,000.00");
 });
+
+const decodeArgs = (proposal: { kind: { FunctionCall: { receiver_id: string; actions: { method_name: string; args: string; gas: string; deposit: string }[] } } }) => {
+  const action = proposal.kind.FunctionCall.actions[0];
+  return { receiver: proposal.kind.FunctionCall.receiver_id, method: action.method_name, deposit: action.deposit,
+    args: JSON.parse(Buffer.from(action.args, "base64").toString()) };
+};
+
+test("v2 company audit reconciles deals, locked units, and reserved investor units", async ({ request }) => {
+  const body = await (await request.get("/api/companies/v2.testnet")).json();
+  expect(body.audit).toEqual({ state: "Consistent", checkedRevision: 9, issues: [] });
+  expect(body.chain.deals).toHaveLength(4);
+  expect(body.chain.rounds[0].id).toBe("seed");
+  const csv = await (await request.get("/api/companies/v2.testnet/export?format=csv")).text();
+  expect(csv).toContain("reserved_for_investors,,250000,");
+  const json = await (await request.get("/api/companies/v2.testnet/export?format=json")).json();
+  expect(json.schemaVersion).toBe(2);
+  expect(json.holders.find((holder: { accountId: string }) => holder.accountId === "founder-b.testnet").lockedUnits).toBe("100000");
+});
+
+test("proposal API builds v2 board actions and refuses them for a v1 company", async ({ request }) => {
+  const post = (company: string, data: Record<string, unknown>) =>
+    request.post(`/api/companies/${company}/proposals`, { data: { expectedRevision: company === "v2.testnet" ? 9 : 4, ...data } });
+  const doc = "b".repeat(64);
+  const issue = await post("v2.testnet", { action: "approveDeal", dealKind: "Issue", roundId: "seed", buyer: "fund.testnet", units: "1000", docHash: doc });
+  expect(issue.ok()).toBeTruthy();
+  const issueCall = decodeArgs((await issue.json()).proposal);
+  expect(issueCall.method).toBe("approve_deal");
+  expect(issueCall.args.terms).toMatchObject({ kind: "Issue", buyer: "fund.testnet", units: "1000", price: "1000000000", round_id: "seed", doc_hash: doc });
+
+  const payouts = [{ account_id: "founder-a.testnet", amount: "700" }, { account_id: "contributor.testnet", amount: "300" }];
+  const explicit = decodeArgs((await (await post("v2.testnet", { action: "explicitDistribution", payouts, label: "exit" })).json()).proposal);
+  expect(explicit.method).toBe("prepare_explicit_distribution");
+  expect(explicit.args).toMatchObject({ expected_revision: 9, budget: "1000", payouts, label: "exit", doc_hash: null });
+
+  const buyback = decodeArgs((await (await post("v2.testnet", { action: "approveDeal", dealKind: "Buyback", seller: "founder-a.testnet",
+    units: "10", price: "5000" })).json()).proposal);
+  expect(buyback.args.terms).toMatchObject({ kind: "Buyback", seller: "founder-a.testnet", units: "10", price: "5000" });
+  expect(buyback.args.terms.buyer).toBeUndefined();
+
+  const grant = decodeArgs((await (await post("v2.testnet", { action: "grant", recipient: "cofounder.testnet", units: "500",
+    startIso: "2026-01-01T00:00:00Z", scheduleMonths: 24, cliffMonths: 6, source: "unallocated", docHash: doc })).json()).proposal);
+  expect(grant.args.boundaries).toHaveLength(25);
+  expect(grant.args.terms).toEqual({ cliff_index: 6, source: "Unallocated" });
+
+  const authorized = decodeArgs((await (await post("v2.testnet", { action: "increaseAuthorized", authorizedUnits: "20000000" })).json()).proposal);
+  expect(authorized.args).toMatchObject({ authorized_units: "20000000", expected_revision: 9 });
+
+  const pay = await post("v2.testnet", { action: "payBuyback", dealId: 1 });
+  expect(pay.status()).toBe(409);
+  expect((await pay.json()).error).toContain("Only an accepted buyback");
+  const cancel = decodeArgs((await (await post("v2.testnet", { action: "cancelDeal", dealId: 2 })).json()).proposal);
+  expect(cancel).toMatchObject({ method: "cancel_deal", args: { deal_id: 2 } });
+
+  expect((await post("v2.testnet", { action: "approveDeal", dealKind: "Issue", roundId: "seed", buyer: "fund.testnet", units: "1250001" })).status()).toBe(409);
+  expect((await post("v2.testnet", { action: "pool", units: "1", docHash: "NOT-A-HASH" })).status()).toBe(400);
+  const v1 = await post("company.testnet", { action: "approveDeal", dealKind: "Issue", roundId: "seed", buyer: "fund.testnet", units: "1" });
+  expect(v1.status()).toBe(400);
+  expect((await v1.json()).error).toContain("schema v2");
+  const v1Founder = decodeArgs((await (await post("company.testnet", { action: "founder", recipient: "new.testnet", units: "1" })).json()).proposal);
+  expect(Object.keys(v1Founder.args)).toEqual(["action_id", "expected_revision", "recipient", "units"]);
+});
+
+test("deals page shows rounds and deal states, and a buyer pays the token contract", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as typeof window & { __CAPTAB_E2E_CONNECTOR__?: unknown; __captabWalletCalls?: unknown[] };
+    state.__captabWalletCalls = [];
+    const account = { accountId: "angel.testnet" };
+    const wallet = { manifest: { features: { signDelegateActions: false } }, getAccounts: async () => [account],
+      signAndSendTransaction: async (request: unknown) => {
+        state.__captabWalletCalls!.push(request);
+        return { transaction: { hash: "fixture-deal-payment" }, status: { SuccessValue: "" } };
+      } };
+    state.__CAPTAB_E2E_CONNECTOR__ = { getConnectedWallet: async () => ({ wallet, accounts: [account] }), connect: async () => wallet };
+  });
+  await page.goto("/company/v2.testnet/deals");
+  await expect(page.getByRole("region", { name: "Rounds table" })).toContainText("seed");
+  await expect(page.getByTestId("deal-1")).toContainText("Secondary sale · Accepted");
+  await expect(page.getByTestId("deal-3")).toContainText("10000000 held");
+  await expect(page.getByTestId("deal-2").getByRole("button")).toHaveCount(0);
+  await page.getByTestId("deal-1").getByRole("button", { name: "Pay with the settlement token" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Payment fixture-deal-payment sent" })).toBeVisible();
+  const calls = await page.evaluate(() => (window as typeof window & { __captabWalletCalls?: unknown[] }).__captabWalletCalls);
+  expect(calls).toEqual([{ receiverId: "testusd.testnet", actions: [{ type: "FunctionCall", params: {
+    methodName: "ft_transfer_call", args: { receiver_id: "v2.testnet", amount: "90000000000", msg: "{\"deal_id\":1}" },
+    gas: "150000000000000", deposit: "1" } }] }]);
+});
+
+test("v2 exit preview produces payout lines in token base units", async ({ page }) => {
+  await page.goto("/company/v2.testnet/distributions");
+  await expect(page.getByTestId("waterfall-total")).toHaveText("$10,000,000.00");
+  const lines = (await page.getByTestId("waterfall-payouts").inputValue()).split("\n");
+  expect(lines).toContain("founder-a.testnet 5454545450000");
+  const total = lines.reduce((sum, line) => sum + BigInt(line.split(" ")[1]), 0n);
+  expect(total).toBe(10_000_000_000_000n);
+  await page.goto("/company/v2.testnet/approvals");
+  await page.getByLabel("Action").selectOption("explicitDistribution");
+  await expect(page.getByLabel(/Payouts, one "account amount" per line/)).toBeVisible();
+});

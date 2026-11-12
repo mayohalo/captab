@@ -1,5 +1,6 @@
-/** Fixed 48-month UTC schedule, always anchored to the original start day. */
-export function buildMonthlyBoundaries(startIso: string): number[] {
+/** Monthly UTC schedule (48 months by default), always anchored to the original start day. */
+export function buildMonthlyBoundaries(startIso: string, months = 48): number[] {
+  if (!Number.isInteger(months) || months < 1 || months > 120) throw new Error("Schedules run 1 to 120 months.");
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(startIso)) {
     throw new Error("Use a UTC start such as 2026-11-01T00:00:00Z.");
   }
@@ -14,7 +15,7 @@ export function buildMonthlyBoundaries(startIso: string): number[] {
   const hour = start.getUTCHours();
   const minute = start.getUTCMinutes();
   const second = start.getUTCSeconds();
-  const boundaries = Array.from({ length: 49 }, (_, offset) => {
+  const boundaries = Array.from({ length: months + 1 }, (_, offset) => {
     const targetMonth = month + offset;
     const lastDay = new Date(Date.UTC(year, targetMonth + 1, 0)).getUTCDate();
     return Date.UTC(year, targetMonth, Math.min(day, lastDay), hour, minute, second) / 1000;

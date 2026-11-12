@@ -23,3 +23,14 @@ This is the current release audit against [the implementation plan](../IMPLEMENT
 The remaining release step is checking compatibility with a third-party NEAR testnet wallet extension. The seeded founder, grant, snapshot, funding, worker failure, retry, final token-balance checks, browser-driven DAO pause/resume, and live sponsored claim have passed on testnet. The browser test wallet signs in a local Node process; it does not establish compatibility with an external wallet. Do not put private keys in this file or the manifest.
 
 The MVP deliberately limits history to app-submitted transactions, uses persistent single-host SQLite, has no automatic recovery for a transfer whose callback failed, and treats ownership units and TESTUSD as fictional. These limits remain visible in the [runbook](RUNBOOK.md) and app. A production system would need a separate design for complete indexing, callback recovery, confidentiality, legal ownership, and upgrades.
+
+## Contract v2 (branch `contract-v2`, not deployed)
+
+| Gate | Evidence | Status |
+| --- | --- | --- |
+| Phase B ledger extensions and Phase C rounds, deals, explicit payouts | `pnpm test:contract`: 74 passing Rust unit tests (28 from v1 unchanged in meaning, 46 new) | Verified locally |
+| Real local chain: Sputnik votes, investor payment and refund, secondary sale with held and retried proceeds, DAO-paid buyback, explicit payout, close | Sandbox `v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputnik`; all 9 Sandbox tests pass | Verified locally |
+| Storage and gas at v2 limits | Stress test: 1,141,581 bytes of state, 35.8 Tgas for a 100-holder snapshot ([measurements](STORAGE_LIMITS.md)) | Verified locally |
+| App reads v1 and v2, builds the twelve new board actions, deals page, audit and export | 13 web suites, 25 browser tests including a schema v2 fixture company, production build | Verified with fixtures |
+| Explicit payout hash parity | Rust `explicit_distribution_hash_matches_the_typescript_vector` and `pnpm test:hash` share one vector | Verified locally |
+| Testnet deployment and live rehearsal of v2 | Needs fresh funded accounts (about 21 NEAR of storage at limits), `pnpm deploy:testnet`, and new rehearsal evidence | Open |

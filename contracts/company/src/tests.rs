@@ -1,6 +1,7 @@
 use super::*;
 use near_sdk::test_utils::{get_logs, VMContextBuilder};
 use near_sdk::testing_env;
+use near_sdk::PromiseResult;
 
 fn aid(name: &str) -> AccountId {
     name.parse().unwrap()
@@ -50,10 +51,10 @@ fn distribution_hash_matches_typescript_vector() {
 
     let mut company = company();
     set_caller("board.testnet");
-    company.issue_founder_units("a".into(), 0, aid("founder-a.testnet"), U128(3_600_000));
-    company.issue_founder_units("b".into(), 1, aid("founder-b.testnet"), U128(2_400_000));
-    company.issue_founder_units("c".into(), 2, aid("contributor.testnet"), U128(25_000));
-    company.increase_pool("p".into(), 3, U128(1_000_000));
+    company.issue_founder_units("a".into(), 0, aid("founder-a.testnet"), U128(3_600_000), None);
+    company.issue_founder_units("b".into(), 1, aid("founder-b.testnet"), U128(2_400_000), None);
+    company.issue_founder_units("c".into(), 2, aid("contributor.testnet"), U128(25_000), None);
+    company.increase_pool("p".into(), 3, U128(1_000_000), None);
     let mut context = VMContextBuilder::new();
     context.current_account_id(aid("company.testnet"));
     context.predecessor_account_id(aid("operator.testnet"));
@@ -114,22 +115,22 @@ fn assert_accounting_from_views(company: &Company) {
 fn combined_company_and_paged_entitlement_views_match_ledger_state() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
-    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(100));
-    c.increase_pool("pool".into(), 2, U128(100));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100), None);
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(100), None);
+    c.increase_pool("pool".into(), 2, U128(100), None);
     let schedule = boundaries();
-    let grant_id = c.create_grant("grant".into(), 3, aid("employee.testnet"), U128(100), schedule.clone());
+    let grant_id = c.create_grant("grant".into(), 3, aid("employee.testnet"), U128(100), schedule.clone(), None, None);
     set_caller_at("employee.testnet", schedule[12]);
     let vesting = c.get_vesting_status(grant_id).unwrap();
     assert_eq!(vesting.vested_units.0, 25);
     assert_eq!(vesting.claimable_units.0, 25);
     c.claim_vested(grant_id);
     let company = c.get_company();
-    assert_eq!(company.config.schema_version, 1);
-    assert_eq!(company.config.limits.max_holders, 20);
-    assert_eq!(company.config.limits.max_grants, 100);
-    assert_eq!(company.config.limits.max_distributions, 20);
-    assert_eq!(company.config.limits.max_actions, 200);
+    assert_eq!(company.config.schema_version, 2);
+    assert_eq!(company.config.limits.max_holders, 100);
+    assert_eq!(company.config.limits.max_grants, 200);
+    assert_eq!(company.config.limits.max_distributions, 50);
+    assert_eq!(company.config.limits.max_actions, None);
     assert_eq!(company.config.limits.vesting_boundaries, 49);
     assert_eq!(company.config.dao_id, aid("board.testnet"));
     assert_eq!(company.totals.issued_total.0, 225);
@@ -150,8 +151,8 @@ fn combined_company_and_paged_entitlement_views_match_ledger_state() {
 fn mixed_ledger_operations_preserve_accounting_after_every_step() {
     let mut company = company();
     set_caller("board.testnet");
-    company.increase_pool("initial-pool".into(), 0, U128(2_000_000));
-    company.issue_founder_units("initial-founder".into(), 1, aid("holder-0.testnet"), U128(100_000));
+    company.increase_pool("initial-pool".into(), 0, U128(2_000_000), None);
+    company.issue_founder_units("initial-founder".into(), 1, aid("holder-0.testnet"), U128(100_000), None);
     let mut random = 0x84c1_6e4d_39b2_07a5u64;
     let mut created_grants = Vec::new();
     let mut claims = 0;
@@ -166,10 +167,10 @@ fn mixed_ledger_operations_preserve_accounting_after_every_step() {
         let revision = company.get_totals().ledger_revision;
         let action = format!("mixed-{step}");
         match operation {
-            0 => company.issue_founder_units(action, revision, aid(&format!("holder-{}.testnet", random % 5)), U128(units)),
-            1 => company.increase_pool(action, revision, U128(units)),
+            0 => company.issue_founder_units(action, revision, aid(&format!("holder-{}.testnet", random % 5)), U128(units), None),
+            1 => company.increase_pool(action, revision, U128(units), None),
             2 if company.get_totals().pool_available.0 >= units => {
-                let id = company.create_grant(action, revision, aid(&format!("holder-{}.testnet", random % 5)), U128(units), schedule.clone());
+                let id = company.create_grant(action, revision, aid(&format!("holder-{}.testnet", random % 5)), U128(units), schedule.clone(), None, None);
                 created_grants.push(id);
             }
             3 => {
@@ -181,7 +182,7 @@ fn mixed_ledger_operations_preserve_accounting_after_every_step() {
             }
             4 => {
                 if let Some(grant) = created_grants.iter().filter_map(|id| company.get_grant(*id)).find(|grant| grant.cancelled_at.is_none()) {
-                    company.cancel_unvested(action, grant.id);
+                    company.cancel_unvested(action, grant.id, None);
                     cancellations += 1;
                 }
             }
@@ -197,9 +198,9 @@ fn mixed_ledger_operations_preserve_accounting_after_every_step() {
 fn founder_issuance_pool_and_denominators() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(3_600_000));
-    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(2_400_000));
-    c.increase_pool("c".into(), 2, U128(2_000_000));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(3_600_000), None);
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(2_400_000), None);
+    c.increase_pool("c".into(), 2, U128(2_000_000), None);
     let totals = c.get_totals();
     assert_eq!(totals.issued_total.0, 6_000_000);
     assert_eq!(totals.pool_available.0, 2_000_000);
@@ -213,9 +214,9 @@ fn founder_issuance_pool_and_denominators() {
 fn identical_replay_is_idempotent_even_after_revision_changes() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
-    c.increase_pool("b".into(), 1, U128(100));
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100), None);
+    c.increase_pool("b".into(), 1, U128(100), None);
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100), None);
     assert_eq!(c.get_holding(aid("alice.testnet")).0, 100);
     assert_eq!(c.get_totals().ledger_revision, 2);
 }
@@ -225,7 +226,7 @@ fn identical_replay_is_idempotent_even_after_revision_changes() {
 fn non_dao_cannot_issue() {
     let mut c = company();
     set_caller("attacker.testnet");
-    c.issue_founder_units("a".into(), 0, aid("attacker.testnet"), U128(100));
+    c.issue_founder_units("a".into(), 0, aid("attacker.testnet"), U128(100), None);
 }
 
 #[test]
@@ -233,8 +234,8 @@ fn non_dao_cannot_issue() {
 fn stale_revision_rejected() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("a".into(), 0, U128(100));
-    c.increase_pool("b".into(), 0, U128(100));
+    c.increase_pool("a".into(), 0, U128(100), None);
+    c.increase_pool("b".into(), 0, U128(100), None);
 }
 
 #[test]
@@ -242,8 +243,8 @@ fn stale_revision_rejected() {
 fn action_id_cannot_be_repurposed() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("a".into(), 0, U128(100));
-    c.increase_pool("a".into(), 0, U128(101));
+    c.increase_pool("a".into(), 0, U128(100), None);
+    c.increase_pool("a".into(), 0, U128(101), None);
 }
 
 #[test]
@@ -251,8 +252,8 @@ fn action_id_cannot_be_repurposed() {
 fn cannot_exceed_authorized_supply() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("a".into(), 0, U128(9_000_000));
-    c.issue_founder_units("b".into(), 1, aid("alice.testnet"), U128(1_000_001));
+    c.increase_pool("a".into(), 0, U128(9_000_000), None);
+    c.issue_founder_units("b".into(), 1, aid("alice.testnet"), U128(1_000_001), None);
 }
 
 #[test]
@@ -260,24 +261,24 @@ fn cannot_exceed_authorized_supply() {
 fn holder_limit_is_enforced() {
     let mut c = company();
     set_caller("board.testnet");
-    for i in 0..20 {
+    for i in 0..100 {
         c.issue_founder_units(
             format!("action-{i}"),
             i,
             aid(&format!("holder-{i}.testnet")),
-            U128(1),
+            U128(1), None
         );
     }
-    c.issue_founder_units("overflow".into(), 20, aid("extra.testnet"), U128(1));
+    c.issue_founder_units("overflow".into(), 100, aid("extra.testnet"), U128(1), None);
 }
 
 #[test]
 fn pagination_and_repeat_issuance_do_not_duplicate_holders() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(10));
-    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(20));
-    c.issue_founder_units("c".into(), 2, aid("alice.testnet"), U128(30));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(10), None);
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(20), None);
+    c.issue_founder_units("c".into(), 2, aid("alice.testnet"), U128(30), None);
     assert_eq!(c.get_totals().holder_count, 2);
     let page = c.list_holdings(1, 1);
     assert_eq!(page[0].account_id, aid("bob.testnet"));
@@ -288,14 +289,14 @@ fn pagination_and_repeat_issuance_do_not_duplicate_holders() {
 fn grant_reservation_cliff_claim_and_full_vesting() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("pool".into(), 0, U128(2_000_000));
+    c.increase_pool("pool".into(), 0, U128(2_000_000), None);
     let schedule = boundaries();
     let id = c.create_grant(
         "grant".into(),
         1,
         aid("employee.testnet"),
         U128(100_000),
-        schedule.clone(),
+        schedule.clone(), None, None
     );
     assert_eq!(id, 0);
     assert_eq!(
@@ -304,7 +305,7 @@ fn grant_reservation_cliff_claim_and_full_vesting() {
             1,
             aid("employee.testnet"),
             U128(100_000),
-            schedule.clone()
+            schedule.clone(), None, None
         ),
         id
     );
@@ -330,17 +331,17 @@ fn grant_reservation_cliff_claim_and_full_vesting() {
 fn cancellation_releases_only_unvested_units() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("pool".into(), 0, U128(100_000));
+    c.increase_pool("pool".into(), 0, U128(100_000), None);
     let schedule = boundaries();
     let id = c.create_grant(
         "grant".into(),
         1,
         aid("employee.testnet"),
         U128(100_000),
-        schedule.clone(),
+        schedule.clone(), None, None
     );
     set_caller_at("board.testnet", schedule[18]);
-    c.cancel_unvested("cancel".into(), id);
+    c.cancel_unvested("cancel".into(), id, None);
     assert_eq!(c.get_totals().pool_available.0, 62_500);
     assert_eq!(c.get_totals().grant_reserved.0, 37_500);
     set_caller_at("employee.testnet", schedule[48]);
@@ -354,14 +355,14 @@ fn cancellation_releases_only_unvested_units() {
 fn another_account_cannot_claim() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("pool".into(), 0, U128(100_000));
+    c.increase_pool("pool".into(), 0, U128(100_000), None);
     let schedule = boundaries();
     let id = c.create_grant(
         "grant".into(),
         1,
         aid("employee.testnet"),
         U128(100_000),
-        schedule.clone(),
+        schedule.clone(), None, None
     );
     set_caller_at("attacker.testnet", schedule[12]);
     c.claim_vested(id);
@@ -372,7 +373,7 @@ fn another_account_cannot_claim() {
 fn schedule_must_be_monotonic() {
     let mut c = company();
     set_caller("board.testnet");
-    c.increase_pool("pool".into(), 0, U128(100_000));
+    c.increase_pool("pool".into(), 0, U128(100_000), None);
     let mut schedule = boundaries();
     schedule[12] = schedule[11];
     c.create_grant(
@@ -380,7 +381,7 @@ fn schedule_must_be_monotonic() {
         1,
         aid("employee.testnet"),
         U128(100_000),
-        schedule,
+        schedule, None, None
     );
 }
 
@@ -388,16 +389,16 @@ fn schedule_must_be_monotonic() {
 fn snapshot_rounds_exactly_and_survives_later_issuance() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(3_600_000));
-    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(2_400_000));
-    c.increase_pool("pool".into(), 2, U128(2_000_000));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(3_600_000), None);
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(2_400_000), None);
+    c.increase_pool("pool".into(), 2, U128(2_000_000), None);
     let schedule = boundaries();
     let grant_id = c.create_grant(
         "grant".into(),
         3,
         aid("employee.testnet"),
         U128(100_000),
-        schedule.clone(),
+        schedule.clone(), None, None
     );
     set_caller_at("employee.testnet", schedule[12]);
     c.claim_vested(grant_id);
@@ -439,7 +440,7 @@ fn snapshot_rounds_exactly_and_survives_later_issuance() {
         41_493_776
     );
     set_caller_at("board.testnet", schedule[12]);
-    c.issue_founder_units("late".into(), 5, aid("late.testnet"), U128(100));
+    c.issue_founder_units("late".into(), 5, aid("late.testnet"), U128(100), None);
     c.approve_distribution("approve".into(), id, before.schedule_hash.clone());
     let after = c.get_distribution(id).unwrap();
     assert!(after.approved);
@@ -451,9 +452,9 @@ fn snapshot_rounds_exactly_and_survives_later_issuance() {
 fn tiny_budget_marks_zero_entitlements_non_payable() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(1));
-    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(1));
-    c.issue_founder_units("c".into(), 2, aid("carol.testnet"), U128(1));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(1), None);
+    c.issue_founder_units("b".into(), 1, aid("bob.testnet"), U128(1), None);
+    c.issue_founder_units("c".into(), 2, aid("carol.testnet"), U128(1), None);
     set_caller("operator.testnet");
     let id = c.prepare_distribution(3, U128(1), 10_000);
     let distribution = c.get_distribution(id).unwrap();
@@ -473,7 +474,7 @@ fn tiny_budget_marks_zero_entitlements_non_payable() {
 fn approval_rejects_modified_hash() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100), None);
     set_caller("operator.testnet");
     let id = c.prepare_distribution(1, U128(100), 1000);
     set_caller("board.testnet");
@@ -485,7 +486,7 @@ fn approval_rejects_modified_hash() {
 fn non_operator_cannot_prepare_snapshot() {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100));
+    c.issue_founder_units("a".into(), 0, aid("alice.testnet"), U128(100), None);
     set_caller("attacker.testnet");
     c.prepare_distribution(1, U128(100), 1000);
 }
@@ -493,7 +494,7 @@ fn non_operator_cannot_prepare_snapshot() {
 fn approved_distribution() -> (Company, u64, Vec<u8>) {
     let mut c = company();
     set_caller("board.testnet");
-    c.issue_founder_units("founder".into(), 0, aid("alice.testnet"), U128(100));
+    c.issue_founder_units("founder".into(), 0, aid("alice.testnet"), U128(100), None);
     set_caller("operator.testnet");
     let id = c.prepare_distribution(1, U128(1_000), 10_000);
     let hash = c.get_distribution(id).unwrap().schedule_hash;

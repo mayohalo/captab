@@ -1,6 +1,6 @@
 const PINNED_DAO_SOURCE = "5434a59dec23ee0c49df8c8c4350c208a7e75b0b";
 const PINNED_DAO_SHA256 = "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722";
-const DEMO_LIMITS = { max_holders: 20, max_grants: 100, max_distributions: 20, max_actions: 200, vesting_boundaries: 49 };
+import { LIMITS_BY_SCHEMA } from "./schema.mjs";
 const CALLBACK_FAULT_MARKER = Buffer.from("sandbox-injected payment callback failure");
 
 export function assertReleaseCompanyWasm(bytes) {
@@ -58,20 +58,22 @@ export function assessRelease({ manifest, artifacts, chain, funding, requireFroz
     String(chain?.tokenSupply) === manifest.token.totalSupply,
   "Settlement token total supply differs from the frozen manifest.");
   const config = chain?.config;
-  check(config?.schema_version === 1 && manifest?.company?.schemaVersion === 1 &&
+  const limits = LIMITS_BY_SCHEMA[manifest?.company?.schemaVersion];
+  check(Boolean(limits) && config?.schema_version === manifest?.company?.schemaVersion &&
     config?.dao_id === manifest?.daoId && config?.snapshot_operator_id === manifest?.operatorId &&
     config?.settlement_token_id === manifest?.tokenId && String(config?.authorized_units) === String(manifest?.company?.authorizedUnits) &&
-    Object.entries(DEMO_LIMITS).every(([key, value]) => config?.limits?.[key] === value && manifest?.company?.limits?.[key] === value),
+    Object.entries(limits ?? {}).every(([key, value]) => config?.limits?.[key] === value && manifest?.company?.limits?.[key] === value),
   "Company configuration or limits differ from the frozen manifest.");
   try {
     const totals = chain.totals;
     const issued = BigInt(totals.issued_total);
     const pool = BigInt(totals.pool_available);
     const reserved = BigInt(totals.grant_reserved);
+    const dealReserved = BigInt(totals.deal_reserved ?? 0);
     const authorized = BigInt(totals.authorized_units);
     check(totals.dao_id === manifest?.daoId && authorized === BigInt(manifest?.company?.authorizedUnits) &&
       issued + pool + reserved === BigInt(totals.fully_diluted_total) &&
-      authorized - issued - pool - reserved === BigInt(totals.unallocated_units),
+      authorized - issued - pool - reserved - dealReserved === BigInt(totals.unallocated_units),
     "Company supply accounting does not reconcile.");
   } catch { issues.push("Company supply accounting is unavailable or invalid."); }
   check(manifest?.token?.storageRegistration === "registered" && Boolean(chain?.storageBalance),

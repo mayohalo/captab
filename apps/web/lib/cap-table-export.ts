@@ -21,6 +21,7 @@ export function buildCapTable(input: CapTableExportInput) {
     accountId: holding.account_id, issuedUnits: holding.issued_units,
     issuedPercent: percent4(holding.issued_units, totals.issued_total),
     fullyDilutedPercent: percent4(holding.issued_units, totals.fully_diluted_total),
+    ...(holding.locked_units !== undefined ? { lockedUnits: holding.locked_units } : {}),
   }));
   const grants = [...input.grants].sort((a, b) => a.id - b.id).map(grant => ({
     grantId: grant.id, recipient: grant.recipient, grantedUnits: grant.original_units,
@@ -28,7 +29,7 @@ export function buildCapTable(input: CapTableExportInput) {
     claimableUnits: grant.claimable_units,
     reservedUnits: (BigInt(grant.entitlement_cap) - BigInt(grant.issued_units)).toString(),
     status: grant.cancelled_at === null ? "active" : "cancelled",
-    startUtc: iso(grant.boundaries[0]), cliffUtc: iso(grant.boundaries[12]), fullyVestedUtc: iso(grant.boundaries[grant.boundaries.length - 1]),
+    startUtc: iso(grant.boundaries[0]), cliffUtc: iso(grant.boundaries[grant.cliff_index ?? 12]), fullyVestedUtc: iso(grant.boundaries[grant.boundaries.length - 1]),
     cancelledUtc: iso(grant.cancelled_at),
   }));
   return {
@@ -40,7 +41,9 @@ export function buildCapTable(input: CapTableExportInput) {
       authorizedUnits: totals.authorized_units, issuedUnits: totals.issued_total,
       poolAvailableUnits: totals.pool_available, grantReservedUnits: totals.grant_reserved,
       fullyDilutedUnits: totals.fully_diluted_total, unallocatedUnits: totals.unallocated_units,
+      ...(totals.deal_reserved !== undefined ? { dealReservedUnits: totals.deal_reserved } : {}),
     },
+    schemaVersion: config.schema_version,
     holders, grants,
     notice: "Testnet prototype export. Units are on-chain ledger records, not legal shares.",
   };
@@ -59,7 +62,7 @@ function cell(value: string | number | boolean | null | undefined): string {
 }
 
 export function capTableCsv(table: CapTable): string {
-  const rows: Record<string, string | number | null>[] = [
+  const rows: Record<string, string | number | null | undefined>[] = [
     ...table.holders.map(holder => ({ record_type: "holding", account_id: holder.accountId, units: holder.issuedUnits,
       issued_percent: holder.issuedPercent, fully_diluted_percent: holder.fullyDilutedPercent })),
     ...table.grants.map(grant => ({ record_type: "grant", account_id: grant.recipient, units: grant.reservedUnits,
@@ -72,6 +75,7 @@ export function capTableCsv(table: CapTable): string {
     { record_type: "total_issued", units: table.totals.issuedUnits, issued_percent: "100.0000",
       fully_diluted_percent: percent4(table.totals.issuedUnits, table.totals.fullyDilutedUnits) },
     { record_type: "total_fully_diluted", units: table.totals.fullyDilutedUnits, fully_diluted_percent: "100.0000" },
+    ...("dealReservedUnits" in table.totals ? [{ record_type: "reserved_for_investors", units: table.totals.dealReservedUnits }] : []),
     { record_type: "unallocated", units: table.totals.unallocatedUnits },
     { record_type: "authorized", units: table.totals.authorizedUnits },
   ];

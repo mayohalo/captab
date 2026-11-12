@@ -70,6 +70,40 @@ const policy = {
   ] }, permissions: ["*:VoteApprove"], vote_policy: {} }],
   default_vote_policy: { weight_kind: "RoleWeight", quorum: "0", threshold: [1, 2] },
 };
+// Schema v2 fixture: an investor round, settled and open deals, locked units, and an explicit payout list.
+const v2Company = "v2.testnet";
+const fixtureDoc = "a".repeat(64);
+const v2Config = { ...config, schema_version: 2, closed: false, limits: { max_holders: 100, max_grants: 200, max_distributions: 50,
+  max_deals: 200, max_rounds: 20, max_payout_rows: 100, max_actions: null, vesting_boundaries: 49, max_vesting_boundaries: 121 } };
+const v2Totals = { dao_id: dao, authorized_units: "10000000", issued_total: "6525000", pool_available: "1900000", grant_reserved: "75000",
+  deal_reserved: "250000", fully_diluted_total: "8500000", unallocated_units: "1250000", ledger_revision: 9, holder_count: 4 };
+const v2Holdings = [
+  { account_id: "founder-a.testnet", issued_units: "3600000", locked_units: "0" },
+  { account_id: "founder-b.testnet", issued_units: "2400000", locked_units: "100000" },
+  { account_id: "contributor.testnet", issued_units: "25000", locked_units: "0" },
+  { account_id: "investor.testnet", issued_units: "500000", locked_units: "0" },
+];
+const v2Grants = [{ ...grants[0], cliff_index: 12, source: "Pool", accelerated_months: 0, doc_hash: fixtureDoc, accepted_terms_hash: null }];
+const v2Rounds = [{ id: "seed", price_per_unit: "1000000", doc_hash: fixtureDoc, opened_at: 1_790_000_000, closed_at: null,
+  units_issued: "500000", amount_raised: "500000000000", deal_count: 2 }];
+const dealBase = { doc_hash: fixtureDoc, settled_at: null, proceeds_pending: "0", forward_attempt: 0, forward_in_flight: false, expires_at: 4_102_444_800 };
+const v2Deals = [
+  { ...dealBase, id: 0, kind: "Issue", seller: null, buyer: "investor.testnet", units: "500000", price: "500000000000", round_id: "seed",
+    status: "Settled", settled_at: 1_790_000_100, proceeds_recipient: dao, forward_attempt: 1 },
+  { ...dealBase, id: 1, kind: "Secondary", seller: "founder-b.testnet", buyer: "angel.testnet", units: "100000", price: "90000000000",
+    round_id: null, status: "Accepted", proceeds_recipient: "founder-b.testnet" },
+  { ...dealBase, id: 2, kind: "Issue", seller: null, buyer: "investor-2.testnet", units: "250000", price: "250000000000", round_id: "seed",
+    status: "Approved", proceeds_recipient: dao },
+  { ...dealBase, id: 3, kind: "Buyback", seller: "former.testnet", buyer: null, units: "1000", price: "10000000", round_id: null,
+    status: "Settled", settled_at: 1_790_000_200, proceeds_recipient: "former.testnet", proceeds_pending: "10000000", forward_attempt: 1 },
+];
+const v2Distribution = { id: 0, kind: "Explicit", label: "exit", doc_hash: fixtureDoc, snapshot_revision: 9, snapshot_timestamp: 1_790_000_300,
+  snapshot_block_height: 200, token_id: token, budget: "1000", expires_at: 1_900_000_000, schedule_hash: [], approved: true, cancelled: false,
+  funded: false, paid_total: "0", in_flight_total: "0", available_escrow: "0", entitlements: [
+    { account_id: "founder-a.testnet", units: "3600000", amount: "600", payment_status: "Ready", attempt_id: 0 },
+    { account_id: "founder-b.testnet", units: "2400000", amount: "400", payment_status: "Ready", attempt_id: 0 },
+  ] };
+v2Distribution.schedule_hash = distributionHash(v2Company, v2Distribution);
 const proposal = { id: 0, proposer: "council-b.testnet", description: "Issue 100 founder units",
   kind: { FunctionCall: { receiver_id: company, actions: [{ method_name: "issue_founder_units",
     args: Buffer.from(JSON.stringify({ action_id: "fixture-proposal", expected_revision: 4, recipient: "new-founder.testnet", units: "100" })).toString("base64"),
@@ -105,6 +139,11 @@ const methods = new Map([
   [`${claimableCompany}:get_company`, { config: claimableConfig, totals: claimableTotals }],
   [`${claimableCompany}:list_holdings`, []], [`${claimableCompany}:list_grants`, [claimableGrant]],
   [`${claimableCompany}:get_grant`, [claimableGrant]], [`${claimableCompany}:list_distributions`, []],
+  [`${v2Company}:get_company`, { config: v2Config, totals: v2Totals }], [`${v2Company}:get_config`, v2Config],
+  [`${v2Company}:get_totals`, v2Totals], [`${v2Company}:list_holdings`, v2Holdings], [`${v2Company}:list_grants`, v2Grants],
+  [`${v2Company}:get_grant`, v2Grants], [`${v2Company}:list_distributions`, [v2Distribution]],
+  [`${v2Company}:get_distribution`, [v2Distribution]], [`${v2Company}:list_deals`, v2Deals], [`${v2Company}:get_deal`, v2Deals],
+  [`${v2Company}:list_rounds`, v2Rounds], [`${v2Company}:get_round`, v2Rounds],
   [`${unsafeDao}:get_policy`, policy], [`${unsafeDao}:get_last_proposal_id`, 0],
   [`${unsafeDao}:get_proposals`, []],
 ]);
@@ -144,7 +183,7 @@ createServer(async (request, response) => {
       throw new Error(`Contract reads must use finality=final: ${params.request_type}`);
     }
     let result;
-    if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, alteredCompany, dao, unsafeDao].includes(params.account_id)) {
+    if (params.request_type === "view_code" && [company, claimableCompany, pausedCompany, alteredCompany, v2Company, dao, unsafeDao].includes(params.account_id)) {
       result = { code_base64: "", hash: params.account_id === dao
         ? "CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq"
         : params.account_id === alteredCompany ? "altered-company-code-hash" : "fixture-company-code-hash" };
@@ -155,6 +194,8 @@ createServer(async (request, response) => {
       const value = methods.get(key);
       const page = params.method_name === "ft_balance_of" ? (args.account_id === dao ? value : "0")
         : params.method_name === "get_grant" ? value[args.grant_id] ?? null
+        : params.method_name === "get_deal" ? value[args.deal_id] ?? null
+        : params.method_name === "get_round" ? value.find(round => round.id === args.round_id) ?? null
         : params.method_name === "get_distribution" && args.distribution_id === 2
           ? { ...distributions[1], id: 2 }
         : params.method_name === "get_distribution" ? value[args.distribution_id] ?? null

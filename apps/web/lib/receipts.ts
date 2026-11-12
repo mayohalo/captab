@@ -68,7 +68,7 @@ export function parseCaptabEvents(receipts: ReceiptOutcome[], contractId: string
       catch { return []; }
       if (!event || typeof event !== "object") return [];
       const value = event as Record<string, unknown>;
-      if (value.standard !== "captable" || value.version !== "1.0.0" || typeof value.event !== "string" || !Array.isArray(value.data)) return [];
+      if (value.standard !== "captable" || (value.version !== "1.0.0" && value.version !== "2.0.0") || typeof value.event !== "string" || !Array.isArray(value.data)) return [];
       return [{ receiptId: receipt.id, logIndex, eventName: value.event, version: value.version, payload: value.data }];
     });
   });

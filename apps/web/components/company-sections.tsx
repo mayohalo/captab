@@ -1,25 +1,27 @@
 import Link from "next/link";
-import { formatUnits, percent, type Distribution, type Grant, type Holding, type Totals } from "../lib/near";
+import { formatUnits, grantMilestones, percent, type Distribution, type Grant, type Holding, type Totals } from "../lib/near";
 import { WalletControl } from "./wallet";
 
 export function CompanyNavigation({ id }: { id: string }) {
   return <nav aria-label="Company"><Link href={`/company/${id}`}>Overview</Link><Link href={`/company/${id}/ownership`}>Ownership</Link>
     <Link href={`/company/${id}/grants`}>Grants</Link><Link href={`/company/${id}/approvals`}>Approvals</Link>
-    <Link href={`/company/${id}/distributions`}>Distributions</Link><Link href={`/company/${id}/activity`}>Activity</Link>
+    <Link href={`/company/${id}/distributions`}>Distributions</Link><Link href={`/company/${id}/deals`}>Deals</Link><Link href={`/company/${id}/activity`}>Activity</Link>
     <Link href={`/me?company=${id}`}>My ownership</Link></nav>;
 }
 
 export function OwnershipSection({ id, totals, holdings }: { id: string; totals: Totals; holdings: Holding[] }) {
   return <section id="ownership"><h2>Ownership</h2><p>Issued percentages use issued units. Fully diluted percentages include the pool and reserved grants.</p>
     <p className="export-links">Export cap table at revision {totals.ledger_revision}: <a href={`/api/companies/${id}/export?format=csv`} download>CSV</a> · <a href={`/api/companies/${id}/export?format=json`} download>JSON</a></p>
-    <div className="table-scroll" role="region" aria-label="Ownership table" tabIndex={0}><table><thead><tr><th>Account</th><th>Issued units</th><th>Issued</th><th>Fully diluted</th></tr></thead><tbody>
-      {holdings.map(h => <tr key={h.account_id}><td>{h.account_id}</td><td>{formatUnits(h.issued_units)}</td><td>{percent(h.issued_units, totals.issued_total)}</td><td>{percent(h.issued_units, totals.fully_diluted_total)}</td></tr>)}
+    <div className="table-scroll" role="region" aria-label="Ownership table" tabIndex={0}><table><thead><tr><th>Account</th><th>Issued units</th><th>Issued</th><th>Fully diluted</th>{holdings.some(h => h.locked_units && h.locked_units !== "0") && <th>Locked in deals</th>}</tr></thead><tbody>
+      {holdings.map(h => <tr key={h.account_id}><td>{h.account_id}</td><td>{formatUnits(h.issued_units)}</td><td>{percent(h.issued_units, totals.issued_total)}</td><td>{percent(h.issued_units, totals.fully_diluted_total)}</td>
+        {holdings.some(row => row.locked_units && row.locked_units !== "0") && <td>{formatUnits(h.locked_units ?? "0")}</td>}</tr>)}
     </tbody></table></div>{holdings.length === 0 && <p>No units issued yet.</p>}</section>;
 }
 
 export function GrantsSection({ id, grants, companyVerified }: { id: string; grants: Grant[]; companyVerified: boolean }) {
   return <section id="grants"><h2>Contributor grants</h2><div className="cards">
-    {grants.map(g => <article key={g.id}><h3><Link href={`/company/${id}/grants/${g.id}`}>Grant #{g.id}</Link></h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>Start {new Date(g.boundaries[0] * 1000).toUTCString()} · cliff {new Date(g.boundaries[12] * 1000).toUTCString()} · fully vested {new Date(g.boundaries[48] * 1000).toUTCString()}</p><p>{g.cancelled_at ? `Cancelled ${new Date(g.cancelled_at * 1000).toUTCString()}; vested rights remain` : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} companyVerified={companyVerified} /></article>)}
+    {grants.map(g => <article key={g.id}><h3><Link href={`/company/${id}/grants/${g.id}`}>Grant #{g.id}</Link></h3><p>{g.recipient}</p><p>Granted {formatUnits(g.original_units)} · vested {formatUnits(g.vested_units)} · issued {formatUnits(g.issued_units)}</p><p>Claimable {formatUnits(g.claimable_units)} · remaining reservation {formatUnits((BigInt(g.entitlement_cap) - BigInt(g.issued_units)).toString())}</p><p>Start {new Date(grantMilestones(g).start * 1000).toUTCString()} · {grantMilestones(g).cliffIndex ? `cliff ${new Date(grantMilestones(g).cliff * 1000).toUTCString()}` : "no cliff"} · fully vested {new Date(grantMilestones(g).end * 1000).toUTCString()} ({grantMilestones(g).months} months{g.accelerated_months ? `, ${g.accelerated_months} accelerated` : ""}{g.source === "Unallocated" ? ", founder grant" : ""})</p><p>{g.cancelled_at ? `Cancelled ${new Date(g.cancelled_at * 1000).toUTCString()}; vested rights remain` : "Active"}</p><WalletControl contractId={id} grantId={g.id} recipient={g.recipient} claimable={g.claimable_units} companyVerified={companyVerified}
+      termsHash={g.doc_hash ?? undefined} accepted={Boolean(g.accepted_terms_hash)} /></article>)}
   </div>{grants.length === 0 && <p>No grants yet.</p>}</section>;
 }
 

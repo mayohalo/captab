@@ -1,12 +1,13 @@
-import type { CompanyConfig, Distribution, Grant, Holding, Totals } from "./near";
+import type { CompanyConfig, Deal, Distribution, Grant, Holding, Totals } from "./near";
 
 export type CompanyAudit = { state: "Consistent" | "Inconsistent" | "Inconclusive"; checkedRevision: number; issues: string[] };
 
 export function assessCompanyLedger(input: {
   totals: Totals; config: CompanyConfig; holdings: Holding[]; grants: Grant[];
-  distributions: Distribution[]; revisionAfter: number;
+  distributions: Distribution[]; deals?: Deal[]; revisionAfter: number;
 }): CompanyAudit {
   const { totals, config, holdings, grants, distributions, revisionAfter } = input;
+  const deals = input.deals ?? [];
   if (totals.ledger_revision !== revisionAfter) return {
     state: "Inconclusive", checkedRevision: revisionAfter,
     issues: ["Ledger revision changed while the chain views were read; retry the audit."],
@@ -27,7 +28,20 @@ export function assessCompanyLedger(input: {
     if (holdings.length !== totals.holder_count) issues.push("Holder count differs from enumerated holdings.");
     const fullyDiluted = BigInt(totals.issued_total) + BigInt(totals.pool_available) + BigInt(totals.grant_reserved);
     if (fullyDiluted !== BigInt(totals.fully_diluted_total)) issues.push("Fully diluted total does not reconcile.");
-    if (fullyDiluted + BigInt(totals.unallocated_units) !== BigInt(totals.authorized_units)) issues.push("Authorized capacity does not reconcile.");
+    const dealReserved = BigInt(totals.deal_reserved ?? "0");
+    if (fullyDiluted + dealReserved + BigInt(totals.unallocated_units) !== BigInt(totals.authorized_units)) issues.push("Authorized capacity does not reconcile.");
+    const openIssuance = sum(deals.filter(deal => deal.kind === "Issue" && deal.status === "Approved").map(deal => deal.units));
+    if (openIssuance !== dealReserved) issues.push("Reserved investor units differ from open issuance deals.");
+    for (const holding of holdings) {
+      if (BigInt(holding.locked_units ?? "0") > BigInt(holding.issued_units)) issues.push(`${holding.account_id} has more locked than issued units.`);
+    }
+    const lockedBySeller = new Map<string, bigint>();
+    for (const deal of deals) {
+      if (deal.status === "Accepted" && deal.seller) lockedBySeller.set(deal.seller, (lockedBySeller.get(deal.seller) ?? 0n) + BigInt(deal.units));
+    }
+    for (const holding of holdings) {
+      if ((lockedBySeller.get(holding.account_id) ?? 0n) !== BigInt(holding.locked_units ?? "0")) issues.push(`${holding.account_id} locked units differ from accepted deals.`);
+    }
     for (const distribution of distributions) {
       const label = `Distribution #${distribution.id}`;
       const budget = BigInt(distribution.budget);
