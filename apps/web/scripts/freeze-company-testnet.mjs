@@ -1,3 +1,4 @@
+import { loadDeploymentEnv, manifestPath } from "./deployment-paths.mjs";
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { readFile, rename, writeFile } from "node:fs/promises";
@@ -7,8 +8,7 @@ import { JsonRpcProvider, KeyPair } from "near-api-js";
 import { assessCompanyFreeze, publicAccessKeys, removeCompanyDeploymentKey } from "../lib/company-freeze.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
-const manifestPath = resolve(root, "docs/deployment-manifest.testnet.json");
+loadDeploymentEnv();
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const apply = process.argv.includes("--apply");
 const verificationScript = resolve(root, "apps/web/scripts/verify-testnet-release.mjs");

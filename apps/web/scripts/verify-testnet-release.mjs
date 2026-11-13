@@ -1,3 +1,4 @@
+import { loadDeploymentEnv, manifestPath } from "./deployment-paths.mjs";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
@@ -7,8 +8,8 @@ import { assessCompanyFunding } from "../lib/storage-funding.mjs";
 import { assertReleaseCompanyWasm, assessRelease } from "../lib/release-verification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
-const manifest = JSON.parse(await readFile(resolve(root, "docs/deployment-manifest.testnet.json"), "utf8"));
+loadDeploymentEnv();
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const paths = {
   company: "target/wasm32-unknown-unknown/release/captab_company.wasm",
   dao: ".cache/sputnik/target/wasm32-unknown-unknown/release/sputnikdao2.wasm",

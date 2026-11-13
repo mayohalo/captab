@@ -1,3 +1,4 @@
+import { loadDeploymentEnv, manifestPath } from "./deployment-paths.mjs";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
@@ -5,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, teraToGas } from "near-api-js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+loadDeploymentEnv();
 const wasm = await readFile(resolve(root, "target/wasm32-unknown-unknown/release/captab_test_token.wasm"));
 const digest = createHash("sha256").update(wasm).digest();
 const codeHash = baseEncode(digest);

@@ -79,7 +79,27 @@ Testnet transaction hashes come from the [payout rehearsal](docs/testnet-rehears
 
 ## Contract v2: raising, secondaries, and exit (branch `contract-v2`)
 
-Schema v2 extends the ledger from founding and hiring to raising money, secondary sales, buybacks, and exit. It is built and tested locally and on NEAR Sandbox with the pinned Sputnik DAO and a real NEP-141 token. **It is not deployed to testnet yet**; the live demo above runs schema v1, and the app reads both.
+Schema v2 extends the ledger from founding and hiring to raising money, secondary sales, buybacks, and exit. It is tested locally, on NEAR Sandbox, and **live on testnet** as a second deployment beside the v1 demo. The app reads both.
+
+| v2 testnet deployment | Account |
+| --- | --- |
+| Company contract (schema v2) | [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) |
+| Sputnik DAO (2 of 3 council) | [`captab-dao-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-dao-0d07df99e1bb0e44.testnet) |
+| TESTUSD (6 decimals) | [`captab-token-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-token-0d07df99e1bb0e44.testnet) |
+
+The live rehearsal (`pnpm rehearse:v2`, [evidence](docs/testnet-v2-rehearsal.json), [manifest](docs/deployment-manifest.v2.testnet.json)) ran every board action through two-of-three Sputnik votes:
+
+| Step on testnet | Transactions |
+| --- | --- |
+| Charter amendment to 12,000,000 units with a document hash | [proposal 1](https://testnet.nearblocks.io/txns/JBCCbvP4YtmZFAmhcAxHaiPXC5Jy3W2iP9oW9pxzdVSn) |
+| Contributor accepts the grant document, then claims 25,000 units at the cliff | [accept](https://testnet.nearblocks.io/txns/CE4y23r3fiRcM81FrCk9eDgpQadM6i8BWxKNHxyrMEba), [claim](https://testnet.nearblocks.io/txns/FyFBrAFfkQz1DLPTS9JQR5AsTVEf13Ecm5Q2FHZecmdf) |
+| Founder vesting from unallocated capacity, accelerated 12 months, claimed; pool reduced | DAO proposals 6, 7, 8 |
+| Seed round: a wrong amount and a wrong payer are refunded; the investor's exact 10,000 TESTUSD issues 1,000,000 units and reaches the DAO | [refund: amount](https://testnet.nearblocks.io/txns/38fDEUrTUDA2jeHMUvqrnv4JSqJs4XsYnwyhjFTrsYNE), [refund: payer](https://testnet.nearblocks.io/txns/GzNAauqwev72UhRjmWAyJkwvujWAB4jysaBGQudoCmQb), [payment](https://testnet.nearblocks.io/txns/DGY7VapS6G9b8XCzaT8y3LnMpXbb1mUpRUVydX184Jmd) |
+| Secondary sale: seller signs, buyer pays, proceeds held for the unregistered seller, then delivered by a public retry | [accept](https://testnet.nearblocks.io/txns/FKfosRrYSo94ao94dWxDhRhaqqbtstYmH8hyu6HEEqSd), [payment](https://testnet.nearblocks.io/txns/9gBWG3pbnz2yfSNwrZ6vZDN4QnDRjdgT2sv62aFYCGE9), [retry](https://testnet.nearblocks.io/txns/EGuQtscaKtLKcaEb1qiByeQGdG7ajRxJDNcJFpmB5KY6) |
+| Buyback: contributor signs, the DAO pays through a proposal, 5,000 units retired | [accept](https://testnet.nearblocks.io/txns/7JuZfuvezp9AwLAeWZMr9rf7PDRxgSDSdbDp5PfP1XTo), [DAO payment](https://testnet.nearblocks.io/txns/EtXZJ5Egqj8mZqKZb3NoWmBvrdsci6gK6sT7v6apj9oj) |
+| Board-set payout list of 2,000 TESTUSD, funded exactly and paid to five holders | [funding](https://testnet.nearblocks.io/txns/HVefYMr38JD72oebKw7gCR7BFb8vaTx61ThZ8Y9GQqCf), [first payment](https://testnet.nearblocks.io/txns/9SZVkKe9RKhe8wMHF3j4v4c1djzucKBP1MREwCsg6cCb) |
+
+Afterwards the ledger holds 7,140,000 issued units across five holders, the DAO treasury is exactly 72,940 TESTUSD, the app's audit reports **Consistent**, and `CAPTAB_DEPLOYMENT=v2 pnpm verify:testnet` passes. Closing the company is proven in Sandbox only, so the testnet company stays usable as a demo.
 
 | Capability | Contract method | How it works |
 |---|---|---|
@@ -136,7 +156,7 @@ These limits are deliberate for a testnet prototype. The [release audit](docs/RE
 
 ## Roadmap
 
-1. Deploy schema v2 to fresh testnet accounts and re-run the live rehearsals (investor round, secondary sale, buyback, explicit payout). Built and Sandbox-tested; not deployed.
+1. Make the v2 deployment the primary demo once a third-party wallet extension has signed v2 deal flows.
 2. Stock options with an exercise price, one-click company deployment through a factory or global contract, and a history indexer.
 3. Optionally, one restricted NEP-141 token per share class for wallet visibility ([design](docs/TOKENIZATION_PLAN.md)). With v2 deals, secondary sales already work on the ledger, so the token is no longer a requirement.
 

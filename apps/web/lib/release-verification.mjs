@@ -58,10 +58,17 @@ export function assessRelease({ manifest, artifacts, chain, funding, requireFroz
     String(chain?.tokenSupply) === manifest.token.totalSupply,
   "Settlement token total supply differs from the frozen manifest.");
   const config = chain?.config;
+  // v1 authorized units are fixed. v2 boards can only raise them (increase_authorized), so the manifest value is a floor.
+  const authorizedMatches = value => {
+    try {
+      const deployed = BigInt(manifest?.company?.authorizedUnits);
+      return manifest?.company?.schemaVersion === 2 ? BigInt(value) >= deployed : BigInt(value) === deployed;
+    } catch { return false; }
+  };
   const limits = LIMITS_BY_SCHEMA[manifest?.company?.schemaVersion];
   check(Boolean(limits) && config?.schema_version === manifest?.company?.schemaVersion &&
     config?.dao_id === manifest?.daoId && config?.snapshot_operator_id === manifest?.operatorId &&
-    config?.settlement_token_id === manifest?.tokenId && String(config?.authorized_units) === String(manifest?.company?.authorizedUnits) &&
+    config?.settlement_token_id === manifest?.tokenId && authorizedMatches(config?.authorized_units) &&
     Object.entries(limits ?? {}).every(([key, value]) => config?.limits?.[key] === value && manifest?.company?.limits?.[key] === value),
   "Company configuration or limits differ from the frozen manifest.");
   try {
@@ -71,7 +78,7 @@ export function assessRelease({ manifest, artifacts, chain, funding, requireFroz
     const reserved = BigInt(totals.grant_reserved);
     const dealReserved = BigInt(totals.deal_reserved ?? 0);
     const authorized = BigInt(totals.authorized_units);
-    check(totals.dao_id === manifest?.daoId && authorized === BigInt(manifest?.company?.authorizedUnits) &&
+    check(totals.dao_id === manifest?.daoId && authorizedMatches(totals.authorized_units) && String(totals.authorized_units) === String(config?.authorized_units) &&
       issued + pool + reserved === BigInt(totals.fully_diluted_total) &&
       authorized - issued - pool - reserved - dealReserved === BigInt(totals.unallocated_units),
     "Company supply accounting does not reconcile.");

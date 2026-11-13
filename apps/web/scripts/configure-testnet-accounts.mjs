@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { accountsPath, envPath } from "./deployment-paths.mjs";
 import { mkdir, open, readFile, chmod, stat } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,8 +7,7 @@ import { Account, JsonRpcProvider, KeyPair, actions } from "near-api-js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const privateDir = resolve(root, "apps/web/.data");
-const credentialsPath = resolve(privateDir, "testnet-accounts.json");
-const envPath = resolve(root, "apps/web/.env.local");
+const credentialsPath = accountsPath;
 const rpcUrl = "https://rpc.testnet.fastnear.com";
 const faucetUrl = "https://helper.nearprotocol.com/account";
 const initialBalances = {
@@ -20,6 +20,8 @@ const initialBalances = {
   foundera: 200_000_000_000_000_000_000_000n,
   founderb: 200_000_000_000_000_000_000_000n,
   contributor: 100_000_000_000_000_000_000_000n,
+  investor: 300_000_000_000_000_000_000_000n,
+  angel: 300_000_000_000_000_000_000_000n,
 };
 
 function keyRecord(accountId) {
@@ -35,7 +37,7 @@ function envLine(name, value) {
 async function initialize() {
   await mkdir(privateDir, { recursive: true, mode: 0o700 });
   const rootId = `captab-${randomBytes(8).toString("hex")}.testnet`;
-  const roles = ["dao", "company", "token", "operator", "executor", "relayer", "council1", "council2", "council3", "foundera", "founderb", "contributor"];
+  const roles = ["dao", "company", "token", "operator", "executor", "relayer", "council1", "council2", "council3", "foundera", "founderb", "contributor", "investor", "angel"];
   const data = {
     network: "testnet",
     root: keyRecord(rootId),
@@ -125,6 +127,7 @@ async function createSubaccounts() {
   const rootAccount = new Account(data.root.accountId, provider, data.root.privateKey);
   for (const [role, balance] of Object.entries(initialBalances)) {
     const account = data.accounts[role];
+    if (!account) continue; // bundles created before a role existed
     if (KeyPair.fromString(account.privateKey).getPublicKey().toString() !== account.publicKey) throw new Error(`${role} key mismatch`);
     const existing = await provider.viewAccount({ accountId: account.accountId, blockQuery: { finality: "final" } }).catch(error => {
       if (/does not exist|unknown account|UNKNOWN_ACCOUNT/i.test(String(error))) return null;

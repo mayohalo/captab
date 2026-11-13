@@ -1,3 +1,4 @@
+import { loadDeploymentEnv, manifestPath } from "./deployment-paths.mjs";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
@@ -5,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, teraToGas } from "near-api-js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+loadDeploymentEnv();
 const wasm = await readFile(resolve(root, ".cache/sputnik/target/wasm32-unknown-unknown/release/sputnikdao2.wasm"));
 const digest = createHash("sha256").update(wasm).digest();
 const expected = "a6055ab340bb5b9909ce4ff4bc7d2ae365b77d7b4b74d481fc2d2ee97c8a0722";

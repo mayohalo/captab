@@ -31,6 +31,7 @@
     "bootstrap:dao": "pnpm --filter @captab/web bootstrap:dao",
     "bootstrap:token": "pnpm --filter @captab/web bootstrap:token",
     "accounts:testnet": "pnpm --filter @captab/web accounts:testnet",
-    "rehearse:testnet": "pnpm --filter @captab/web rehearse:testnet"
+    "rehearse:testnet": "pnpm --filter @captab/web rehearse:testnet",
+    "rehearse:v2": "pnpm --filter @captab/web rehearse:v2"
   }
 }

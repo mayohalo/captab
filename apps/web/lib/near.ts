@@ -82,25 +82,33 @@ export async function verifiedCompanyCode(contractId: string): Promise<void> {
   if (!assessment.verified) throw new Error(assessment.reason);
 }
 
-const pages = (total: number, size: number) => Array.from({ length: Math.ceil(total / size) }, (_, page) => page * size);
+/** Reads pages in order and stops at the first short page, so a small company costs one RPC call per list. */
+async function readPages<T>(read: (fromIndex: number) => Promise<T[]>, size: number, max: number): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; from < max; from += size) {
+    const page = await read(from);
+    rows.push(...page);
+    if (page.length < size) break;
+  }
+  return rows;
+}
 
 export async function readCompany(contractId: string) {
   const company = await view<CompanySnapshot>(contractId, "get_company");
   const { totals, config } = company;
   if (!supportedSchema(config)) throw new Error("Unsupported company schema or demo limits.");
   const v2 = isV2(config);
-  const [holdings, grantPages, distributionPages, dealPages, rounds] = await Promise.all([
+  // v2 distributions carry up to 100 rows each, so they are read five at a time to stay within view gas.
+  const distributionPage = v2 ? 5 : 20;
+  const [holdings, grants, distributions, deals, rounds] = await Promise.all([
     view<Holding[]>(contractId, "list_holdings", { from_index: 0, limit: config.limits.max_holders }),
-    Promise.all(pages(config.limits.max_grants, 20).map(from_index => view<Grant[]>(contractId, "list_grants", { from_index, limit: 20 }))),
-    // v2 distributions carry up to 100 rows each, so they are read five at a time to stay within view gas.
-    Promise.all(pages(config.limits.max_distributions, v2 ? 5 : 20).map(from_index =>
-      view<Distribution[]>(contractId, "list_distributions", { from_index, limit: v2 ? 5 : 20 }))),
-    v2 ? Promise.all(pages(config.limits.max_deals ?? 0, 50).map(from_index => view<Deal[]>(contractId, "list_deals", { from_index, limit: 50 }))) : Promise.resolve([]),
+    readPages(from_index => view<Grant[]>(contractId, "list_grants", { from_index, limit: 20 }), 20, config.limits.max_grants),
+    readPages(from_index => view<Distribution[]>(contractId, "list_distributions", { from_index, limit: distributionPage }),
+      distributionPage, config.limits.max_distributions),
+    v2 ? readPages(from_index => view<Deal[]>(contractId, "list_deals", { from_index, limit: 50 }), 50, config.limits.max_deals ?? 0)
+      : Promise.resolve([] as Deal[]),
     v2 ? view<Round[]>(contractId, "list_rounds") : Promise.resolve([] as Round[]),
   ]);
-  const grants = grantPages.flat();
-  const distributions = distributionPages.flat();
-  const deals = dealPages.flat();
   const companyAssessment = await assessCompanyCode(contractId);
   let daoPolicy: DaoPolicy | null = null;
   let daoAssessment: DaoAssessment = { verified: false, reason: "DAO policy could not be verified." };

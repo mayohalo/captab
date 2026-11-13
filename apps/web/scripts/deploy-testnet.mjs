@@ -1,3 +1,4 @@
+import { loadDeploymentEnv, manifestPath } from "./deployment-paths.mjs";
 import { LIMITS_BY_SCHEMA } from "../lib/schema.mjs";
 import { createHash } from "node:crypto";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
@@ -8,11 +9,10 @@ import { assessCompanyFunding, DEMO_STATE_GROWTH_BYTES } from "../lib/storage-fu
 import { assertReleaseCompanyWasm, canonicalDaoPolicy } from "../lib/release-verification.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+loadDeploymentEnv();
 const companyWasmPath = resolve(root, "target/wasm32-unknown-unknown/release/captab_company.wasm");
 const daoWasmPath = resolve(root, ".cache/sputnik/target/wasm32-unknown-unknown/release/sputnikdao2.wasm");
 const tokenWasmPath = resolve(root, "target/wasm32-unknown-unknown/release/captab_test_token.wasm");
-const manifestPath = resolve(root, "docs/deployment-manifest.testnet.json");
 let previousManifest = null;
 try {
   previousManifest = JSON.parse(await readFile(manifestPath, "utf8"));

@@ -1,9 +1,10 @@
+import { loadDeploymentEnv, manifestPath } from "./deployment-paths.mjs";
 import { setTimeout as delay } from "node:timers/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-try { process.loadEnvFile(resolve(root, "apps/web/.env.local")); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+loadDeploymentEnv();
 
 const baseUrl = process.env.CAPTAB_BASE_URL ?? "http://127.0.0.1:3000";
 const secret = process.env.CAPTAB_WORKER_SECRET;

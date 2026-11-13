@@ -93,3 +93,21 @@ test("final release requires the deployment key and all full-access keys to be g
   frozen.chain.accessKeys = [];
   assert.deepEqual(assessRelease({ ...frozen, requireFrozen: true }), []);
 });
+
+test("v2 releases accept a board-raised authorized ceiling but never a lower one", () => {
+  const v2Limits = { max_holders: 100, max_grants: 200, max_distributions: 50, max_deals: 200, max_rounds: 20, max_payout_rows: 100,
+    max_actions: null, vesting_boundaries: 49, max_vesting_boundaries: 121 };
+  const v2 = structuredClone(snapshot);
+  v2.manifest.company = { ...v2.manifest.company, schemaVersion: 2, limits: v2Limits };
+  v2.chain.config = { ...v2.chain.config, schema_version: 2, limits: v2Limits, authorized_units: "1500" };
+  v2.chain.totals = { ...v2.chain.totals, authorized_units: "1500", deal_reserved: "50", unallocated_units: "550" };
+  assert.deepEqual(assessRelease(v2), []);
+  const lowered = structuredClone(v2);
+  lowered.chain.config.authorized_units = "900";
+  lowered.chain.totals = { ...lowered.chain.totals, authorized_units: "900", unallocated_units: "-50" };
+  assert.ok(assessRelease(lowered).some(issue => issue.includes("configuration")));
+  const v1Raised = structuredClone(snapshot);
+  v1Raised.chain.config.authorized_units = "1500";
+  v1Raised.chain.totals = { ...v1Raised.chain.totals, authorized_units: "1500", unallocated_units: "600" };
+  assert.ok(assessRelease(v1Raised).some(issue => issue.includes("configuration")), "v1 authorized units stay fixed");
+});

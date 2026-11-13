@@ -24,7 +24,7 @@ The remaining release step is checking compatibility with a third-party NEAR tes
 
 The MVP deliberately limits history to app-submitted transactions, uses persistent single-host SQLite, has no automatic recovery for a transfer whose callback failed, and treats ownership units and TESTUSD as fictional. These limits remain visible in the [runbook](RUNBOOK.md) and app. A production system would need a separate design for complete indexing, callback recovery, confidentiality, legal ownership, and upgrades.
 
-## Contract v2 (branch `contract-v2`, not deployed)
+## Contract v2 (branch `contract-v2`, deployed beside v1)
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
@@ -33,4 +33,4 @@ The MVP deliberately limits history to app-submitted transactions, uses persiste
 | Storage and gas at v2 limits | Stress test: 1,141,581 bytes of state, 35.8 Tgas for a 100-holder snapshot ([measurements](STORAGE_LIMITS.md)) | Verified locally |
 | App reads v1 and v2, builds the twelve new board actions, deals page, audit and export | 13 web suites, 25 browser tests including a schema v2 fixture company, production build | Verified with fixtures |
 | Explicit payout hash parity | Rust `explicit_distribution_hash_matches_the_typescript_vector` and `pnpm test:hash` share one vector | Verified locally |
-| Testnet deployment and live rehearsal of v2 | Needs fresh funded accounts (about 21 NEAR of storage at limits), `pnpm deploy:testnet`, and new rehearsal evidence | Open |
+| Testnet deployment and live rehearsal of v2 | Deployed to fresh accounts with `CAPTAB_DEPLOYMENT=v2` ([manifest](deployment-manifest.v2.testnet.json)); `pnpm rehearse:v2` ran the charter amendment, grants, founder vesting, seed round with refunds, secondary sale with held and retried proceeds, buyback, and explicit payout through Sputnik votes ([evidence](testnet-v2-rehearsal.json)); `CAPTAB_DEPLOYMENT=v2 pnpm verify:testnet` passes; the app audit is Consistent against the live company | Verified on testnet; close proven in Sandbox only |

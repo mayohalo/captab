@@ -1,0 +1,508 @@
+{
+  "network": "testnet",
+  "schemaVersion": 2,
+  "companyId": "captab-company-0d07df99e1bb0e44.testnet",
+  "daoId": "captab-dao-0d07df99e1bb0e44.testnet",
+  "tokenId": "captab-token-0d07df99e1bb0e44.testnet",
+  "signer": "Local Node process with the test-only v2 key bundle; keys stay in ignored files",
+  "documents": {
+    "charter": "371cf4f5a14b5d93a156b6fe3046c2bf7da7597f132e951122d88efe9a9ff5ee",
+    "founders": "ce40347bd9ff56832558b2307072700ac5afb0c2453e971e498cc9a9ce45437e",
+    "grant": "ab87c60551b53736c131725392266940da7b3ae71e000679e3809ef256317f82",
+    "founderGrant": "02ac77e8d0497b39ce74fe0fdf023a598ca0d2a494f554bd496bad8cee0dc401",
+    "seed": "42aabef4b6156e05ce8fa0cd2f4f24b83e9d4ff6d901e21c785f8ac4e7da8e14",
+    "sale": "0229420ae5893ee397e9c1d82205c51611df8b1a1f330ab852e11a77537dcbec",
+    "buyback": "c83cb4c47a75b013ae94201241d6e90e4bbde9ffed0601cda22546ce42676b98",
+    "exit": "8a983ccd0384149c46c3d60c30e696325a2c86fa1d1afeb70554b1db04277b62"
+  },
+  "steps": [
+    {
+      "step": "token-setup",
+      "registrations": [
+        {
+          "hash": "CtkcD1UZFZLSoMKsEpemBLDhcNAxDHoZxginDkou4FM1",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/CtkcD1UZFZLSoMKsEpemBLDhcNAxDHoZxginDkou4FM1"
+        },
+        {
+          "hash": "EKhCvpH3ZhPHRRBfc8kGVHKvGfsRgYk6XC2RiyLK9XLu",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/EKhCvpH3ZhPHRRBfc8kGVHKvGfsRgYk6XC2RiyLK9XLu"
+        },
+        {
+          "hash": "9MWh2LLUAarEdUYURQXwV2gFZwRAJXmJFytdgn5rTdey",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/9MWh2LLUAarEdUYURQXwV2gFZwRAJXmJFytdgn5rTdey"
+        },
+        {
+          "hash": "GbPDCTU6Kgc9GFPEa3DUEGN653J5VFnXHysyBimtJZjM",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/GbPDCTU6Kgc9GFPEa3DUEGN653J5VFnXHysyBimtJZjM"
+        }
+      ],
+      "funding": {
+        "proposalId": 0,
+        "proposal": {
+          "hash": "H1F3HepF72GVgcfgyQyjpALxb2a7h4dW2RM4DniqYjQ8",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/H1F3HepF72GVgcfgyQyjpALxb2a7h4dW2RM4DniqYjQ8"
+        },
+        "votes": [
+          {
+            "hash": "FVT3R7HZJAAYgsNji375RjKfiX4REjM9r7nnib8BvLXf",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/FVT3R7HZJAAYgsNji375RjKfiX4REjM9r7nnib8BvLXf"
+          },
+          {
+            "hash": "7qh1LADG5gicWcCUCEVRcmmeqY8DvvK1YxPY1NDdC5jx",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/7qh1LADG5gicWcCUCEVRcmmeqY8DvvK1YxPY1NDdC5jx"
+          }
+        ]
+      }
+    },
+    {
+      "step": "charter-and-founders",
+      "amend": {
+        "proposalId": 1,
+        "proposal": {
+          "hash": "JBCCbvP4YtmZFAmhcAxHaiPXC5Jy3W2iP9oW9pxzdVSn",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/JBCCbvP4YtmZFAmhcAxHaiPXC5Jy3W2iP9oW9pxzdVSn"
+        },
+        "votes": [
+          {
+            "hash": "Cc9tJCCHYyZTrbXkU6jnHnNbKsUxFUBACEo4wA8uhRo3",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/Cc9tJCCHYyZTrbXkU6jnHnNbKsUxFUBACEo4wA8uhRo3"
+          },
+          {
+            "hash": "9Pvht1k2YUXJfAzZG6nrWHgt1X8Y4yAcqfRHVMhSdHMC",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/9Pvht1k2YUXJfAzZG6nrWHgt1X8Y4yAcqfRHVMhSdHMC"
+          }
+        ]
+      },
+      "founderA": {
+        "proposalId": 2,
+        "proposal": {
+          "hash": "8fza2P5zsvk4CU827rovZe5eJsGiyf8mDX7ic64sM2PS",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/8fza2P5zsvk4CU827rovZe5eJsGiyf8mDX7ic64sM2PS"
+        },
+        "votes": [
+          {
+            "hash": "Euy1AFF8TK3UsQU5UE8pTmnTiUGFa1cAVRHZvv1yWybZ",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/Euy1AFF8TK3UsQU5UE8pTmnTiUGFa1cAVRHZvv1yWybZ"
+          },
+          {
+            "hash": "3Acp5MUtnzXm54reLApVrKHLooBMtfuFE3FqhQmkCWzv",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/3Acp5MUtnzXm54reLApVrKHLooBMtfuFE3FqhQmkCWzv"
+          }
+        ]
+      },
+      "founderB": {
+        "proposalId": 3,
+        "proposal": {
+          "hash": "EETiF9XHZ1H85AM2VX7xMox2poxavrzzTzvMFbwWWvL8",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/EETiF9XHZ1H85AM2VX7xMox2poxavrzzTzvMFbwWWvL8"
+        },
+        "votes": [
+          {
+            "hash": "4rN3BLtRTBF6X34Z6X5Bf1bo8kZ7Psa6mf9oh5VyuTyE",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/4rN3BLtRTBF6X34Z6X5Bf1bo8kZ7Psa6mf9oh5VyuTyE"
+          },
+          {
+            "hash": "2uw4Pi3nyxrFxaCsKfYkPc3ggLYJ9EaCvMD8kZMK8f8u",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/2uw4Pi3nyxrFxaCsKfYkPc3ggLYJ9EaCvMD8kZMK8f8u"
+          }
+        ]
+      },
+      "pool": {
+        "proposalId": 4,
+        "proposal": {
+          "hash": "7m5r6D7d7DBSFWDBPsNid6YfYWVHPqUTTmgg8rNe1iFy",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/7m5r6D7d7DBSFWDBPsNid6YfYWVHPqUTTmgg8rNe1iFy"
+        },
+        "votes": [
+          {
+            "hash": "FQYmeVZDHFu9PfC4enMRUECcDWgEi2EezzqwQALSseTM",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/FQYmeVZDHFu9PfC4enMRUECcDWgEi2EezzqwQALSseTM"
+          },
+          {
+            "hash": "5L5CsNzTviPfjRRMqsDshhJNCyDEogPLGZcjBxfk6CRC",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/5L5CsNzTviPfjRRMqsDshhJNCyDEogPLGZcjBxfk6CRC"
+          }
+        ]
+      },
+      "totals": {
+        "dao_id": "captab-dao-0d07df99e1bb0e44.testnet",
+        "authorized_units": "12000000",
+        "issued_total": "6000000",
+        "pool_available": "2000000",
+        "grant_reserved": "0",
+        "deal_reserved": "0",
+        "fully_diluted_total": "8000000",
+        "unallocated_units": "4000000",
+        "ledger_revision": 4,
+        "holder_count": 2
+      }
+    },
+    {
+      "step": "contributor-grant",
+      "grant": {
+        "proposalId": 5,
+        "proposal": {
+          "hash": "ET8YUY2RNYSCmio1HvAEyDdxX3wfxZACm1dxMVo8EqmX",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/ET8YUY2RNYSCmio1HvAEyDdxX3wfxZACm1dxMVo8EqmX"
+        },
+        "votes": [
+          {
+            "hash": "HEHKrdcQuFhsgKBg3kFX3kgRSuhcBou2S26MyrqymX4F",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/HEHKrdcQuFhsgKBg3kFX3kgRSuhcBou2S26MyrqymX4F"
+          },
+          {
+            "hash": "1ErLQNxKR3ciUmNatc25AXHPRfrLqgX24Z3QgJZWdWJ",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/1ErLQNxKR3ciUmNatc25AXHPRfrLqgX24Z3QgJZWdWJ"
+          }
+        ]
+      },
+      "grantId": 0,
+      "accept": {
+        "hash": "CE4y23r3fiRcM81FrCk9eDgpQadM6i8BWxKNHxyrMEba",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/CE4y23r3fiRcM81FrCk9eDgpQadM6i8BWxKNHxyrMEba"
+      },
+      "claim": {
+        "hash": "FyFBrAFfkQz1DLPTS9JQR5AsTVEf13Ecm5Q2FHZecmdf",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/FyFBrAFfkQz1DLPTS9JQR5AsTVEf13Ecm5Q2FHZecmdf"
+      },
+      "claimedUnits": "25000"
+    },
+    {
+      "step": "founder-vesting",
+      "grant": {
+        "proposalId": 6,
+        "status": "Approved"
+      },
+      "grantId": 1,
+      "accelerate": {
+        "proposalId": 7,
+        "status": "Approved"
+      },
+      "shrink": {
+        "proposalId": 8,
+        "status": "Approved"
+      },
+      "claimedUnits": "120000",
+      "recoveredFromChain": "Completed on chain before the rehearsal process was interrupted; evidence rebuilt from DAO proposals and grant state. Transaction hashes are on the DAO and company account pages.",
+      "totals": {
+        "dao_id": "captab-dao-0d07df99e1bb0e44.testnet",
+        "authorized_units": "12000000",
+        "issued_total": "6145000",
+        "pool_available": "1800000",
+        "grant_reserved": "435000",
+        "deal_reserved": "0",
+        "fully_diluted_total": "8380000",
+        "unallocated_units": "3620000",
+        "ledger_revision": 10,
+        "holder_count": 3
+      }
+    },
+    {
+      "step": "seed-round",
+      "round": {
+        "proposalId": 9,
+        "proposal": {
+          "hash": "Rzc734Ld6JY7FFSv8E7qgDdFCcYkPL6BoVfhhhUEuy5",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/Rzc734Ld6JY7FFSv8E7qgDdFCcYkPL6BoVfhhhUEuy5"
+        },
+        "votes": [
+          {
+            "hash": "FEqhCaczm6kSTJvKzxCJa3Kdu7xGjoaZp9VT8jJDm6m1",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/FEqhCaczm6kSTJvKzxCJa3Kdu7xGjoaZp9VT8jJDm6m1"
+          },
+          {
+            "hash": "Dqdso6SwVzTxxngieTfKgyyZaSnGuYGd5rCXhmhbmosz",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/Dqdso6SwVzTxxngieTfKgyyZaSnGuYGd5rCXhmhbmosz"
+          }
+        ]
+      },
+      "allocation": {
+        "proposalId": 10,
+        "proposal": {
+          "hash": "3ngmLFq8jCtQDsfnHyvujUEszLCdpRocQxhc4va7dNhb",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/3ngmLFq8jCtQDsfnHyvujUEszLCdpRocQxhc4va7dNhb"
+        },
+        "votes": [
+          {
+            "hash": "3WfNHrkBnEiMEs4ws8fbVbMpu7Mx2C9PmBfEdN4SJpHv",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/3WfNHrkBnEiMEs4ws8fbVbMpu7Mx2C9PmBfEdN4SJpHv"
+          },
+          {
+            "hash": "97SZdJNt2FpSzZk8FtVoF3MRvJKgt3rHjNEyNbVQ5ut",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/97SZdJNt2FpSzZk8FtVoF3MRvJKgt3rHjNEyNbVQ5ut"
+          }
+        ]
+      },
+      "dealId": 0,
+      "refusedWrongAmount": {
+        "hash": "38fDEUrTUDA2jeHMUvqrnv4JSqJs4XsYnwyhjFTrsYNE",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/38fDEUrTUDA2jeHMUvqrnv4JSqJs4XsYnwyhjFTrsYNE"
+      },
+      "refusedWrongPayer": {
+        "hash": "GzNAauqwev72UhRjmWAyJkwvujWAB4jysaBGQudoCmQb",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/GzNAauqwev72UhRjmWAyJkwvujWAB4jysaBGQudoCmQb"
+      },
+      "payment": {
+        "hash": "DGY7VapS6G9b8XCzaT8y3LnMpXbb1mUpRUVydX184Jmd",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/DGY7VapS6G9b8XCzaT8y3LnMpXbb1mUpRUVydX184Jmd"
+      },
+      "daoReceivedBaseUnits": "10000000000",
+      "roundState": {
+        "id": "seed",
+        "price_per_unit": "10000",
+        "doc_hash": "42aabef4b6156e05ce8fa0cd2f4f24b83e9d4ff6d901e21c785f8ac4e7da8e14",
+        "opened_at": 1794532834,
+        "closed_at": null,
+        "units_issued": "1000000",
+        "amount_raised": "10000000000",
+        "deal_count": 1
+      }
+    },
+    {
+      "step": "secondary-sale",
+      "approval": {
+        "proposalId": 11,
+        "proposal": {
+          "hash": "HVpqrH9vm86mMUJ4moQxGPfKFNP7HUxRsY83dJdERCdP",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/HVpqrH9vm86mMUJ4moQxGPfKFNP7HUxRsY83dJdERCdP"
+        },
+        "votes": [
+          {
+            "hash": "Fm3tv2VzQoxiFJVKFMmBWr1mYuQUmqC4hz3kECeCxKra",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/Fm3tv2VzQoxiFJVKFMmBWr1mYuQUmqC4hz3kECeCxKra"
+          },
+          {
+            "hash": "9XkGbPYecj2sPGbnQg6vsHZXXXdGvH7jHkkaEbXarPFB",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/9XkGbPYecj2sPGbnQg6vsHZXXXdGvH7jHkkaEbXarPFB"
+          }
+        ]
+      },
+      "dealId": 1,
+      "accept": {
+        "hash": "FKfosRrYSo94ao94dWxDhRhaqqbtstYmH8hyu6HEEqSd",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/FKfosRrYSo94ao94dWxDhRhaqqbtstYmH8hyu6HEEqSd"
+      },
+      "payment": {
+        "hash": "9gBWG3pbnz2yfSNwrZ6vZDN4QnDRjdgT2sv62aFYCGE9",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/9gBWG3pbnz2yfSNwrZ6vZDN4QnDRjdgT2sv62aFYCGE9"
+      },
+      "heldBaseUnits": "1500000000",
+      "registerSeller": {
+        "hash": "CREsEpSsH1d25BCRxU6bUzvDsCjaVPPYdoDx6SeFJqqW",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/CREsEpSsH1d25BCRxU6bUzvDsCjaVPPYdoDx6SeFJqqW"
+      },
+      "retry": {
+        "hash": "EGuQtscaKtLKcaEb1qiByeQGdG7ajRxJDNcJFpmB5KY6",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/EGuQtscaKtLKcaEb1qiByeQGdG7ajRxJDNcJFpmB5KY6"
+      },
+      "sellerPaidBaseUnits": "1500000000"
+    },
+    {
+      "step": "buyback",
+      "approval": {
+        "proposalId": 12,
+        "proposal": {
+          "hash": "Ef7DVKvBwtWzvfziKAsTPdoePr1VJ8ZzSWHtNsJHmumW",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/Ef7DVKvBwtWzvfziKAsTPdoePr1VJ8ZzSWHtNsJHmumW"
+        },
+        "votes": [
+          {
+            "hash": "6kJ2veVfjCgCAPCsoVGHQEajD8BeChjVindBCVGpDohj",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/6kJ2veVfjCgCAPCsoVGHQEajD8BeChjVindBCVGpDohj"
+          },
+          {
+            "hash": "3phEZXrFUrusSAVc9fxXHiBJBiuGKPtxkodCgJ4YTm8w",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/3phEZXrFUrusSAVc9fxXHiBJBiuGKPtxkodCgJ4YTm8w"
+          }
+        ]
+      },
+      "dealId": 2,
+      "accept": {
+        "hash": "7JuZfuvezp9AwLAeWZMr9rf7PDRxgSDSdbDp5PfP1XTo",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/7JuZfuvezp9AwLAeWZMr9rf7PDRxgSDSdbDp5PfP1XTo"
+      },
+      "payment": {
+        "proposalId": 13,
+        "proposal": {
+          "hash": "ARU7FzfZyZ4NMHiEVGkMWoakdhpgb3npUwLrFCP84Jbe",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/ARU7FzfZyZ4NMHiEVGkMWoakdhpgb3npUwLrFCP84Jbe"
+        },
+        "votes": [
+          {
+            "hash": "FFbGGEFqowTuaAnfJ2anLLQrivU45RbZvfa2wEAM2FvM",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/FFbGGEFqowTuaAnfJ2anLLQrivU45RbZvfa2wEAM2FvM"
+          },
+          {
+            "hash": "EtXZJ5Egqj8mZqKZb3NoWmBvrdsci6gK6sT7v6apj9oj",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/EtXZJ5Egqj8mZqKZb3NoWmBvrdsci6gK6sT7v6apj9oj"
+          }
+        ]
+      },
+      "retiredUnits": "5000"
+    },
+    {
+      "step": "explicit-payout",
+      "prepared": {
+        "proposalId": 14,
+        "proposal": {
+          "hash": "3egmxZBC65bvTi8JbEvnV4m7JgQb49WgPm3kbQA8t58K",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/3egmxZBC65bvTi8JbEvnV4m7JgQb49WgPm3kbQA8t58K"
+        },
+        "votes": [
+          {
+            "hash": "AGiX9eMdvVtYCUeKKy5eDKidMUWJx9nwrE1nBx9Tv8ab",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/AGiX9eMdvVtYCUeKKy5eDKidMUWJx9nwrE1nBx9Tv8ab"
+          },
+          {
+            "hash": "GCPNQHfzYpYKaLi3huoMkebvZ5yS6jrjdHaiJNwFJArg",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/GCPNQHfzYpYKaLi3huoMkebvZ5yS6jrjdHaiJNwFJArg"
+          }
+        ]
+      },
+      "distributionId": 0,
+      "scheduleHash": "c0b88bc9eb5d02946fbc33df66438f65019c3cba337ff2984656f0b08a6e1801",
+      "funding": {
+        "proposalId": 15,
+        "proposal": {
+          "hash": "GNfCbMhefQnrptac19eXy5bT5v5hRcmKzdJjCbLMTT2S",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/GNfCbMhefQnrptac19eXy5bT5v5hRcmKzdJjCbLMTT2S"
+        },
+        "votes": [
+          {
+            "hash": "AYJboUp3uks4eotxH4qSJgx6JBowAeovpuUKcLS1qJX8",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/AYJboUp3uks4eotxH4qSJgx6JBowAeovpuUKcLS1qJX8"
+          },
+          {
+            "hash": "HVefYMr38JD72oebKw7gCR7BFb8vaTx61ThZ8Y9GQqCf",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/HVefYMr38JD72oebKw7gCR7BFb8vaTx61ThZ8Y9GQqCf"
+          }
+        ]
+      },
+      "payments": [
+        {
+          "recipient": "investor.captab-0d07df99e1bb0e44.testnet",
+          "hash": "9SZVkKe9RKhe8wMHF3j4v4c1djzucKBP1MREwCsg6cCb",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/9SZVkKe9RKhe8wMHF3j4v4c1djzucKBP1MREwCsg6cCb"
+        },
+        {
+          "recipient": "foundera.captab-0d07df99e1bb0e44.testnet",
+          "hash": "AP18dM2gfwg48PYZTDGyNFy6ipo4oGRG3VkLRmvXiJkt",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/AP18dM2gfwg48PYZTDGyNFy6ipo4oGRG3VkLRmvXiJkt"
+        },
+        {
+          "recipient": "founderb.captab-0d07df99e1bb0e44.testnet",
+          "hash": "J7fdgKa78MNbwkppkWTnA5zh7T3GhAzgzmfpMTFTjqA2",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/J7fdgKa78MNbwkppkWTnA5zh7T3GhAzgzmfpMTFTjqA2"
+        },
+        {
+          "recipient": "angel.captab-0d07df99e1bb0e44.testnet",
+          "hash": "8wg3hGQbkNQcALwbCC5WPdATmhZxsZsUMpQs8b5uyVXY",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/8wg3hGQbkNQcALwbCC5WPdATmhZxsZsUMpQs8b5uyVXY"
+        },
+        {
+          "recipient": "contributor.captab-0d07df99e1bb0e44.testnet",
+          "hash": "YeUfSxY3B6w6CvKeJuuwtSruz6wQetSHdbZRKvLsfGu",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/YeUfSxY3B6w6CvKeJuuwtSruz6wQetSHdbZRKvLsfGu"
+        }
+      ],
+      "budgetBaseUnits": "2000000000"
+    }
+  ],
+  "updatedAt": "2026-11-13T01:23:19.043Z",
+  "finalState": {
+    "totals": {
+      "dao_id": "captab-dao-0d07df99e1bb0e44.testnet",
+      "authorized_units": "12000000",
+      "issued_total": "7140000",
+      "pool_available": "1800000",
+      "grant_reserved": "435000",
+      "deal_reserved": "0",
+      "fully_diluted_total": "9375000",
+      "unallocated_units": "2625000",
+      "ledger_revision": 14,
+      "holder_count": 5
+    },
+    "holdings": [
+      {
+        "account_id": "foundera.captab-0d07df99e1bb0e44.testnet",
+        "issued_units": "3600000",
+        "locked_units": "0"
+      },
+      {
+        "account_id": "founderb.captab-0d07df99e1bb0e44.testnet",
+        "issued_units": "2420000",
+        "locked_units": "0"
+      },
+      {
+        "account_id": "contributor.captab-0d07df99e1bb0e44.testnet",
+        "issued_units": "20000",
+        "locked_units": "0"
+      },
+      {
+        "account_id": "investor.captab-0d07df99e1bb0e44.testnet",
+        "issued_units": "1000000",
+        "locked_units": "0"
+      },
+      {
+        "account_id": "angel.captab-0d07df99e1bb0e44.testnet",
+        "issued_units": "100000",
+        "locked_units": "0"
+      }
+    ],
+    "daoTreasuryBaseUnits": "72940000000",
+    "deals": [
+      {
+        "id": 0,
+        "kind": "Issue",
+        "seller": null,
+        "buyer": "investor.captab-0d07df99e1bb0e44.testnet",
+        "units": "1000000",
+        "price": "10000000000",
+        "expires_at": 1795742438,
+        "round_id": "seed",
+        "doc_hash": "42aabef4b6156e05ce8fa0cd2f4f24b83e9d4ff6d901e21c785f8ac4e7da8e14",
+        "status": "Settled",
+        "settled_at": 1794532868,
+        "proceeds_recipient": "captab-dao-0d07df99e1bb0e44.testnet",
+        "proceeds_pending": "0",
+        "forward_attempt": 1,
+        "forward_in_flight": false
+      },
+      {
+        "id": 1,
+        "kind": "Secondary",
+        "seller": "founderb.captab-0d07df99e1bb0e44.testnet",
+        "buyer": "angel.captab-0d07df99e1bb0e44.testnet",
+        "units": "100000",
+        "price": "1500000000",
+        "expires_at": 1795742473,
+        "round_id": null,
+        "doc_hash": "0229420ae5893ee397e9c1d82205c51611df8b1a1f330ab852e11a77537dcbec",
+        "status": "Settled",
+        "settled_at": 1794532893,
+        "proceeds_recipient": "founderb.captab-0d07df99e1bb0e44.testnet",
+        "proceeds_pending": "0",
+        "forward_attempt": 2,
+        "forward_in_flight": false
+      },
+      {
+        "id": 2,
+        "kind": "Buyback",
+        "seller": "contributor.captab-0d07df99e1bb0e44.testnet",
+        "buyer": null,
+        "units": "5000",
+        "price": "60000000",
+        "expires_at": 1795742508,
+        "round_id": null,
+        "doc_hash": "c83cb4c47a75b013ae94201241d6e90e4bbde9ffed0601cda22546ce42676b98",
+        "status": "Settled",
+        "settled_at": 1794532936,
+        "proceeds_recipient": "contributor.captab-0d07df99e1bb0e44.testnet",
+        "proceeds_pending": "0",
+        "forward_attempt": 1,
+        "forward_in_flight": false
+      }
+    ],
+    "checkedAt": "2026-11-13T01:23:20.126Z"
+  }
+}
