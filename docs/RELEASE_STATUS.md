@@ -24,7 +24,7 @@ The remaining release step is checking compatibility with a third-party NEAR tes
 
 The MVP deliberately limits history to app-submitted transactions, uses persistent single-host SQLite, has no automatic recovery for a transfer whose callback failed, and treats ownership units and TESTUSD as fictional. These limits remain visible in the [runbook](RUNBOOK.md) and app. A production system would need a separate design for complete indexing, callback recovery, confidentiality, legal ownership, and upgrades.
 
-## Contract v2 (branch `contract-v2`, deployed beside v1)
+## Contract v2 (deployed beside v1)
 
 | Gate | Evidence | Status |
 | --- | --- | --- |

@@ -23,7 +23,7 @@
 | Sputnik DAO (2 of 3 council) | [`captab-dao-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-dao-101e85b169dd3522.testnet) |
 | TESTUSD (6 decimals) | [`captab-token-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-token-101e85b169dd3522.testnet) |
 
-Code hashes, the full DAO policy, token supply, and storage funding are recorded in the [deployment manifest](docs/deployment-manifest.testnet.json). `pnpm verify:testnet` re-checks all of them against live chain state and exits nonzero on any drift.
+These accounts run contract schema v1 (tag `v1-testnet`, which rebuilds the deployed WASM byte for byte). Schema v2, on `main`, is [live on a second set of accounts](#contract-v2-raising-secondaries-and-exit). Code hashes, the full DAO policy, token supply, and storage funding are recorded in the [deployment manifest](docs/deployment-manifest.testnet.json). `pnpm verify:testnet` re-checks all of them against live chain state and exits nonzero on any drift.
 
 Demo: [live read-only walkthrough](docs/demo/live-testnet.webm) (31 s) · [fixture walkthrough and screenshots](docs/demo/README.md)
 
@@ -77,7 +77,7 @@ Every claim below is backed by a test you can run or a transaction you can open.
 
 Testnet transaction hashes come from the [payout rehearsal](docs/testnet-rehearsal.json) and the [browser rehearsal](docs/testnet-browser-rehearsal.json). Unit test names are in [`tests.rs`](contracts/company/src/tests.rs) and [`tests_v2.rs`](contracts/company/src/tests_v2.rs); Sandbox tests are in [`contracts/company/tests/sandbox.rs`](contracts/company/tests/sandbox.rs).
 
-## Contract v2: raising, secondaries, and exit (branch `contract-v2`)
+## Contract v2: raising, secondaries, and exit
 
 Schema v2 extends the ledger from founding and hiring to raising money, secondary sales, buybacks, and exit. It is tested locally, on NEAR Sandbox, and **live on testnet** as a second deployment beside the v1 demo. The app reads both.
 

@@ -1,6 +1,6 @@
 # Company contract storage limits
 
-## Schema v2 (branch `contract-v2`)
+## Schema v2
 
 The NEAR Sandbox stress test `bounded_storage_still_allows_payment_callback_at_demo_limits` fills one company with 100 holders, 200 grants (each with 49 monthly vesting boundaries), and 50 pro-rata distributions of 100 rows each, then records more than 350 governance actions. It rejects the next holder, grant, and distribution, pauses and resumes after the old 200-action limit, reads the last page of distributions, and confirms that funding and a payout callback still settle at those limits.
 

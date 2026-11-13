@@ -2,7 +2,7 @@
 
 Status: design proposal, 2026-10-26. No tokenized ownership or migration is implemented by this document.
 
-Update, 2026-11-13: Stage 1 is implemented in contract schema v2 (branch `contract-v2`, deployed to testnet beside v1 on 2026-11-13): rounds, board-approved investor issuance paid atomically with the settlement token, and `reassign_holding` for wallet replacement. v2 deals also cover secondary sales and buybacks on the ledger, without a token. Captab's current ownership units and TESTUSD are fictional testnet assets, not legal shares.
+Update, 2026-11-13: Stage 1 is implemented in contract schema v2 (deployed to testnet beside v1 on 2026-11-13): rounds, board-approved investor issuance paid atomically with the settlement token, and `reassign_holding` for wallet replacement. v2 deals also cover secondary sales and buybacks on the ledger, without a token. Captab's current ownership units and TESTUSD are fictional testnet assets, not legal shares.
 
 ## Decision
 
