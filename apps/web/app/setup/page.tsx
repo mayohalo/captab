@@ -22,7 +22,7 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
   const council = councilMembers(inspection?.daoPolicy ?? null);
   const rule = councilRule(inspection?.daoPolicy ?? null);
   const proposalStates = inspection?.proposals.map(proposal => proposal.status) ?? [];
-  return <main><header><div><Link href="/">CapTable</Link><h1>Company setup</h1><p>NEAR testnet · attach a pre-created Sputnik DAO and company account.</p></div></header>
+  return <main><header><div><Link href="/">Home</Link><h1>Company setup</h1><p>NEAR testnet · attach a pre-created Sputnik DAO and company account.</p></div></header>
     <section><h2>Inspect company</h2><form className="governance-form" action="/setup" method="get">
       <label>Company contract account<input name="company" defaultValue={selected} placeholder="company.testnet" required /></label>
       <button>Inspect on-chain setup</button>

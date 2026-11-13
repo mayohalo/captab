@@ -9,6 +9,7 @@ import { observeTransaction } from "../lib/observe";
 import { describeObservation } from "../lib/observed-status.mjs";
 import { getConnector } from "./wallet";
 import { councilMembers, councilRule, describeRule } from "../lib/dao-policy";
+import { Pill } from "./brand";
 
 type PreparedEnvelope = { proposal: PreparedProposal; daoId: string; proposalBond: string; expectedRevision: number; preparedAt: string };
 
@@ -205,7 +206,7 @@ export function GovernancePanel({ id, totals, config, policy, governanceVerified
     {status && <p role="status">{status}</p>}
     <h3>Recent proposals</h3>
     {proposals.length === 0 ? <p>No recent proposals or DAO history unavailable.</p> : <div className="cards">{[...proposals].reverse().map(proposal => <article key={proposal.id}>
-      <h3>#{proposal.id} · {proposal.status}</h3><p>{proposal.description}</p><p>Proposed by {proposal.proposer}</p>
+      <h3>#{proposal.id} · <Pill status={proposal.status} /></h3><p>{proposal.description}</p><p>Proposed by {proposal.proposer}</p>
       {proposal.status === "Failed" && <p role="alert">DAO execution failed. Review the receipt before creating a replacement proposal.</p>}
       {proposal.status === "InProgress" && isCouncil && <button disabled={busy} onClick={() => approve(proposal)}>Vote to approve</button>}
       <details><summary>Exact proposal kind</summary><pre>{JSON.stringify(proposal.kind, null, 2)}</pre></details>

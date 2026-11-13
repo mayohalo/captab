@@ -23,7 +23,7 @@ export default async function CompanySectionPage({ params }: { params: Promise<{
       proposals={company.proposals} grants={company.grants} distributions={company.distributions}
       deals={company.deals} rounds={company.rounds} initialAction={initialAction} />;
     return <main><header><div><Link href={`/company/${id}`}>← {id}</Link><h1>{section[0].toUpperCase() + section.slice(1)}</h1>
-      <p>NEAR testnet · DAO {company.config.dao_id} · ledger revision {company.totals.ledger_revision}</p></div></header>
+      <p>Schema v{company.config.schema_version} · DAO {company.config.dao_id} · ledger revision {company.totals.ledger_revision}</p></div></header>
       <CompanyNavigation id={id} />
       {company.config.paused && <p role="alert">Company is paused. New actions are unavailable.</p>}
       {!company.companyAssessment.verified && <p role="alert">Company verification failed: {company.companyAssessment.reason}</p>}

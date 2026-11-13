@@ -8,7 +8,7 @@ export default defineConfig({
   testDir: "./e2e",
   testMatch: "*.record.ts",
   workers: 1,
-  use: { baseURL, ...devices["Desktop Chrome"], video: "on" },
+  use: { baseURL, ...devices["Desktop Chrome"], colorScheme: "dark", video: "on" },
   webServer: [
     { command: "node e2e/fixture-rpc.mjs", url: "http://127.0.0.1:14555/health", reuseExistingServer: false },
     { command: "pnpm dev --port 3100", url: baseURL, reuseExistingServer: false, timeout: 120_000,

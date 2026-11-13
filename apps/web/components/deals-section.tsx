@@ -3,10 +3,11 @@
 import { type NearWalletBase } from "@hot-labs/near-connect";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { CompanyConfig, Deal, Round } from "../lib/near";
+import { formatUnits, type CompanyConfig, type Deal, type Round } from "../lib/near";
 import { observeTransaction } from "../lib/observe";
 import { describeObservation } from "../lib/observed-status.mjs";
 import { getConnector } from "./wallet";
+import { Pill } from "./brand";
 
 type Action = "accept" | "withdraw" | "pay" | "forward" | "expire";
 
@@ -100,18 +101,18 @@ export function DealsSection({ id, config, deals, rounds, companyVerified }: {
     {rounds.length === 0 ? <p>No rounds yet. The board opens one from Approvals.</p> :
       <div className="table-scroll" role="region" aria-label="Rounds table" tabIndex={0}><table>
         <thead><tr><th>Round</th><th>Price per unit</th><th>Units issued</th><th>Raised</th><th>Status</th></tr></thead>
-        <tbody>{rounds.map(round => <tr key={round.id}><td>{round.id}</td><td>{round.price_per_unit}</td><td>{round.units_issued}</td>
-          <td>{round.amount_raised}</td><td>{round.closed_at ? "Closed" : "Open"}</td></tr>)}</tbody>
+        <tbody>{rounds.map(round => <tr key={round.id}><td>{round.id}</td><td>{formatUnits(round.price_per_unit)}</td><td>{formatUnits(round.units_issued)}</td>
+          <td>{formatUnits(round.amount_raised)}</td><td><Pill status={round.closed_at ? "Closed" : "Open"} /></td></tr>)}</tbody>
       </table></div>}
     <h3>Deals</h3>
     {deals.length === 0 ? <p>No deals yet.</p> : <div className="cards">{deals.map(deal => {
       const actions = dealActions(deal, account, now);
       return <article key={deal.id} data-testid={`deal-${deal.id}`}>
-        <h3>#{deal.id} · {deal.kind === "Issue" ? `Issuance${deal.round_id ? ` in ${deal.round_id}` : ""}` : deal.kind === "Secondary" ? "Secondary sale" : "Buyback"} · {deal.status}</h3>
-        <p>{deal.units} units for {deal.price} token base units · {deal.seller ? `seller ${deal.seller}` : "issued by the company"} → {deal.buyer ?? "company (DAO pays)"}</p>
+        <h3>#{deal.id} · {deal.kind === "Issue" ? `Issuance${deal.round_id ? ` in ${deal.round_id}` : ""}` : deal.kind === "Secondary" ? "Secondary sale" : "Buyback"} · <Pill status={deal.status} /></h3>
+        <p>{formatUnits(deal.units)} units for {formatUnits(deal.price)} token base units · {deal.seller ? `seller ${deal.seller}` : "issued by the company"} → {deal.buyer ?? "company (DAO pays)"}</p>
         <p>Expires {new Date(deal.expires_at * 1000).toUTCString()}{deal.doc_hash ? ` · document ${deal.doc_hash.slice(0, 12)}…` : ""}</p>
         {deal.status === "Settled" && <p>Payment to {deal.proceeds_recipient}: {deal.proceeds_pending === "0" ? "delivered"
-          : deal.forward_in_flight ? "in flight" : `${deal.proceeds_pending} held; anyone can retry once the recipient is registered with the token`}</p>}
+          : deal.forward_in_flight ? "in flight" : `${formatUnits(deal.proceeds_pending)} held; anyone can retry once the recipient is registered with the token`}</p>}
         {deal.kind === "Buyback" && deal.status === "Accepted" && <p>Accepted. The board pays it with a &quot;Pay for an accepted buyback&quot; proposal.</p>}
         {actions.map(action => <button key={action} disabled={busy || !companyVerified || !wallet}
           onClick={() => void run(deal, action)}>{labels[action]}</button>)}

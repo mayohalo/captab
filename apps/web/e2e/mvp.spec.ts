@@ -99,7 +99,7 @@ test("proposal API rebuilds exact actions from current chain state", async ({ re
 
 test("setup inspects the configured company, DAO, and settlement token", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "CapTable" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Captab", level: 1 })).toBeVisible();
   await page.getByRole("link", { name: "Inspect or deploy a company" }).click();
   await page.getByLabel("Company contract account").fill("company.testnet");
   await page.getByRole("button", { name: "Inspect on-chain setup" }).click();
@@ -142,8 +142,9 @@ test("altered company code is rejected by payout and sponsor APIs", async ({ req
 test("ownership, vesting, and a failed payout render from chain views", async ({ page }) => {
   await page.goto("/company/company.testnet");
   await expect(page.getByText(/DAO treasury board\.testnet: 90,000,000,000 token base units/)).toBeVisible();
-  await expect(page.getByText("6,025,000")).toBeVisible();
-  await expect(page.getByText("8,000,000")).toBeVisible();
+  const metrics = page.locator("section.metrics");
+  await expect(metrics.getByText("6,025,000", { exact: true })).toBeVisible();
+  await expect(metrics.getByText("8,000,000", { exact: true })).toBeVisible();
   await expect(page.getByRole("row", { name: /founder-a\.testnet.*3,600,000/ })).toBeVisible();
   await expect(page.getByText("Claimable 0 · remaining reservation 75,000")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Grant #20" })).toBeVisible();
@@ -421,7 +422,7 @@ test("deals page shows rounds and deal states, and a buyer pays the token contra
   await page.goto("/company/v2.testnet/deals");
   await expect(page.getByRole("region", { name: "Rounds table" })).toContainText("seed");
   await expect(page.getByTestId("deal-1")).toContainText("Secondary sale · Accepted");
-  await expect(page.getByTestId("deal-3")).toContainText("10000000 held");
+  await expect(page.getByTestId("deal-3")).toContainText("10,000,000 held");
   await expect(page.getByTestId("deal-2").getByRole("button")).toHaveCount(0);
   await page.getByTestId("deal-1").getByRole("button", { name: "Pay with the settlement token" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Payment fixture-deal-payment sent" })).toBeVisible();

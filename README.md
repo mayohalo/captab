@@ -1,38 +1,56 @@
 # Captab
 
-**DAO-governed company ownership on NEAR.** A board approves issuance, contributor grants, and payouts through a Sputnik DAO. A company contract keeps the ownership ledger, vests grants monthly, and pays holders from an exact, immutable distribution snapshot, so no recipient is ever paid twice.
+**DAO-governed company ownership on NEAR, from day zero to exit.** A board approves every change through a Sputnik DAO. A company contract keeps the ownership ledger, vests contributor grants, sells new units to investors in the same transaction that takes their money, settles secondary sales and buybacks, and pays holders from exact, immutable payout lists, so no one is ever paid twice.
 
 > Testnet prototype. Ownership units are on-chain ledger records, not share tokens or legal equity. TESTUSD is a demo NEP-141 token. All holders are fictional.
+
+## From day zero to exit
+
+| Stage | What the company needs | How Captab does it | Status |
+| --- | --- | --- | --- |
+| **1. Found** | Authorized units, a founder split, a board, founder vesting | The DAO council is the board (2 of 3 on testnet). `issue_founder_units` records the split with the SHA-256 of the founders' agreement; `create_grant` with `source: Unallocated` vests founders' units; `increase_authorized` amends the charter | Live on testnet |
+| **2. Hire** | An equity pool, grants with a cliff and monthly vesting, signed terms | `increase_pool` / `decrease_pool`; `create_grant` with 1–120 monthly steps and any cliff; the recipient signs the grant document's hash with `accept_grant`; `claim_vested` works with **zero NEAR** through a sponsored relayer; `cancel_unvested` keeps vested rights | Live on testnet |
+| **3. Raise** | Priced rounds, a valuation trail, investors paid in and issued at once | The app's round model computes price per unit, new units, and pool top-up. The board opens a round (`create_round`) and approves an issuance deal per investor. The investor pays with `ft_transfer_call`; units are issued in the same receipt and the money goes to the DAO treasury. A wrong amount, payer, or expired deal is refunded | Live on testnet (schema v2) |
+| **4. Operate** | Board approvals, corrections, lost wallets, audit-ready records | Every change is a DAO proposal with a replay-safe action ID and an expected ledger revision. `retire_units` corrects errors; `reassign_holding` moves a lost wallet's units and open grants. The cap table exports as CSV or JSON with its revision and SHA-256, and the app audits the ledger against on-chain totals | Live on testnet |
+| **5. Liquidity** | Secondary sales for early holders, buybacks and tender offers | Secondary deal: the board approves, the seller signs to lock their units, the buyer pays, units move and the seller is paid. Buyback deal: the seller signs, the DAO pays, units are retired. Held payments can be retried by anyone | Live on testnet (schema v2) |
+| **6. Pay holders** | Dividends or distributions that sum exactly | Pro-rata snapshot with largest-remainder rounding and a schedule hash the board approves; exact-budget funding from the DAO; one payment per holder, retry-safe | Live on testnet |
+| **7. Exit** | Acquisition proceeds split by preference, accelerated vesting, a final record | The app's exit waterfall applies liquidation preferences; the board pays its rows as an explicit payout list (`prepare_explicit_distribution`). `accelerate_grant` handles acceleration. `close_company` makes the ledger final once every payout and deal is settled | Live on testnet; close proven in NEAR Sandbox |
+
+**What Captab does not do.** Units are not legal shares, so an IPO itself happens off-chain: Captab hands the transfer agent or acquirer a verifiable export, pays the proceeds, and closes the ledger. SAFEs and convertible notes, stock options with an exercise price, and investor KYC are not modeled; a converted SAFE can be issued as an issuance deal at its conversion price. Wallet-visible share tokens are a [later stage](docs/TOKENIZATION_PLAN.md).
 
 ## Why NEAR
 
 | NEAR primitive | How Captab uses it |
 | --- | --- |
-| [Sputnik DAO](https://github.com/near-daos/sputnik-dao-contract) (pinned commit `5434a59`, WASM hash verified) | A board approves every issuance, grant, cancellation, distribution approval, funding transfer, and pause. The company contract trusts only the DAO as the immediate caller. |
+| [Sputnik DAO](https://github.com/near-daos/sputnik-dao-contract) (pinned commit `5434a59`, WASM hash verified) | A board approves every issuance, grant, round, deal, buyback payment, payout, and pause. The company contract trusts only the DAO as the immediate caller. |
 | [NEP-366 meta-transactions](https://github.com/near/NEPs/blob/master/neps/nep-0366.md) | A contributor with **zero NEAR** signs a `claim_vested` delegate action, and a scoped relayer pays the gas. |
-| [NEP-141](https://github.com/near/NEPs/blob/master/neps/nep-0141.md) `ft_transfer_call` | The DAO funds a distribution in a single transfer. The contract accepts only the exact approved budget, from the DAO, once. |
+| [NEP-141](https://github.com/near/NEPs/blob/master/neps/nep-0141.md) `ft_transfer_call` | The DAO funds a distribution in a single transfer; the contract accepts only the exact approved budget, from the DAO, once. An investor or buyer pays for a deal the same way, and the units move in the same receipt or the payment is refunded. |
 | Promises and callbacks | Each payout is a separate `ft_transfer` with a private callback. A failed transfer can be retried; a lost callback stays locked rather than risking a double payment. |
 | [NEP-413](https://github.com/near/NEPs/blob/master/neps/nep-0413.md) signed messages | Wallet-signed sign-in gives private (off-chain) access to names and emails. |
 | NEP-297 events | Every ledger change emits a versioned `captable` event. |
 
 ## Live on testnet
 
-| Role | Account |
-| --- | --- |
-| Company contract | [`captab-company-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-company-101e85b169dd3522.testnet) |
-| Sputnik DAO (2 of 3 council) | [`captab-dao-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-dao-101e85b169dd3522.testnet) |
-| TESTUSD (6 decimals) | [`captab-token-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-token-101e85b169dd3522.testnet) |
+Two deployments run side by side. Schema v2 covers the whole lifecycle; schema v1 is the original MVP.
 
-These accounts run contract schema v1 (tag `v1-testnet`, which rebuilds the deployed WASM byte for byte). Schema v2, on `main`, is [live on a second set of accounts](#contract-v2-raising-secondaries-and-exit). Code hashes, the full DAO policy, token supply, and storage funding are recorded in the [deployment manifest](docs/deployment-manifest.testnet.json). `pnpm verify:testnet` re-checks all of them against live chain state and exits nonzero on any drift.
+| Role | Schema v2 (full lifecycle, code on `main`) | Schema v1 (MVP, tag `v1-testnet`) |
+| --- | --- | --- |
+| Company contract | [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) | [`captab-company-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-company-101e85b169dd3522.testnet) |
+| Sputnik DAO (2 of 3 council) | [`captab-dao-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-dao-0d07df99e1bb0e44.testnet) | [`captab-dao-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-dao-101e85b169dd3522.testnet) |
+| TESTUSD (6 decimals) | [`captab-token-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-token-0d07df99e1bb0e44.testnet) | [`captab-token-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-token-101e85b169dd3522.testnet) |
+| Manifest | [v2 manifest](docs/deployment-manifest.v2.testnet.json) | [v1 manifest](docs/deployment-manifest.testnet.json) |
+| Live rehearsal | [v2: round, secondary, buyback, payout list](docs/testnet-v2-rehearsal.json) | [v1: payout and retry](docs/testnet-rehearsal.json), [browser governance](docs/testnet-browser-rehearsal.json) |
 
-Demo: [live read-only walkthrough](docs/demo/live-testnet.webm) (31 s) · [fixture walkthrough and screenshots](docs/demo/README.md)
+Each manifest records code hashes, the full DAO policy, token supply, and storage funding. `CAPTAB_DEPLOYMENT=v2 pnpm verify:testnet` (from `main`) and `pnpm verify:testnet` (from tag `v1-testnet`, which rebuilds the v1 WASM byte for byte) re-check them against live chain state and exit nonzero on any drift.
+
+Demo: [motion overview](docs/demo/captab-motion-30s.mp4) (30 s) · [live read-only walkthrough](docs/demo/live-testnet.webm) (31 s, v1) · [fixture walkthrough and screenshots](docs/demo/README.md)
 
 ## How it works
 
 ```mermaid
 flowchart LR
   UI[Next.js app] -->|proposal + votes| DAO[Sputnik DAO]
-  DAO -->|issue / grant / approve / pause| CO[Company contract]
+  DAO -->|issue / grant / round / deal / payout / pause| CO[Company contract]
   DAO -->|ft_transfer_call exact budget| FT[TESTUSD]
   FT -->|ft_on_transfer| CO
   CO -->|ft_transfer per recipient + callback| FT
@@ -40,19 +58,22 @@ flowchart LR
   RL --> CO
   OP[Snapshot operator] -->|prepare_distribution| CO
   WK[Receipt worker + SQLite] -->|observe final receipts| CO
+  INV[Investor or buyer] -->|ft_transfer_call deal_id| FT
+  CO -->|v2: proceeds to DAO or seller| FT
 ```
 
 1. **Issue.** The board votes; the DAO calls `issue_founder_units` or `increase_pool`. Each call carries an `action_id` (replay-safe) and an `expected_revision` (rejected if stale).
-2. **Grant and vest.** `create_grant` reserves pool units against 49 approved UTC month boundaries: a 12-month cliff, then monthly vesting to 48 months. The recipient calls `claim_vested` directly or through the sponsored relayer. Cancellation releases only unvested units.
-3. **Distribute.** The operator prepares a snapshot. The contract derives every holder's payout with largest-remainder rounding, so payouts sum exactly to the budget, and hashes the schedule. The DAO approves that hash, then funds it. Payments run one recipient at a time; a failed one can be retried.
+2. **Grant and vest.** `create_grant` reserves pool units against approved UTC month boundaries; the app's default is a 12-month cliff, then monthly vesting to 48 months (v2 accepts 1 to 120 months and any cliff, and the recipient can sign the grant terms). The recipient calls `claim_vested` directly or through the sponsored relayer. Cancellation releases only unvested units.
+3. **Distribute.** The operator prepares a snapshot. The contract derives every holder's payout with largest-remainder rounding, so payouts sum exactly to the budget, and hashes the schedule. The DAO approves that hash, then funds it. Payments run one recipient at a time; a failed one can be retried. In v2 the board can instead set an explicit payout list (for example an exit waterfall), funded and paid by the same machinery.
+4. **Raise and trade (v2).** The board approves a deal. For new units, the investor pays with `ft_transfer_call` and the units are issued in the same receipt; for a secondary sale or buyback, the seller first signs to lock their units. Proceeds go to the DAO (issuance) or the seller, and a held payment can be retried by anyone.
 
 ### Planning tools (app only)
 
-These help a company plan its next steps. None of them proposes, signs, or changes anything on-chain.
+These help a company plan its next steps. They compute in the browser; acting on a result is a separate DAO proposal.
 
 - **Cap table export.** `GET /api/companies/<id>/export?format=csv|json` returns holdings, grants, pool, and totals at one ledger revision. The response headers give the revision and the SHA-256 of the file, so a lawyer or auditor can check they received the same file. It rejects a read during which the ledger changed. Spreadsheet formula characters are neutralized. Download links are on the ownership pages.
-- **Priced-round model** (`/company/<id>/ownership`). Enter a pre-money valuation, an investment, and a pool target to see the price per unit, the new investor units, any pre-money pool top-up, and the before and after table. It warns when the round would need more units than are unallocated. Executing a round needs contract support for investor issuance, which is on the roadmap.
-- **Exit waterfall preview** (`/company/<id>/distributions`). Splits sale proceeds across issued units and grants (accelerated or cancelled unvested units), after optional liquidation preferences (multiple, participating or not). Non-participating holders convert to common when that pays more. Integer math with largest-remainder rounding, the same rule the contract uses for payouts, so the rows sum to the proceeds exactly. Paying this schedule on-chain needs a distribution with an explicit payout list, which is on the roadmap.
+- **Priced-round model** (`/company/<id>/ownership`). Enter a pre-money valuation, an investment, and a pool target to see the price per unit, the new investor units, any pre-money pool top-up, and the before and after table. It warns when the round would need more units than are unallocated. On a schema v2 company the board executes the round with `create_round` and an issuance deal per investor (see the Deals page).
+- **Exit waterfall preview** (`/company/<id>/distributions`). Splits sale proceeds across issued units and grants (accelerated or cancelled unvested units), after optional liquidation preferences (multiple, participating or not). Non-participating holders convert to common when that pays more. Integer math with largest-remainder rounding, the same rule the contract uses for payouts, so the rows sum to the proceeds exactly. On a schema v2 company the preview's payout lines go straight into an explicit payout list proposal.
 - **Any majority council.** Governance works with any council size on the pinned Sputnik build, as long as only the council can vote and approval needs a majority. The app shows the rule (for example "2 of 3"). Code: [`dao-policy.ts`](apps/web/lib/dao-policy.ts), [`cap-table-export.ts`](apps/web/lib/cap-table-export.ts), [`round-model.ts`](apps/web/lib/round-model.ts), [`waterfall.ts`](apps/web/lib/waterfall.ts). Tests: `pnpm test:dao`, `pnpm test:planning`, and three browser tests.
 
 ## Claims and evidence
@@ -77,15 +98,9 @@ Every claim below is backed by a test you can run or a transaction you can open.
 
 Testnet transaction hashes come from the [payout rehearsal](docs/testnet-rehearsal.json) and the [browser rehearsal](docs/testnet-browser-rehearsal.json). Unit test names are in [`tests.rs`](contracts/company/src/tests.rs) and [`tests_v2.rs`](contracts/company/src/tests_v2.rs); Sandbox tests are in [`contracts/company/tests/sandbox.rs`](contracts/company/tests/sandbox.rs).
 
-## Contract v2: raising, secondaries, and exit
+## Contract v2 evidence: raising, secondaries, and exit
 
-Schema v2 extends the ledger from founding and hiring to raising money, secondary sales, buybacks, and exit. It is tested locally, on NEAR Sandbox, and **live on testnet** as a second deployment beside the v1 demo. The app reads both.
-
-| v2 testnet deployment | Account |
-| --- | --- |
-| Company contract (schema v2) | [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) |
-| Sputnik DAO (2 of 3 council) | [`captab-dao-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-dao-0d07df99e1bb0e44.testnet) |
-| TESTUSD (6 decimals) | [`captab-token-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-token-0d07df99e1bb0e44.testnet) |
+Schema v2 extends the ledger from founding and hiring to raising money, secondary sales, buybacks, and exit. It is tested locally, on NEAR Sandbox, and live on testnet as a second deployment beside the v1 MVP ([accounts](#live-on-testnet)). The app reads both.
 
 The live rehearsal (`pnpm rehearse:v2`, [evidence](docs/testnet-v2-rehearsal.json), [manifest](docs/deployment-manifest.v2.testnet.json)) ran every board action through two-of-three Sputnik votes:
 
@@ -156,7 +171,7 @@ These limits are deliberate for a testnet prototype. The [release audit](docs/RE
 
 ## Roadmap
 
-1. Make the v2 deployment the primary demo once a third-party wallet extension has signed v2 deal flows.
+1. Sign the v2 deal flows with a third-party wallet extension (so far signing used local test keys).
 2. Stock options with an exercise price, one-click company deployment through a factory or global contract, and a history indexer.
 3. Optionally, one restricted NEP-141 token per share class for wallet visibility ([design](docs/TOKENIZATION_PLAN.md)). With v2 deals, secondary sales already work on the ledger, so the token is no longer a requirement.
 
