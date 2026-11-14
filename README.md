@@ -148,7 +148,7 @@ pnpm install
 pnpm test:contract          # 74 Rust unit tests (28 from v1, 46 for v2)
 pnpm test:sandbox           # 9 NEAR Sandbox tests: pinned Sputnik DAO, token, sponsored claim, payout retry, v2 deals and close
 pnpm --filter @captab/web exec playwright install chromium
-pnpm test:e2e               # 25 browser tests against fixture chain views, including a schema v2 company
+pnpm test:e2e               # 26 browser tests against fixture chain views, including a schema v2 company
 cp apps/web/.env.example apps/web/.env.local   # point at the testnet company
 pnpm --filter @captab/web dev
 ```

@@ -443,3 +443,23 @@ test("v2 exit preview produces payout lines in token base units", async ({ page 
   await page.getByLabel("Action").selectOption("explicitDistribution");
   await expect(page.getByLabel(/Payouts, one "account amount" per line/)).toBeVisible();
 });
+
+test("landing page explains the product, privacy, tokenization, and evidence for people and agents", async ({ page, request }) => {
+  await page.goto("/");
+  for (const name of ["What is a cap table?", "Why put it on-chain", "From day zero to exit", "Transparent where it matters, private where it should be",
+    "Ownership ledger today, share tokens next", "Proof, not promises", "How it is built", "Who it helps", "Honest limits"]) {
+    await expect(page.getByRole("heading", { name, level: 2 })).toBeVisible();
+  }
+  await expect(page.getByRole("img", { name: "Captab architecture" })).toBeVisible();
+  await expect(page.getByLabel("Live cap table").getByText(/live from chain/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Live testnet transactions" }).getByRole("link", { name: "payment", exact: true }))
+    .toHaveAttribute("href", "https://testnet.nearblocks.io/txns/DGY7VapS6G9b8XCzaT8y3LnMpXbb1mUpRUVydX184Jmd");
+  const jsonLd = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent() ?? "{}");
+  expect(jsonLd["@type"]).toBe("SoftwareApplication");
+  const llms = await request.get("/llms.txt");
+  expect(llms.headers()["content-type"]).toContain("text/plain");
+  const text = await llms.text();
+  expect(text).toContain("# Captab");
+  expect(text).toContain("captab-company-0d07df99e1bb0e44.testnet");
+  expect(text).toContain("Amounts are public today");
+});
