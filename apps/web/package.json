@@ -31,7 +31,8 @@
     "bootstrap:token": "node scripts/bootstrap-token-testnet.mjs",
     "accounts:testnet": "node scripts/configure-testnet-accounts.mjs",
     "rehearse:testnet": "node scripts/rehearse-testnet.mjs",
-    "rehearse:v2": "CAPTAB_DEPLOYMENT=v2 node scripts/rehearse-v2-testnet.mjs"
+    "rehearse:v2": "CAPTAB_DEPLOYMENT=v2 node scripts/rehearse-v2-testnet.mjs",
+    "verify:evidence": "node scripts/verify-evidence.mjs"
   },
   "dependencies": {
     "@hot-labs/near-connect": "^0.11.4",

@@ -1,16 +1,56 @@
-# Captab NEAR testnet package
+# Captab: your company's cap table on NEAR, from day zero to unicorn
 
-**Live app:** [captab.xyz](https://captab.xyz) shows the v2 company read live from NEAR testnet, with its evidence; [captab.xyz/llms.txt](https://captab.xyz/llms.txt) is a plain-text summary for agents.
+**Live app:** [captab.xyz](https://captab.xyz) · **Source:** [github.com/mayohalo/captab](https://github.com/mayohalo/captab) · **For agents:** [captab.xyz/llms.txt](https://captab.xyz/llms.txt) · **Video:** [30 seconds](demo/captab-motion-30s.mp4)
 
-Captab runs a company's ownership from day zero to exit on NEAR testnet: founder issuance, contributor grants with vesting, priced investor rounds paid and issued in one transaction, secondary sales, buybacks, exact payouts, and a final close. A Sputnik DAO council is the board and approves every change.
+## One line
 
-Two fictional companies are live:
+Captab keeps a company's cap table, the record of who owns what, in a NEAR smart contract run by a DAO board, so founders, employees, and investors can verify their own stake, and money moves in the same transaction as the ownership it pays for.
 
-- **Schema v2 (full lifecycle, code on `main`):** `captab-company-0d07df99e1bb0e44.testnet`, governed by `captab-dao-0d07df99e1bb0e44.testnet`, settled in `captab-token-0d07df99e1bb0e44.testnet` (six-decimal TESTUSD). Its [live rehearsal](testnet-v2-rehearsal.json) ran a charter amendment, signed grant terms, founder vesting with acceleration, a seed round with refunded wrong payments, a secondary sale whose held proceeds were delivered by a retry, a DAO-paid buyback, and an explicit payout list, all through two-of-three DAO votes.
-- **Schema v1 (MVP, tag `v1-testnet`):** `captab-company-101e85b169dd3522.testnet` with `captab-dao-101e85b169dd3522.testnet` and `captab-token-101e85b169dd3522.testnet`. Its rehearsals cover [payouts with a failed-then-retried payment](testnet-rehearsal.json) and [browser-driven governance and a zero-NEAR sponsored claim](testnet-browser-rehearsal.json).
+## Why it matters
 
-Start with the [README](../README.md): its "From day zero to exit" table maps each startup stage to a contract method, and its claims-and-evidence table links each guarantee to its code, test, and testnet transaction. The [release audit](RELEASE_STATUS.md) lists each gate and its evidence, and the [runbook](RUNBOOK.md) explains setup, verification, and recovery. Each [v2](deployment-manifest.v2.testnet.json) and [v1](deployment-manifest.testnet.json) manifest pins code hashes, the DAO policy, and token supply.
+A cap table decides who gets paid at an exit, how much each investor dilutes everyone else, and whether an employee's equity has vested. Today it lives in spreadsheets and paid platforms, approvals arrive by email, investor money and payouts are reconciled by hand, and every holder trusts whoever keeps the file. Captab replaces the file with a contract: the board votes on-chain, the rules are code, and payments and ownership move together.
 
-Known limits, stated plainly: closing a company is proven in NEAR Sandbox only, so the testnet company stays open as a demo. Browser signing used local test keys kept in ignored files; compatibility with third-party wallet extensions is not yet recorded. The company deployment key is deliberately kept because the contract has no self-upgrade method. The app uses a single-host SQLite worker and records history only for app-submitted transactions. Ownership units and TESTUSD are fictional and are not legal shares.
+## What is built and working
 
-To review from a fresh checkout: `pnpm install`, the checks in the README, then `CAPTAB_DEPLOYMENT=v2 pnpm verify:testnet`. This repository contains no private keys or local database files.
+Every stage of a company's life runs on NEAR testnet today:
+
+1. **Found:** the charter, the founder split with its agreement's SHA-256, founder vesting.
+2. **Hire:** a pool and vesting grants with any cliff; contributors sign their terms on-chain and claim with zero NEAR through a sponsored relayer.
+3. **Raise:** priced rounds; each investor's payment issues their units in the same transaction or is refunded, and the money lands in the DAO treasury.
+4. **Operate:** replay-safe board votes, corrections, lost-wallet recovery, a cap table export carrying its SHA-256.
+5. **Liquidity:** secondary sales and buybacks; a unit moves only with the board's approval and the holder's signature.
+6. **Pay holders:** payouts that sum exactly to the budget and pay each holder once, retry-safe.
+7. **Exit:** a preference waterfall paid as an explicit payout list, accelerated vesting, and a closed ledger.
+
+The live company [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) holds 7,140,000 units across 5 holders after 16 executed DAO proposals, a seed round, a secondary sale, a buyback, and a payout list paid to every holder. An earlier MVP deployment proved browser-signed DAO votes, a zero-NEAR sponsored claim, and a failed-then-retried payout.
+
+## Check it yourself
+
+| Time | Command | What it proves |
+| --- | --- | --- |
+| 1 minute, nothing to install | Open [captab.xyz](https://captab.xyz) | The live cap table, deals, payouts, and board actions, read from chain |
+| 1 minute, Node only | `node apps/web/scripts/verify-evidence.mjs` | All 16 recorded DAO proposals executed, 3 deals settled, the payout list fully paid, totals and treasury exact |
+| 5 minutes, Node and Rust | `pnpm install && pnpm demo:sandbox` | The whole lifecycle on a local NEAR chain through real DAO votes and token transfers, including close |
+| A few minutes | `pnpm test:contract`, `pnpm test:sandbox`, `pnpm test:e2e` | 74 Rust, 9 Sandbox, and 26 browser tests |
+
+The [evidence page](EVIDENCE.md) maps every guarantee to the code that enforces it, the tests that prove it, and the testnet transaction that shows it.
+
+## How it uses NEAR
+
+A pinned Sputnik DAO is the board and the only caller allowed to change the ledger. NEP-141 `ft_transfer_call` settles investor and buyer payments atomically with the units. Promises and callbacks make payouts retry-safe without double payment. NEP-366 meta-transactions let contributors claim with zero NEAR. NEP-413 signed messages gate private profiles. NEP-297 events record every ledger change.
+
+## Transparency and privacy
+
+Holdings, grants, rounds, deals, payouts, and votes are public and verifiable. The names and emails behind accounts stay off-chain behind wallet sign-in. Agreements stay with the company; only their SHA-256 goes on chain. Amounts are public today; confidential balances are on the roadmap.
+
+## What comes next
+
+Restricted share tokens per class, migrated once from the ledger ([design](TOKENIZATION_PLAN.md)); one-click company deployment through a factory contract; third-party wallet signing for the deal flows; confidential amounts; options, SAFEs, and convertible notes; and AI agents as operators or council members, held to the same DAO rules as people.
+
+## Who it helps
+
+Founders anywhere who need an auditable cap table with built-in payouts and no equity-software bill; contributors who can verify their own vesting and reach liquidity; investors who settle with nothing to reconcile; and DAOs, open-source projects, and co-ops that want equity-like units governed by their own council.
+
+## Honest limits
+
+NEAR testnet only, with fictional holders and a demo token; units are ledger records, not legal shares. Closing a company is proven in NEAR Sandbox, not on the live company. Signing used local test keys; third-party wallet extensions are not yet verified. The activity history covers app-submitted transactions; contract views are the source of truth. This repository contains no private keys or local database files.

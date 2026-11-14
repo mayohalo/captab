@@ -964,12 +964,14 @@ async fn v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputn
     let company_id = company.id().as_str();
     let call = |method: &str, args: Value| dao_function_call(company_id, method, args, "100000000000000", "0");
 
+    eprintln!("[1/6] Found: the board (2-of-3 Sputnik DAO) amends the charter and issues founder units with a document hash");
     // Phase B through the board: a charter amendment, founder units with a document hash.
     approve_two_of_three(&dao, &members, call("increase_authorized",
         json!({"action_id": "amend", "expected_revision": 0, "authorized_units": "2000", "doc_hash": DOC_HASH})), "Raise authorized units").await?;
     approve_two_of_three(&dao, &members, call("issue_founder_units",
         json!({"action_id": "founder", "expected_revision": 1, "recipient": founder.id(), "units": "1000", "doc_hash": DOC_HASH})), "Issue founder units").await?;
 
+    eprintln!("[2/6] Raise: the board opens a seed round; a wrong payment is refunded, the exact one issues units and pays the DAO");
     // Investor round: the board opens a round and approves an allocation; the investor pays and is issued
     // units in the same receipt, and the payment is forwarded to the DAO treasury.
     approve_two_of_three(&dao, &members, call("create_round",
@@ -994,6 +996,7 @@ async fn v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputn
     let round = view_json(&company, "get_round", json!({"round_id": "seed"})).await?;
     assert_eq!((round["units_issued"].as_str(), round["amount_raised"].as_str()), (Some("500"), Some("500000000")));
 
+    eprintln!("[3/6] Secondary sale: the board approves, the seller locks units, the buyer pays, held proceeds are retried");
     // Secondary sale: board approval, seller signature, buyer payment. The unregistered seller's proceeds are
     // held, then delivered by a public retry once the seller registers.
     approve_two_of_three(&dao, &members, call("approve_deal", json!({"action_id": "sale", "terms": {
@@ -1015,6 +1018,7 @@ async fn v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputn
     assert_eq!(balance(&token, founder.id().as_str()).await?, 70_000_000);
     assert_eq!(view_json(&company, "get_deal", json!({"deal_id": 1})).await?["proceeds_pending"], "0");
 
+    eprintln!("[4/6] Buyback: the holder accepts, the DAO pays through a proposal, the units are retired");
     // Buyback: the investor signs, the DAO pays through a proposal, and the units are retired.
     approve_two_of_three(&dao, &members, call("approve_deal", json!({"action_id": "buyback", "terms": {
         "kind": "Buyback", "seller": investor.id(), "units": "50", "price": "40000000", "expires_at": 4_102_444_800u64}})), "Approve buyback").await?;
@@ -1028,6 +1032,7 @@ async fn v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputn
     let totals = view_json(&company, "get_totals", json!({})).await?;
     assert_eq!((totals["issued_total"].as_str(), totals["unallocated_units"].as_str()), (Some("1450"), Some("550")));
 
+    eprintln!("[5/6] Exit payout: the board sets an explicit payout list, funds it exactly, and every holder is paid once");
     // Explicit payout list (an exit waterfall): the board sets the amounts, then funds them exactly.
     let revision = totals["ledger_revision"].as_u64().unwrap();
     approve_two_of_three(&dao, &members, call("prepare_explicit_distribution", json!({
@@ -1050,11 +1055,13 @@ async fn v2_round_secondary_buyback_explicit_payout_and_close_through_real_sputn
     let paid_exit = view_json(&company, "get_distribution", json!({"distribution_id": 0})).await?;
     assert_eq!(paid_exit["paid_total"], "1000000");
 
+    eprintln!("[6/6] Close: with everything settled, the board closes the ledger; later calls are refused");
     // Close: everything is settled, so the board can close the ledger for good.
     approve_two_of_three(&dao, &members, call("close_company", json!({"action_id": "close", "doc_hash": DOC_HASH})), "Close company").await?;
     let closed: Value = company.view("get_config").await?.json()?;
     assert_eq!(closed["closed"], true);
     let after_close = founder.call(company.id(), "accept_deal").args_json(json!({"deal_id": 1})).transact().await?;
     assert!(!after_close.is_success(), "a closed company accepts nothing");
+    eprintln!("Lifecycle complete: every step above ran on a local NEAR chain through real DAO votes and token transfers");
     Ok(())
 }

@@ -1,4 +1,12 @@
-# Fixture-backed fallback walkthrough
+# Demo media
+
+## Live app
+
+[captab.xyz](https://captab.xyz) serves the schema v2 company read live from NEAR testnet. Screenshots taken from the live site on 2026-11-14: [landing page](live-hero.png), [company overview with the stage tracker](live-overview.png), [rounds and deals](live-deals.png).
+
+The [30-second motion overview](captab-motion-30s.mp4) (with [captions](captab-motion-30s.srt)) explains the product; its source is in [`motion/`](motion/) and re-renders with `node docs/demo/motion/render.mjs`.
+
+## Fixture walkthrough
 
 The [short walkthrough video](fixture-walkthrough.webm) and nine screenshots show the local browser fixture: the home page with the founding-to-exit journey, a schema v2 company overview, setup, ownership, grants, approvals, distributions, v2 rounds and deals, and a contributor view. They use the app's dark theme, built from the motion video's unicorn-horn logo: four band colors (mint for issued units and founders, blue for grants, violet for the pool, gold for deals and exit). The app follows the system light or dark setting. The captured pages carry a **fixture walkthrough** label because the displayed chain responses are deterministic fixtures and the browser does not create live wallet signatures. These artifacts demonstrate the interface; they are not evidence of a testnet deployment or completed payments.
 

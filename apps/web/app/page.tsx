@@ -59,6 +59,7 @@ export default async function Home() {
           {configured ? <Link className="button" href={`/company/${configured}`}>Explore the live company</Link> : null}
           <a className="button ghost" href="#proof">See the evidence</a>
           <a className="button ghost" href="#how">How it works</a>
+          <a className="button ghost" href="https://github.com/mayohalo/captab">Source code</a>
         </div>
         <span className="disclaimer">NEAR testnet prototype · units are ledger records, not legal shares · all holders are fictional</span>
       </div>
@@ -143,6 +144,15 @@ export default async function Home() {
         <tbody>{LIVE_STEPS.map(step => <tr key={step.what}><td><strong>{step.stage}</strong></td><td>{step.what}</td>
           <td className="tx-links">{step.links.map(link => <a key={link.tx} href={txUrl(link.tx)}>{link.label}</a>)}</td></tr>)}</tbody>
       </table></div>
+      <h3>Check it yourself</h3>
+      <div className="three-up verify-steps">
+        <article><span className="step-time">1 minute · Node only</span><pre><code>git clone https://github.com/mayohalo/captab{"\n"}cd captab{"\n"}node apps/web/scripts/verify-evidence.mjs</code></pre>
+          <p>Reads NEAR testnet directly: deployed code hashes and the 2-of-3 board policy match the manifest, all 16 board proposals executed, 3 deals settled, the payout list paid in full, totals and treasury exact.</p></article>
+        <article><span className="step-time">5 minutes · Node and Rust</span><pre><code>pnpm install{"\n"}pnpm demo:sandbox</code></pre>
+          <p>Runs the whole lifecycle on a local NEAR chain through real DAO votes: found, raise, secondary sale, buyback, exit payout, close.</p></article>
+        <article><span className="step-time">Any time · browser</span><pre><code>pnpm test:contract{"\n"}pnpm test:sandbox{"\n"}pnpm test:e2e</code></pre>
+          <p>74 Rust, 9 Sandbox, and 26 browser tests, also run in <a href="https://github.com/mayohalo/captab/actions/workflows/ci.yml">CI</a>. The <a href="https://github.com/mayohalo/captab/blob/main/docs/EVIDENCE.md">evidence page</a> maps every guarantee to its code and proof.</p></article>
+      </div>
       <div className="three-up tests">{TEST_COUNTS.map(test => <article key={test.label}><strong>{test.value}</strong><span>{test.label}</span><p>{test.detail}</p></article>)}</div>
       <p className="small">Contracts: <a href={accountUrl(DEPLOYMENTS.v2.company)}>{DEPLOYMENTS.v2.company}</a> (company), <a href={accountUrl(DEPLOYMENTS.v2.dao)}>{DEPLOYMENTS.v2.dao}</a> (board),
         {" "}<a href={accountUrl(DEPLOYMENTS.v2.token)}>{DEPLOYMENTS.v2.token}</a> (TESTUSD). An earlier v1 deployment, <a href={accountUrl(DEPLOYMENTS.v1.company)}>{DEPLOYMENTS.v1.company}</a>, ran the original payout and zero-NEAR claim rehearsals.</p>
@@ -184,7 +194,7 @@ export default async function Home() {
         <li>Signing so far used local test keys; third-party wallet extensions are not yet verified.</li>
         <li>The activity history covers transactions submitted through this app; contract views are always the source of truth.</li>
       </ul>
-      <p className="small"><Link href="/setup">Inspect or deploy a company</Link> · For agents: a plain-text summary is at <a href="/llms.txt">/llms.txt</a>.</p>
+      <p className="small"><Link href="/setup">Inspect or deploy a company</Link> · <a href="https://github.com/mayohalo/captab">Source on GitHub</a> · For agents: a plain-text summary is at <a href="/llms.txt">/llms.txt</a>.</p>
     </section>
   </main>;
 }

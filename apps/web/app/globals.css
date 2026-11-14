@@ -276,3 +276,7 @@ td .tx-links, .table-scroll td { vertical-align: top; }
   .tx-links { white-space: normal; }
 }
 @media (max-width: 760px) { .diagram { overflow-x: auto; } .diagram svg { min-width: 680px; } }
+
+.verify-steps article { display: grid; gap: 8px; align-content: start; }
+.verify-steps pre { margin: 0; font-size: .78rem; overflow-x: auto; white-space: pre; }
+.step-time { font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--mint-ink); font-weight: 700; }

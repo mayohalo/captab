@@ -25,6 +25,11 @@ export function GET() {
 ## Evidence: live testnet transactions
 ${LIVE_STEPS.map(step => `- ${step.stage}: ${step.what}. ${step.links.map(link => `${link.label} ${txUrl(link.tx)}`).join("; ")}`).join("\n")}
 
+## Verify it yourself
+- Source: https://github.com/mayohalo/captab (evidence map: docs/EVIDENCE.md)
+- Live state, Node only, under a minute: \`git clone https://github.com/mayohalo/captab && cd captab && node apps/web/scripts/verify-evidence.mjs\` (checks the deployed code hashes and 2-of-3 DAO policy against the manifest, 16 executed DAO proposals, 3 settled deals, a fully paid payout list, and exact totals, holdings, and treasury against docs/testnet-v2-rehearsal.json)
+- Whole lifecycle on a local NEAR chain with real DAO votes: \`pnpm install && pnpm demo:sandbox\`
+
 ## Tests
 ${TEST_COUNTS.map(test => `- ${test.value} ${test.label}: ${test.detail}`).join("\n")}
 
