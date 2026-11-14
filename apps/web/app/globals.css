@@ -9,8 +9,9 @@
   --text: #ECF1F5; --muted: #8C99A7; --dim: #5D6B7A;
   --mint: #5EE6A8; --blue: #7AA7FF; --violet: #B79BFF; --gold: #F5B54A; --spark: #FFE7A8; --bad: #FF6B6B;
   --mint-ink: #5EE6A8; --blue-ink: #7AA7FF; --violet-ink: #B79BFF; --gold-ink: #F5B54A; --bad-ink: #FF8A8A;
-  --on-accent: #06221A;
+  --on-accent: #06221A; --button-bg: var(--mint); --button-ink: #06221A;
   --iridescent: linear-gradient(90deg, var(--mint), var(--blue), var(--violet), var(--gold));
+  --iridescent-text: var(--iridescent);
   --glow-a: rgba(94, 230, 168, .10); --glow-b: rgba(122, 167, 255, .09); --glow-c: rgba(183, 155, 255, .07);
   --grid: rgba(255, 255, 255, .022);
   --shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 12px 32px rgba(0, 0, 0, .28);
@@ -27,7 +28,8 @@
     --text: #141A24; --muted: #586274; --dim: #8A93A3;
     --mint: #2FCB8A; --blue: #5B8DF5; --violet: #9B7BF0; --gold: #EAA22C; --spark: #F5C451; --bad: #E05252;
     --mint-ink: #0B7E52; --blue-ink: #2D5FCF; --violet-ink: #6A49C9; --gold-ink: #94600E; --bad-ink: #B42F2F;
-    --on-accent: #FFFFFF;
+    --on-accent: #FFFFFF; --button-bg: #0A8458; --button-ink: #FFFFFF;
+    --iridescent-text: linear-gradient(90deg, var(--mint-ink), var(--blue-ink), var(--violet-ink), var(--gold-ink));
     --glow-a: rgba(47, 203, 138, .10); --glow-b: rgba(91, 141, 245, .09); --glow-c: rgba(155, 123, 240, .08);
     --grid: rgba(20, 26, 36, .035);
     --shadow: 0 1px 2px rgba(20, 26, 36, .05), 0 10px 28px rgba(60, 50, 120, .07);
@@ -101,10 +103,10 @@ article h3 a:hover { color: var(--blue-ink); }
 [data-tone="violet"] { --tone: var(--violet); } [data-tone="gold"] { --tone: var(--gold); }
 
 /* buttons */
-button, .button { font: inherit; font-weight: 650; font-size: .92rem; background: var(--mint); color: var(--on-accent); padding: 10px 16px; border: 0;
+button, .button { font: inherit; font-weight: 650; font-size: .92rem; background: var(--button-bg); color: var(--button-ink); padding: 10px 16px; border: 0;
   border-radius: 10px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin: 4px 8px 4px 0;
-  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease; box-shadow: 0 6px 18px color-mix(in srgb, var(--mint) 22%, transparent); }
-button:hover, .button:hover { filter: brightness(1.07); transform: translateY(-1px); color: var(--on-accent); }
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease; box-shadow: 0 6px 18px color-mix(in srgb, var(--button-bg) 22%, transparent); }
+button:hover, .button:hover { filter: brightness(1.07); transform: translateY(-1px); color: var(--button-ink); }
 button:active { transform: translateY(0); }
 button:disabled { opacity: .45; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
 .button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line-strong); box-shadow: none; }
@@ -171,7 +173,7 @@ footer { padding: 36px 0 0; color: var(--muted); font-size: .85rem; border-top: 
 @keyframes spark-pop { from { opacity: 0; transform: scale(0) rotate(-90deg); } to { opacity: 1; transform: none; } }
 @keyframes twinkle { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(.82) rotate(10deg); } }
 @media (prefers-reduced-motion: reduce) { .horn-animated .band, .horn-animated .spark { animation: none; } }
-.iridescent { background: var(--iridescent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.iridescent { background: var(--iridescent-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* home */
 .home { padding-top: 40px; }
@@ -204,7 +206,7 @@ footer { padding: 36px 0 0; color: var(--muted); font-size: .85rem; border-top: 
 .tracker li[data-state="done"]::after { background: var(--tone); }
 .tracker .dot { width: 32px; height: 32px; margin: 0 auto 8px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 800;
   border: 2px solid var(--line-strong); color: var(--dim); background: var(--surface-2); }
-.tracker li[data-state="done"] .dot { border-color: var(--tone); color: var(--on-accent); background: var(--tone); }
+.tracker li[data-state="done"] .dot { border-color: var(--tone); color: #0A0E13; background: var(--tone); }
 .tracker li[data-state="unavailable"] .dot { border-style: dashed; }
 .tracker strong { display: block; font-size: .86rem; }
 .tracker span { display: block; font-size: .74rem; color: var(--muted); line-height: 1.3; margin-top: 2px; }

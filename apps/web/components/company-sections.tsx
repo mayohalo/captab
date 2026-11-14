@@ -9,6 +9,7 @@ export function CompanyNavigation({ id }: { id: string }) {
 }
 
 type StageState = "done" | "next" | "unavailable";
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
 
 /** Where this company is on the founding-to-exit path, read only from its on-chain state. */
 export function JourneyTracker({ config, totals, grants, distributions, deals, rounds }: {
@@ -21,7 +22,7 @@ export function JourneyTracker({ config, totals, grants, distributions, deals, r
     { title: "Hire", tone: "mint", done: grants.length > 0, detail: `${grants.length} grant${grants.length === 1 ? "" : "s"}` },
     { title: "Raise", tone: "blue", done: rounds.length > 0 || settled("Issue"), needsV2: true, detail: `${rounds.length} round${rounds.length === 1 ? "" : "s"}` },
     { title: "Liquidity", tone: "violet", done: settled("Secondary") || settled("Buyback"), needsV2: true,
-      detail: `${deals.filter(deal => deal.kind !== "Issue" && deal.status === "Settled").length} trades settled` },
+      detail: plural(deals.filter(deal => deal.kind !== "Issue" && deal.status === "Settled").length, "trade") + " settled" },
     { title: "Pay holders", tone: "gold", done: distributions.some(d => d.paid_total !== "0"), detail: `${distributions.length} distribution${distributions.length === 1 ? "" : "s"}` },
     { title: "Exit", tone: "gold", done: Boolean(config.closed), needsV2: true, detail: config.closed ? "ledger closed" : "open" },
   ];
