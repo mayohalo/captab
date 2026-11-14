@@ -11,17 +11,20 @@ const TAU = Math.PI * 2;
 
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296) * 2 - 1; }
 
-export function synthesize({ duration, scenes, cues }) {
+export function synthesize({ duration, scenes, cues, music = null }) {
   const n = Math.ceil(duration * SR);
   const L = new Float32Array(n), R = new Float32Array(n);
   const fxL = new Float32Array(n), fxR = new Float32Array(n); // send to delay
   const add = (buf, i, v) => { if (i >= 0 && i < n) buf[i] += v; };
   const grid = (x, step = BEAT) => Math.ceil(x / step - 1e-9) * step; // keep every entry on the beat grid
-  const dropStart = grid(scenes[1]), drumsEnd = scenes[scenes.length - 1], lift = scenes[4];
+  // Arrangement: from the page's MUSIC block, or derived from scene starts (the 30 s cut).
+  const M = music ?? { drop: scenes[1], hats: scenes[2], claps: scenes[3], lift: scenes[4], drumsEnd: scenes[scenes.length - 1] };
+  const dropStart = grid(M.drop), drumsEnd = M.drumsEnd, lift = M.lift;
+  const inBreak = (t) => M.breakStart !== undefined && t >= M.breakStart && t < M.breakEnd;
 
   // kick timeline for sidechain ducking
   const kicks = [];
-  for (let t = dropStart; t < drumsEnd - 0.01; t += BEAT) kicks.push(t);
+  for (let t = dropStart; t < drumsEnd - 0.01; t += BEAT) if (!inBreak(t)) kicks.push(t);
   const duck = new Float32Array(n).fill(1);
   for (const kt of kicks) {
     const i0 = Math.round(kt * SR);
@@ -53,6 +56,7 @@ export function synthesize({ duration, scenes, cues }) {
 
   // bass: eighth-note pulse on chord root from the drop
   for (let t = dropStart; t < drumsEnd; t += BEAT / 2) {
+    if (inBreak(t)) continue;
     const root = ROOTS[Math.floor(t / BAR) % 4], f = hz(root);
     const i0 = Math.round(t * SR), len = Math.round(0.24 * SR);
     for (let j = 0; j < len && i0 + j < n; j++) {
@@ -90,7 +94,8 @@ export function synthesize({ duration, scenes, cues }) {
       add(L, i0 + j, v); add(R, i0 + j, v);
     }
   }
-  for (let t = grid(scenes[2]) + BEAT / 2; t < drumsEnd; t += BEAT) { // off-beat hats
+  for (let t = grid(M.hats) + BEAT / 2; t < drumsEnd; t += BEAT) { // off-beat hats
+    if (inBreak(t)) continue;
     const i0 = Math.round(t * SR); let prev = 0;
     for (let j = 0; j < 0.06 * SR && i0 + j < n; j++) {
       const x = noise(), hp = x - prev; prev = x;
@@ -98,7 +103,8 @@ export function synthesize({ duration, scenes, cues }) {
       add(L, i0 + j, v * 0.8); add(R, i0 + j, v * 1.1);
     }
   }
-  for (let t = grid(scenes[3], BAR) + BEAT; t < drumsEnd; t += BEAT * 2) { // soft clap on 2 and 4
+  for (let t = grid(M.claps, BAR) + BEAT; t < drumsEnd; t += BEAT * 2) { // soft clap on 2 and 4
+    if (inBreak(t)) continue;
     const i0 = Math.round(t * SR); let lp = 0;
     for (let j = 0; j < 0.18 * SR && i0 + j < n; j++) {
       const x = noise(); lp += 0.35 * (x - lp);
@@ -106,6 +112,18 @@ export function synthesize({ duration, scenes, cues }) {
       const v = (x - lp) * env * 0.09;
       add(L, i0 + j, v); add(R, i0 + j, v);
       add(fxL, i0 + j, v * 0.4); add(fxR, i0 + j, v * 0.4);
+    }
+  }
+
+  // riser across the break: swelling filtered noise plus a rising tone, landing on the next downbeat
+  if (M.breakStart !== undefined) {
+    const i0 = Math.round(M.breakStart * SR), len = Math.round((M.breakEnd - M.breakStart) * SR); let lp = 0, ph = 0;
+    for (let j = 0; j < len && i0 + j < n; j++) {
+      const p = j / len, x = noise();
+      lp += (0.01 + 0.3 * p * p) * (x - lp);
+      ph += TAU * (220 * Math.pow(4, p)) / SR;
+      const v = (lp * 0.5 + Math.sin(ph) * 0.06) * p * p * 0.5;
+      add(L, i0 + j, v); add(R, i0 + j, v);
     }
   }
 
@@ -126,7 +144,26 @@ export function synthesize({ duration, scenes, cues }) {
     if (kind === "ok") { tone(t, 1318.5, 0.7, 6, 0.08, { partials: bell }); tone(t + 0.07, 1975.5, 0.7, 6, 0.06, { partials: bell }); }
     if (kind === "paid") { tone(t, 1046.5, 0.5, 9, 0.08, { partials: bell, pan: 0.8 }); tone(t + 0.06, 1568, 0.5, 9, 0.06, { partials: bell, pan: 1.2 }); }
     if (kind === "cliff") tone(t, 1760, 1.4, 3.5, 0.09, { partials: bell });
-    if (kind === "node") tone(t, 784 * (1 + 0.25 * cues.filter(([k, x]) => k === "node" && x < t).length), 0.4, 10, 0.08, { partials: bell });
+    if (kind === "node") { const step = [0, 2, 4, 7, 9, 12, 14, 16][cues.filter(([k, x]) => k === "node" && x < t).length % 8]; tone(t, 784 * Math.pow(2, step / 12), 0.4, 10, 0.07, { partials: bell }); }
+    if (kind === "tick") tone(t, 1567.98, 0.12, 30, 0.07);
+    if (kind === "coin") { tone(t, 2637, 0.35, 12, 0.05, { partials: bell }); tone(t + 0.07, 3520, 0.45, 10, 0.05, { partials: bell }); }
+    if (kind === "bounce") {
+      const i0 = Math.round(t * SR); let ph = 0;
+      for (let j = 0; j < 0.35 * SR && i0 + j < n; j++) {
+        const lt = j / SR; ph += TAU * (520 * Math.exp(-lt * 6) + 140) / SR;
+        const v = Math.sin(ph) * Math.min(1, lt / 0.004) * Math.exp(-lt * 9) * 0.11;
+        add(L, i0 + j, v); add(R, i0 + j, v); add(fxL, i0 + j, v * 0.4);
+      }
+    }
+    if (kind === "click" || kind === "key") {
+      const i0 = Math.round(t * SR), g = kind === "click" ? 0.16 : 0.05 + 0.03 * Math.abs(noise()); let prev = 0;
+      for (let j = 0; j < 0.02 * SR && i0 + j < n; j++) {
+        const x = noise(), hp = x - prev; prev = x;
+        const v = hp * Math.exp(-j / SR * 260) * g;
+        add(L, i0 + j, v); add(R, i0 + j, v);
+      }
+      if (kind === "click") tone(t, 2400, 0.05, 80, 0.04);
+    }
     if (kind === "fail") {
       const i0 = Math.round(t * SR);
       for (let j = 0; j < 0.3 * SR && i0 + j < n; j++) {

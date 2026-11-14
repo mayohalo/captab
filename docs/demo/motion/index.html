@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Captab Motion</title>
+<title>Captab Demo</title>
 <style>
 :root{
   --bg:#0A0E13; --panel:#111821; --panel2:#151E29; --line:#223040;
@@ -24,9 +24,10 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:
 .o{opacity:0}
 h2{position:absolute;left:160px;top:190px;font-size:66px;font-weight:700;letter-spacing:-.025em;line-height:1.05}
 h2 em{font-style:normal;color:var(--a)}
-h2 em.gold{color:var(--gold)}
+h2 em.gold{color:var(--gold)} h2 em.bad{color:var(--bad)} h2 em.blue{color:var(--b)} h2 em.violet{color:var(--pool)}
 .kicker{position:absolute;left:160px;top:140px;font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
 svg.logo{display:block;overflow:visible}
+.check{color:var(--a);font-weight:700}
 
 /* chrome */
 #chrome{position:absolute;inset:0;opacity:0;pointer-events:none}
@@ -37,112 +38,171 @@ svg.logo{display:block;overflow:visible}
 #progress{position:absolute;left:0;bottom:0;height:6px;background:linear-gradient(90deg,var(--b),var(--a),var(--gold));width:0}
 
 /* captions */
-#cap{position:absolute;left:0;right:0;bottom:46px;display:flex;justify-content:center;pointer-events:none}
-#capText{max-width:1500px;font-size:34px;font-weight:500;line-height:1.3;text-align:center;letter-spacing:-.005em;
-  background:rgba(5,8,12,.78);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:12px 28px;opacity:0}
+#cap{position:absolute;left:0;right:0;bottom:46px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#capText{max-width:1560px;font-size:34px;font-weight:500;line-height:1.3;text-align:center;letter-spacing:-.005em;
+  background:rgba(5,8,12,.82);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:12px 28px;opacity:0}
 
-/* scene 1 */
-#s1 .center{position:absolute;left:0;right:0;top:250px;text-align:center}
-#logoBig{width:220px;height:220px;margin:0 auto 26px}
-#title{font-size:150px;font-weight:800;letter-spacing:-.045em;line-height:1}
-#tagline{font-size:54px;font-weight:700;margin-top:22px;letter-spacing:-.02em}
-#tagline em{font-style:normal;background:linear-gradient(90deg,var(--a),var(--b),var(--pool),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
-#subtitle{font-size:34px;color:var(--muted);margin-top:16px}
-#tag{display:inline-block;margin-top:30px;font-size:20px;color:var(--warn);border:1px solid rgba(245,181,74,.4);
-  border-radius:999px;padding:9px 20px;letter-spacing:.06em}
-
-/* cards */
-.card{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:36px}
-.card .lbl{font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+/* shared cards */
+.card{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:34px}
+.card .lbl{font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
 .card .big{font-size:40px;font-weight:700;letter-spacing:-.02em}
 .row{display:flex;justify-content:space-between;align-items:center;font-size:26px;padding:12px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .row span:first-child{color:var(--muted)}
-.check{color:var(--a);font-weight:700}
 .badge{display:inline-flex;align-items:center;gap:10px;font-size:24px;font-weight:700;border-radius:999px;padding:10px 20px}
 .badge.ok{background:rgba(94,230,168,.14);color:var(--a)}
+.badge.gold{background:rgba(245,181,74,.14);color:var(--gold)}
+.badge.muted{background:var(--panel2);color:var(--muted)}
 .arrow{position:absolute;height:4px;background:linear-gradient(90deg,var(--line),var(--a));border-radius:2px;transform-origin:left;transform:scaleX(0)}
 .arrow::after{content:"";position:absolute;right:-4px;top:-8px;border:10px solid transparent;border-left:14px solid var(--a)}
+.pill{display:inline-block;min-width:190px;text-align:center;font-size:21px;font-weight:700;letter-spacing:.06em;border-radius:999px;padding:9px 16px;background:var(--panel2);color:var(--dim)}
+.pill.flight{background:rgba(122,167,255,.15);color:var(--b)}
+.pill.paid{background:rgba(94,230,168,.15);color:var(--a)}
+.pill.fail{background:rgba(255,107,107,.15);color:var(--bad)}
+.pill.held{background:rgba(245,181,74,.15);color:var(--gold)}
 
-/* scene 2 */
-.member{display:flex;align-items:center;gap:20px;font-size:28px;padding:14px 0}
+/* S1 title */
+#s1 .center{position:absolute;left:0;right:0;top:250px;text-align:center}
+#logoBig{width:220px;height:220px;margin:0 auto 26px}
+#title{font-size:150px;font-weight:800;letter-spacing:-.045em;line-height:1}
+.iri{font-style:normal;background:linear-gradient(90deg,var(--a),var(--b),var(--pool),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+#tagline{font-size:54px;font-weight:700;margin-top:22px;letter-spacing:-.02em}
+#subtitle{font-size:34px;color:var(--muted);margin-top:16px}
+#tag{display:inline-block;margin-top:30px;font-size:20px;color:var(--warn);border:1px solid rgba(245,181,74,.4);border-radius:999px;padding:9px 20px;letter-spacing:.06em}
+
+/* S2 problem */
+.old{position:absolute;top:360px;width:500px;height:440px;background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:28px;overflow:hidden}
+.old .lbl{font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;display:flex;gap:12px;align-items:center}
+.sheet{display:grid;grid-template-columns:1.6fr 1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:20px}
+.sheet div{padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);color:#c8d1da;white-space:nowrap}
+.sheet div.h{background:var(--panel2);color:var(--muted);font-weight:700}
+.sheet div.err{color:var(--bad);font-weight:700}
+.mail{padding:15px 0;border-bottom:1px solid var(--line);font-size:23px}
+.mail small{display:block;color:var(--muted);font-size:18px;margin-top:4px}
+.mail b{color:var(--text)}
+#solution{position:absolute;left:330px;top:470px;width:1260px;height:230px;border-radius:30px;padding:36px 46px;display:flex;gap:40px;align-items:center;
+  background:linear-gradient(135deg,#10231C,#121A2B 60%,#1E1A2E);border:1px solid rgba(94,230,168,.45);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+#solution .t{font-size:48px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+#solution .s{font-size:27px;color:var(--muted);margin-top:12px}
+
+/* S3 govern */
+.member{display:flex;align-items:center;gap:20px;font-size:28px;padding:13px 0}
 .avatar{width:58px;height:58px;border-radius:50%;background:var(--panel2);border:2px solid var(--line);display:grid;place-items:center;font-size:30px;color:var(--dim);font-weight:800}
 .member .vote{margin-left:auto;font-size:24px;color:var(--dim)}
 
-/* scene 3 */
-#capbar{position:absolute;left:160px;top:450px;width:1600px;height:130px;border-radius:24px;background:
-  repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 14px, transparent 14px 28px), var(--panel);
-  border:1px solid var(--line);overflow:hidden;display:flex}
-.seg{height:100%;width:0}
-.legend{position:absolute;top:625px;width:380px}
-.legend .sw{width:22px;height:22px;border-radius:6px;display:inline-block;margin-right:14px;vertical-align:-3px}
-.legend .name{font-size:26px;color:var(--muted)}
-.legend .val{font-size:52px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
-.legend .pct{font-size:24px;color:var(--muted);margin-top:4px}
-#authorized{position:absolute;right:160px;top:385px;font-size:26px;color:var(--muted)}
-#authorized b{color:var(--text);font-size:30px}
-#invariant{position:absolute;left:160px;top:850px;font-size:28px;color:var(--muted)}
-
-/* scene 4 */
-#timeline{position:absolute;left:160px;top:400px;width:1600px;height:90px}
+/* S4 vest */
+#timeline{position:absolute;left:160px;top:420px;width:1600px;height:90px}
 #tlTrack{position:absolute;left:0;right:0;top:40px;height:10px;border-radius:5px;background:var(--panel2)}
 #tlFill{position:absolute;left:0;top:40px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--b),var(--a));width:0}
 .tick{position:absolute;top:30px;width:2px;height:30px;background:var(--line)}
 .tick.cliff{background:var(--warn);height:46px;top:22px;width:4px}
 .tlab{position:absolute;top:84px;font-size:22px;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
 #monthNow{position:absolute;top:-18px;font-size:22px;font-weight:700;color:var(--a);transform:translateX(-50%);white-space:nowrap}
-.flow{display:flex;align-items:center;gap:18px;font-size:27px;padding:12px 0}
+.flow{display:flex;align-items:center;gap:18px;font-size:26px;padding:11px 0}
 .flow .n{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:20px;color:var(--muted);flex:none}
 .flow.on .n{border-color:var(--a);color:var(--a)}
-.flow .sub{color:var(--muted);font-size:22px}
+.flow .sub{color:var(--muted);font-size:21px}
+#meteor{position:absolute;left:160px;top:296px;font-size:24px;font-weight:600;color:var(--a);background:rgba(94,230,168,.10);border:1px solid rgba(94,230,168,.35);border-radius:999px;padding:9px 20px}
 
-/* scene 5 */
-#steps{position:absolute;left:160px;top:320px;width:1600px;display:flex;gap:20px}
-.step{flex:1;border:1px solid var(--line);border-radius:18px;padding:20px 24px;font-size:24px;color:var(--dim);background:var(--panel)}
-.step b{display:block;font-size:18px;letter-spacing:.14em;margin-bottom:6px}
-.step.on{color:var(--text);border-color:rgba(94,230,168,.5)}
-.step.on b{color:var(--a)}
-#payTable{position:absolute;left:160px;top:450px;width:1600px}
-.prow{display:grid;grid-template-columns:1fr 360px 420px 300px;align-items:center;height:96px;border-bottom:1px solid var(--line);font-size:32px}
+/* S5 raise */
+#contract5{position:absolute;z-index:3;left:800px;top:450px;width:320px;height:250px;border-radius:30px;background:var(--panel);border:2px solid var(--line);display:grid;place-items:center;text-align:center}
+#contract5 .t{font-size:30px;font-weight:700}
+#contract5 .s{font-size:20px;color:var(--muted);margin-top:8px}
+.chip{position:absolute;z-index:2;font-size:24px;font-weight:700;border-radius:999px;padding:10px 20px;white-space:nowrap;opacity:0}
+.chip.money{background:rgba(245,181,74,.16);color:var(--gold);border:1px solid rgba(245,181,74,.45)}
+.chip.bad{background:rgba(255,107,107,.15);color:var(--bad);border:1px solid rgba(255,107,107,.45)}
+.chip.units{background:rgba(94,230,168,.15);color:var(--a);border:1px solid rgba(94,230,168,.45)}
+
+/* S6 liquidity */
+.step6{display:flex;align-items:center;gap:16px;font-size:26px;padding:13px 0;border-bottom:1px solid var(--line);opacity:.3}
+.step6:last-child{border-bottom:0}
+.step6 .ck{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:19px;color:var(--dim);flex:none}
+.step6.on{opacity:1} .step6.on .ck{border-color:var(--a);color:var(--a)}
+.step6 .right{margin-left:auto}
+
+/* S7 payouts */
+#payTable{position:absolute;left:160px;top:330px;width:1600px}
+.prow{display:grid;grid-template-columns:1fr 330px 380px 260px;align-items:center;height:78px;border-bottom:1px solid var(--line);font-size:30px}
 .prow .who{font-weight:600}
-.prow .units{color:var(--muted);font-size:26px}
+.prow .note{color:var(--muted);font-size:23px}
 .prow .amt{text-align:right;font-weight:700}
 .prow .st{justify-self:end}
-.pill{display:inline-block;min-width:200px;text-align:center;font-size:22px;font-weight:700;letter-spacing:.06em;border-radius:999px;padding:10px 18px;background:var(--panel2);color:var(--dim)}
-.pill.flight{background:rgba(122,167,255,.15);color:var(--b)}
-.pill.paid{background:rgba(94,230,168,.15);color:var(--a)}
-.pill.fail{background:rgba(255,107,107,.15);color:var(--bad)}
-#failNote{position:absolute;left:160px;top:770px;font-size:24px;color:var(--bad)}
-#total{position:absolute;left:160px;top:820px;width:1600px;display:flex;justify-content:space-between;font-size:32px}
-#total .amt{font-weight:800;color:var(--a)}
+#total7{position:absolute;left:160px;top:745px;width:1600px;display:flex;justify-content:space-between;font-size:30px}
+#total7 .amt{font-weight:800;color:var(--a)}
+#chips7{position:absolute;left:160px;top:815px;display:flex;gap:18px}
 
-/* scene 6: roadmap */
-#road{position:absolute;left:160px;top:470px;width:1600px;height:300px}
-#roadTrack{position:absolute;left:60px;right:60px;top:58px;height:6px;border-radius:3px;
-  background:repeating-linear-gradient(90deg, var(--line) 0 14px, transparent 14px 26px)}
-#roadFill{position:absolute;left:60px;top:58px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--b),var(--a));width:0}
-#roadNext{position:absolute;top:58px;height:6px;border-radius:3px;width:0;
-  background:repeating-linear-gradient(90deg, var(--gold) 0 14px, transparent 14px 26px)}
-.node{position:absolute;top:0;width:120px;margin-left:-60px;text-align:center}
-.dot{width:120px;height:120px;border-radius:50%;margin:0 auto;display:grid;place-items:center;background:var(--panel);border:3px solid var(--line);font-size:34px;font-weight:800;color:var(--dim)}
-.node.live .dot{border-color:var(--a);color:var(--a);background:#0F1F1A}
-.node.next .dot{border-color:rgba(245,181,74,.55);color:var(--gold);border-style:dashed}
-.node .nl{position:absolute;left:50%;top:138px;transform:translateX(-50%);width:250px;font-size:25px;line-height:1.25}
-.node .ns{display:block;font-size:19px;color:var(--muted);margin-top:6px}
-.bracket{position:absolute;top:-62px;height:34px;border:2px solid;border-bottom:0;border-radius:10px 10px 0 0;font-size:18px;letter-spacing:.14em;text-align:center}
-.bracket span{position:relative;top:-14px;background:var(--bg);padding:0 12px}
-#brLive{border-color:rgba(94,230,168,.6);color:var(--a)}
-#brNext{border-color:rgba(245,181,74,.55);color:var(--gold)}
+/* S8 ledger */
+#capbar{position:absolute;left:160px;top:440px;width:1600px;height:130px;border-radius:24px;background:
+  repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 14px, transparent 14px 28px), var(--panel);
+  border:1px solid var(--line);overflow:hidden;display:flex}
+.seg{height:100%;width:0}
+.legend{position:absolute;top:615px;width:380px}
+.legend .sw{width:22px;height:22px;border-radius:6px;display:inline-block;margin-right:14px;vertical-align:-3px}
+.legend .name{font-size:26px;color:var(--muted)}
+.legend .val{font-size:52px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
+.legend .pct{font-size:24px;color:var(--muted);margin-top:4px}
+#authorized{position:absolute;right:160px;top:378px;font-size:26px;color:var(--muted)}
+#authorized b{color:var(--text);font-size:30px}
+#invariant{position:absolute;left:160px;top:845px;font-size:28px;color:var(--muted)}
 
-/* scene 7: end */
-#end{position:absolute;left:0;right:0;top:200px;text-align:center}
-#logoEnd{width:190px;height:190px;margin:0 auto 22px}
-#endTitle{font-size:126px;font-weight:800;letter-spacing:-.045em;line-height:1}
-#endSub{font-size:46px;font-weight:700;margin-top:20px;letter-spacing:-.02em}
-#endSub em{font-style:normal;background:linear-gradient(90deg,var(--a),var(--b),var(--pool),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
-#endEvidence{font-size:24px;color:var(--muted);margin-top:34px}
+/* S9 browser */
+#browser{position:absolute;left:260px;top:168px;width:1400px;height:752px;border-radius:22px;overflow:hidden;
+  border:1px solid #2A3646;background:#0B0F14;box-shadow:0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02)}
+#bbar{position:absolute;left:0;right:0;top:0;height:52px;background:#141B25;border-bottom:1px solid #222D3B;display:flex;align-items:center;gap:16px;padding:0 20px}
+#bbar .dots{display:flex;gap:9px}
+#bbar .dots i{width:13px;height:13px;border-radius:50%;background:#2B3646;display:block}
+#url{flex:1;height:34px;border-radius:10px;background:#0C1117;border:1px solid #222D3B;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:19px;color:#B8C3CE}
+#url .lock{color:var(--a);font-size:15px}
+#url .caret{display:inline-block;width:2px;height:20px;background:var(--a);margin-left:1px}
+#liveTag{font-size:16px;color:var(--a);display:flex;gap:8px;align-items:center;letter-spacing:.06em;white-space:nowrap}
+#liveTag i{width:9px;height:9px;border-radius:50%;background:var(--a);display:inline-block;box-shadow:0 0 10px var(--a)}
+#vp{position:absolute;left:0;top:52px;width:1400px;height:700px;overflow:hidden;background:#0A0E13}
+.pg{position:absolute;left:0;top:0;width:1440px;transform-origin:0 0;opacity:0}
+.pg img{display:block;width:1440px}
+.hl{position:absolute;border:4px solid var(--gold);border-radius:14px;box-shadow:0 0 0 6px rgba(245,181,74,.18),0 0 40px rgba(245,181,74,.35);opacity:0}
+.hl.mint{border-color:var(--a);box-shadow:0 0 0 6px rgba(94,230,168,.16),0 0 40px rgba(94,230,168,.35)}
+.callout{position:absolute;font-size:20px;font-weight:700;color:#0A0E13;background:var(--gold);border-radius:10px;padding:7px 14px;white-space:nowrap;opacity:0}
+.callout.mint{background:var(--a)}
+#cursor{position:absolute;left:0;top:0;width:34px;height:34px;opacity:0;z-index:5;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+#ripple{position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid var(--a);opacity:0;z-index:4}
+#vpBadge{position:absolute;right:22px;top:20px;opacity:0;z-index:6}
+
+/* S10 terminal */
+#term{position:absolute;left:160px;top:176px;width:1600px;height:760px;border-radius:22px;background:#07090D;border:1px solid #273243;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.55)}
+#tbar{height:48px;background:#121821;border-bottom:1px solid #222D3B;display:flex;align-items:center;gap:9px;padding:0 20px;font-size:18px;color:var(--muted)}
+#tbar i{width:13px;height:13px;border-radius:50%;display:block}
+#tbody{position:absolute;left:0;right:0;top:48px;bottom:0;overflow:hidden;padding:18px 28px}
+#tlines{position:absolute;left:28px;right:28px;top:18px;font-size:19px;line-height:28.5px;white-space:pre;color:#C9D3DD}
+#tlines .pass{color:var(--a);font-weight:700}
+#tlines .sec{color:#fff;font-weight:700}
+#tlines .dim{color:#6E7C8B}
+#tlines .final{color:#0A0E13;background:var(--a);font-weight:800;border-radius:6px;padding:2px 8px}
+#tlines .prompt{color:var(--b)}
+
+/* S11 road */
+#road{position:absolute;left:160px;top:430px;width:1600px;height:200px}
+#roadFill{position:absolute;left:80px;top:46px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--a),var(--b),var(--pool),var(--gold));width:0}
+.node{position:absolute;top:0;width:220px;margin-left:-110px;text-align:center}
+.dot{width:98px;height:98px;border-radius:50%;margin:0 auto;display:grid;place-items:center;background:#0F1F1A;border:3px solid var(--a);font-size:30px;font-weight:800;color:var(--a)}
+.node .nl{font-size:24px;margin-top:16px;font-weight:600}
+.node .ns{display:block;font-size:18px;color:var(--muted);margin-top:4px;font-weight:400}
+#brLive{position:absolute;left:0;width:1600px;top:-58px;height:30px;border:2px solid rgba(94,230,168,.6);border-bottom:0;border-radius:10px 10px 0 0;font-size:18px;letter-spacing:.14em;text-align:center;color:var(--a)}
+#brLive span{position:relative;top:-14px;background:var(--bg);padding:0 12px}
+#next{position:absolute;left:160px;top:745px;width:1600px;display:flex;align-items:center;gap:18px}
+#next .lbl{font-size:20px;letter-spacing:.16em;color:var(--gold);margin-right:6px}
+.nchip{font-size:24px;border:2px dashed rgba(245,181,74,.55);color:var(--text);border-radius:999px;padding:10px 20px;opacity:0;white-space:nowrap}
+#goal{display:flex;align-items:center;gap:12px;font-size:26px;font-weight:700;color:var(--gold);opacity:0;margin-left:auto}
+
+/* S12 end */
+#end{position:absolute;left:0;right:0;top:170px;text-align:center}
+#logoEnd{width:180px;height:180px;margin:0 auto 20px}
+#endTitle{font-size:122px;font-weight:800;letter-spacing:-.045em;line-height:1}
+#endSub{font-size:46px;font-weight:700;margin-top:18px;letter-spacing:-.02em}
+#endLinks{font-size:30px;margin-top:30px;color:var(--text)}
+#endLinks span{color:var(--muted);margin:0 14px}
+#endEvidence{font-size:23px;color:var(--muted);margin-top:22px}
 #endEvidence b{color:var(--a);font-weight:700}
-#endNote{font-size:19px;color:var(--warn);margin-top:22px;letter-spacing:.06em}
+#endNote{font-size:19px;color:var(--warn);margin-top:20px;letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -153,69 +213,87 @@ svg.logo{display:block;overflow:visible}
   <div id="net"><i></i>NEAR testnet</div>
 </div>
 
-<!-- S1: title -->
+<!-- S1 title 0–6 -->
 <div class="scene" id="s1">
   <div class="center">
-    <div id="logoBig" class="logo-slot" data-size="220" data-anim="1"></div>
+    <div id="logoBig" class="logo-slot" data-size="220"></div>
     <div id="title" class="o">Captab</div>
-    <div id="tagline" class="o">From day zero <em>to unicorn.</em></div>
-    <div id="subtitle" class="o">DAO-governed company ownership on NEAR.</div>
+    <div id="tagline" class="o">From day zero <em class="iri">to unicorn.</em></div>
+    <div id="subtitle" class="o">Your company's cap table, on NEAR, run by a DAO board.</div>
     <div id="tag" class="o">TESTNET PROTOTYPE</div>
   </div>
 </div>
 
-<!-- S2: govern -->
+<!-- S2 problem 6–12 -->
 <div class="scene" id="s2">
-  <div class="kicker">01 · Govern</div>
-  <h2>Every ownership change is a <em>DAO vote.</em></h2>
-  <div class="card o" id="c2a" style="left:160px;top:380px;width:460px;height:430px">
-    <div class="lbl">Proposal</div>
-    <div class="big mono" style="font-size:30px">issue_founder_units</div>
-    <div style="margin-top:22px">
-      <div class="row"><span>recipient</span><span class="mono">founder-a</span></div>
-      <div class="row"><span>units</span><span class="mono">3,600,000</span></div>
-      <div class="row"><span>expected revision</span><span class="mono">0</span></div>
+  <div class="kicker">The problem</div>
+  <h2>Cap tables still live in <em class="bad">spreadsheets.</em></h2>
+  <div class="old o" id="o1" style="left:160px">
+    <div class="lbl">📊 cap-table-final-v7.xlsx</div>
+    <div class="sheet">
+      <div class="h">Holder</div><div class="h">Shares</div><div class="h">%</div>
+      <div>Founder A</div><div>3,600,000</div><div>50.4</div>
+      <div>Founder B</div><div>2,420,000</div><div>33.9</div>
+      <div>Investor</div><div>1,000,000</div><div class="err">#REF!</div>
+      <div>Angel (?)</div><div>100,000</div><div>1.4</div>
+      <div>Pool</div><div class="err">#VALUE!</div><div>?</div>
     </div>
   </div>
-  <div class="arrow" id="ar2a" style="left:636px;top:593px;width:84px"></div>
-  <div class="card o" id="c2b" style="left:730px;top:380px;width:460px;height:430px">
+  <div class="old o" id="o2" style="left:710px">
+    <div class="lbl">✉️ Inbox</div>
+    <div class="mail"><b>Re: Re: Fwd: board consent?</b><small>Did we get the second signature?</small></div>
+    <div class="mail"><b>Grant letter v3 (final) (2).pdf</b><small>Which version did the board approve?</small></div>
+    <div class="mail"><b>Seed wire received?</b><small>Units issued before the money arrived</small></div>
+  </div>
+  <div class="old o" id="o3" style="left:1260px">
+    <div class="lbl">💸 Payouts</div>
+    <div class="mail"><b>Wire 1 of 5 sent</b><small>Reconcile against the sheet by hand</small></div>
+    <div class="mail"><b style="color:var(--bad)">Wire 3 bounced</b><small>Resend? Did it pay twice?</small></div>
+    <div class="mail"><b>Who is owed what?</b><small>Trust whoever keeps the file</small></div>
+  </div>
+  <div id="solution" class="o">
+    <div class="logo-slot" data-size="150"></div>
+    <div><div class="t">One NEAR contract. <span class="iri">One DAO board.</span></div>
+      <div class="s">Votes on-chain, rules in code, and money that moves with ownership.</div></div>
+  </div>
+</div>
+
+<!-- S3 found 12–18 -->
+<div class="scene" id="s3">
+  <div class="kicker">01 · Found</div>
+  <h2>Every ownership change is a <em>DAO vote.</em></h2>
+  <div class="card o" id="c3a" style="left:160px;top:370px;width:460px;height:440px">
+    <div class="lbl">Proposal #2</div>
+    <div class="big mono" style="font-size:29px">issue_founder_units</div>
+    <div style="margin-top:20px">
+      <div class="row"><span>recipient</span><span class="mono">founder A</span></div>
+      <div class="row"><span>units</span><span class="mono">3,600,000</span></div>
+      <div class="row"><span>agreement</span><span class="mono" style="color:var(--a)">SHA-256 ✓</span></div>
+    </div>
+  </div>
+  <div class="arrow" id="ar3a" style="left:636px;top:588px;width:84px"></div>
+  <div class="card o" id="c3b" style="left:730px;top:370px;width:460px;height:440px">
     <div class="lbl">Sputnik DAO council</div>
     <div class="member"><div class="avatar" id="av1">1</div>Board 1<span class="vote" id="v1">pending</span></div>
     <div class="member"><div class="avatar" id="av2">2</div>Board 2<span class="vote" id="v2">pending</span></div>
     <div class="member"><div class="avatar" id="av3">3</div>Board 3<span class="vote">not needed</span></div>
-    <div style="margin-top:14px" class="o" id="approved"><span class="badge ok">✓ 2 of 3 · Approved</span></div>
+    <div style="margin-top:12px" class="o" id="approved3"><span class="badge ok">✓ 2 of 3 · Approved</span></div>
   </div>
-  <div class="arrow" id="ar2b" style="left:1206px;top:593px;width:84px"></div>
-  <div class="card o" id="c2c" style="left:1300px;top:380px;width:460px;height:430px">
+  <div class="arrow" id="ar3b" style="left:1206px;top:588px;width:84px"></div>
+  <div class="card o" id="c3c" style="left:1300px;top:370px;width:460px;height:440px">
     <div class="lbl">Company contract</div>
-    <div class="row o" id="k1"><span>caller is DAO</span><span class="check">✓</span></div>
-    <div class="row o" id="k2"><span>revision matches</span><span class="check">✓</span></div>
-    <div class="row o" id="k3"><span>within authorized</span><span class="check">✓</span></div>
-    <div style="margin-top:22px" class="o" id="executed"><span class="badge ok">Executed · revision 1</span></div>
+    <div class="row o" id="k1"><span>caller is the DAO</span><span class="check">✓</span></div>
+    <div class="row o" id="k2"><span>agreement hash bound</span><span class="check">✓</span></div>
+    <div class="row o" id="k3"><span>within 12,000,000</span><span class="check">✓</span></div>
+    <div style="margin-top:20px" class="o" id="executed3"><span class="badge ok">Executed · units issued</span></div>
   </div>
 </div>
 
-<!-- S3: ledger -->
-<div class="scene" id="s3">
-  <div class="kicker">02 · Own</div>
-  <h2>One on-chain ledger, <em>always reconciled.</em></h2>
-  <div id="authorized">Authorized <b class="mono">10,000,000</b> units</div>
-  <div id="capbar">
-    <div class="seg" id="segA" style="background:var(--a)"></div>
-    <div class="seg" id="segB" style="background:var(--b)"></div>
-    <div class="seg" id="segP" style="background:var(--pool)"></div>
-  </div>
-  <div class="legend o" id="lgA" style="left:160px"><span class="sw" style="background:var(--a)"></span><span class="name">Founder A</span><div class="val mono" id="nA">0</div><div class="pct">36% of authorized</div></div>
-  <div class="legend o" id="lgB" style="left:570px"><span class="sw" style="background:var(--b)"></span><span class="name">Founder B</span><div class="val mono" id="nB">0</div><div class="pct">24% of authorized</div></div>
-  <div class="legend o" id="lgP" style="left:980px"><span class="sw" style="background:var(--pool)"></span><span class="name">Contributor pool</span><div class="val mono" id="nP">0</div><div class="pct">reserved for grants</div></div>
-  <div class="legend o" id="lgU" style="left:1390px"><span class="sw" style="background:var(--panel2);border:1px solid var(--line)"></span><span class="name">Unallocated</span><div class="val mono" id="nU">10,000,000</div><div class="pct">free capacity</div></div>
-  <div id="invariant" class="mono o">issued + pool + reserved ≤ authorized <span class="check">✓ checked on every write</span></div>
-</div>
-
-<!-- S4: vest + sponsored claim -->
+<!-- S4 hire 18–24 -->
 <div class="scene" id="s4">
-  <div class="kicker">03 · Vest &amp; claim</div>
+  <div class="kicker">02 · Hire</div>
   <h2>Contributors vest monthly, <em>and claim gas-free.</em></h2>
+  <div id="meteor" class="o">✓ Live: captab.testnet signed its grant terms and claimed from Meteor Wallet</div>
   <div id="timeline">
     <div id="tlTrack"></div><div id="tlFill"></div>
     <div id="ticks"></div>
@@ -224,70 +302,167 @@ svg.logo{display:block;overflow:visible}
     <div class="tlab" style="left:1600px;transform:translateX(-100%)">Month 48</div>
     <div id="monthNow" class="mono">month 0</div>
   </div>
-  <div class="card o" id="c4a" style="left:160px;top:570px;width:700px;height:320px">
-    <div class="lbl">Grant · 100,000 units · 48 months</div>
-    <div style="display:flex;gap:60px;margin-top:10px">
-      <div><div style="font-size:22px;color:var(--muted)">Claimable</div><div class="big mono" id="claimable" style="font-size:64px">0</div></div>
-      <div><div style="font-size:22px;color:var(--muted)">Company issued</div><div class="big mono" id="issued" style="font-size:64px">6,000,000</div></div>
+  <div class="card o" id="c4a" style="left:160px;top:590px;width:700px;height:310px">
+    <div class="lbl">Grant #0 · 100,000 units · 48 months</div>
+    <div style="display:flex;gap:60px;margin-top:6px">
+      <div><div style="font-size:22px;color:var(--muted)">Claimable</div><div class="big mono" id="claimable" style="font-size:62px">0</div></div>
+      <div><div style="font-size:22px;color:var(--muted)">Contributor holds</div><div class="big mono" id="holds" style="font-size:62px">0</div></div>
     </div>
-    <div class="o" id="claimed" style="margin-top:24px"><span class="badge ok">✓ 25,000 units claimed to contributor</span></div>
+    <div class="o" id="claimed4" style="margin-top:20px"><span class="badge ok">✓ 25,000 units claimed with 0 NEAR</span></div>
   </div>
-  <div class="card o" id="c4b" style="left:900px;top:570px;width:860px;height:320px">
+  <div class="card o" id="c4b" style="left:900px;top:590px;width:860px;height:310px">
     <div class="lbl">Sponsored claim · NEP-366</div>
-    <div class="flow" id="f1"><span class="n">1</span>Contributor wallet holds <b class="mono">0 NEAR</b></div>
-    <div class="flow" id="f2"><span class="n">2</span>Signs <span class="mono">claim_vested</span> as a delegate action</div>
-    <div class="flow" id="f3"><span class="n">3</span>Relayer pays gas <span class="sub">· scoped to one method, rate-limited</span></div>
+    <div class="flow" id="f1"><span class="n">1</span>Contributor signs the grant terms on-chain</div>
+    <div class="flow" id="f2"><span class="n">2</span>Signs <span class="mono">claim_vested</span> holding <b class="mono">0 NEAR</b></div>
+    <div class="flow" id="f3"><span class="n">3</span>Relayer pays gas <span class="sub">· one method, rate-limited</span></div>
   </div>
 </div>
 
-<!-- S5: distribution -->
+<!-- S5 raise 24–30 -->
 <div class="scene" id="s5">
-  <div class="kicker">04 · Distribute</div>
-  <h2>Payouts from an <em>immutable snapshot.</em></h2>
-  <div id="steps">
-    <div class="step" id="st1"><b>STEP 1</b>Snapshot + hash</div>
-    <div class="step" id="st2"><b>STEP 2</b>DAO approves hash</div>
-    <div class="step" id="st3"><b>STEP 3</b>Funded: exactly 10,000</div>
-    <div class="step" id="st4"><b>STEP 4</b>Pay each holder</div>
+  <div class="kicker">03 · Raise</div>
+  <h2>Investors pay and get units <em class="blue">in one transaction.</em></h2>
+  <div class="card o" id="c5a" style="left:160px;top:400px;width:470px;height:360px">
+    <div class="lbl">Seed round · approved</div>
+    <div class="row"><span>price</span><span class="mono">0.01 TESTUSD / unit</span></div>
+    <div class="row"><span>allocation</span><span class="mono">1,000,000 units</span></div>
+    <div class="row"><span>investor pays</span><span class="mono">10,000 TESTUSD</span></div>
+    <div class="row"><span>proposals</span><span class="mono">#9 · #10</span></div>
   </div>
-  <div id="payTable">
-    <div class="prow o" id="r1"><span class="who">Founder A</span><span class="units mono">3,600,000 units</span><span class="amt mono" id="a1">0.000000</span><span class="st"><span class="pill" id="p1">READY</span></span></div>
-    <div class="prow o" id="r2"><span class="who">Founder B</span><span class="units mono">2,400,000 units</span><span class="amt mono" id="a2">0.000000</span><span class="st"><span class="pill" id="p2">READY</span></span></div>
-    <div class="prow o" id="r3"><span class="who">Contributor</span><span class="units mono">25,000 units</span><span class="amt mono" id="a3">0.000000</span><span class="st"><span class="pill" id="p3">READY</span></span></div>
+  <div id="contract5" class="o"><div><div class="logo-slot" data-size="70" style="width:70px;margin:0 auto 10px"></div><div class="t">Company contract</div><div class="s">ft_on_transfer</div></div></div>
+  <div class="chip bad" id="pBad">✕ wrong amount</div>
+  <div class="chip money" id="pGood">10,000 TESTUSD</div>
+  <div class="chip units" id="outUnits">+1,000,000 units</div>
+  <div class="chip money" id="outMoney">+10,000 TESTUSD</div>
+  <div class="card o" id="c5b" style="z-index:3;left:1290px;top:400px;width:470px;height:165px">
+    <div class="lbl">Investor holds</div><div class="big mono" id="invHolds" style="font-size:54px">0</div>
   </div>
-  <div id="failNote" class="o">✕ Attempt 1 failed: recipient not registered with the token. Funds return to escrow.</div>
-  <div id="total" class="o"><span>Total paid · <span style="color:var(--muted)">escrow left 0</span></span><span class="amt mono">10,000.000000 TESTUSD</span></div>
+  <div class="card o" id="c5c" style="z-index:3;left:1290px;top:595px;width:470px;height:165px">
+    <div class="lbl">DAO treasury</div><div class="big mono" id="treasury" style="font-size:54px">+0</div>
+  </div>
+  <div class="o" id="refund5" style="position:absolute;left:160px;top:790px;font-size:24px;color:var(--bad)">↩ Wrong amount or wrong payer: the token refunds it, nothing is issued</div>
+  <div class="o" id="settled5" style="position:absolute;left:800px;top:730px"><span class="badge ok">✓ Deal #0 settled in one receipt</span></div>
 </div>
 
-<!-- S6: roadmap 0 -> IPO -->
+<!-- S6 liquidity 30–36 -->
 <div class="scene" id="s6">
-  <div class="kicker">05 · The road</div>
-  <h2>From day zero <em class="gold">to IPO.</em></h2>
-  <div id="road">
-    <div id="roadTrack"></div><div id="roadFill"></div><div id="roadNext"></div>
-    <div class="bracket o" id="brLive"><span>LIVE ON TESTNET</span></div>
-    <div class="bracket o" id="brNext"><span>ROADMAP</span></div>
+  <div class="kicker">04 · Liquidity</div>
+  <h2>Early holders can sell. <em class="violet">Nothing moves without consent.</em></h2>
+  <div class="card o" id="c6a" style="left:160px;top:360px;width:960px;height:480px">
+    <div class="lbl">Secondary sale · deal #1</div>
+    <div style="font-size:30px;font-weight:700;margin-bottom:10px">Founder B → Angel · 100,000 units · 1,500 TESTUSD</div>
+    <div class="step6" id="l1"><span class="ck">✓</span>Board approves the sale <span class="right mono" style="color:var(--muted);font-size:21px">proposal #11</span></div>
+    <div class="step6" id="l2"><span class="ck">✓</span>Seller signs and locks the units</div>
+    <div class="step6" id="l3"><span class="ck">✓</span>Buyer pays 1,500 TESTUSD · units move</div>
+    <div class="step6" id="l4"><span class="ck">✓</span>Proceeds to the seller <span class="right"><span class="pill" id="p6">PENDING</span></span></div>
+  </div>
+  <div class="card o" id="c6b" style="left:1160px;top:360px;width:600px;height:480px">
+    <div class="lbl">Buyback · deal #2</div>
+    <div style="font-size:30px;font-weight:700;margin-bottom:10px">Contributor → Company · 5,000 units</div>
+    <div class="step6" id="b1"><span class="ck">✓</span>Contributor signs</div>
+    <div class="step6" id="b2"><span class="ck">✓</span>DAO pays 60 TESTUSD</div>
+    <div class="step6" id="b3"><span class="ck">✓</span>5,000 units retired</div>
+  </div>
+  <div class="o" id="held6" style="position:absolute;left:160px;top:868px;font-size:23px;color:var(--gold)">Seller not yet registered with the token: proceeds held, then retried and delivered, exactly once.</div>
+</div>
+
+<!-- S7 pay + exit 36–42 -->
+<div class="scene" id="s7">
+  <div class="kicker">05 · Pay holders &amp; exit</div>
+  <h2>Exit proceeds, <em class="gold">paid exactly once.</em></h2>
+  <div id="payTable">
+    <div class="prow o" id="r1"><span class="who">Investor</span><span class="note">1× preference first</span><span class="amt mono" id="a1">0.000000</span><span class="st"><span class="pill" id="p1">READY</span></span></div>
+    <div class="prow o" id="r2"><span class="who">Founder A</span><span class="note">3,600,000 units</span><span class="amt mono" id="a2">0.000000</span><span class="st"><span class="pill" id="p2">READY</span></span></div>
+    <div class="prow o" id="r3"><span class="who">Founder B</span><span class="note">2,420,000 units</span><span class="amt mono" id="a3">0.000000</span><span class="st"><span class="pill" id="p3">READY</span></span></div>
+    <div class="prow o" id="r4"><span class="who">Angel</span><span class="note">100,000 units</span><span class="amt mono" id="a4">0.000000</span><span class="st"><span class="pill" id="p4">READY</span></span></div>
+    <div class="prow o" id="r5"><span class="who">Contributor</span><span class="note">20,000 units</span><span class="amt mono" id="a5">0.000000</span><span class="st"><span class="pill" id="p5">READY</span></span></div>
+  </div>
+  <div id="total7" class="o"><span>Payout list · funded exactly by the DAO</span><span class="amt mono">2,000.000000 TESTUSD</span></div>
+  <div id="chips7" class="o"><span class="badge ok">✓ Exit waterfall → payout list, live</span><span class="badge muted">close_company · proven in Sandbox</span></div>
+</div>
+
+<!-- S8 ledger 42–48 -->
+<div class="scene" id="s8">
+  <div class="kicker">The ledger now</div>
+  <h2>One ledger, <em>always reconciled.</em></h2>
+  <div id="authorized">Authorized <b class="mono">12,000,000</b> units · 6 holders · revision 16</div>
+  <div id="capbar">
+    <div class="seg" id="segI" style="background:var(--a)"></div>
+    <div class="seg" id="segG" style="background:var(--b)"></div>
+    <div class="seg" id="segP" style="background:var(--pool)"></div>
+  </div>
+  <div class="legend o" id="lgI" style="left:160px"><span class="sw" style="background:var(--a)"></span><span class="name">Issued</span><div class="val mono" id="nI">0</div><div class="pct">held by 6 accounts</div></div>
+  <div class="legend o" id="lgG" style="left:570px"><span class="sw" style="background:var(--b)"></span><span class="name">Reserved for grants</span><div class="val mono" id="nG">0</div><div class="pct">vesting, unclaimed</div></div>
+  <div class="legend o" id="lgP" style="left:980px"><span class="sw" style="background:var(--pool)"></span><span class="name">Pool</span><div class="val mono" id="nP">0</div><div class="pct">for future grants</div></div>
+  <div class="legend o" id="lgU" style="left:1390px"><span class="sw" style="background:var(--panel2);border:1px solid var(--line)"></span><span class="name">Unallocated</span><div class="val mono" id="nU">12,000,000</div><div class="pct">free capacity</div></div>
+  <div id="invariant" class="mono o">issued + grants + pool ≤ authorized <span class="check">✓ enforced on every write</span></div>
+</div>
+
+<!-- S9 live browser 48–70 -->
+<div class="scene" id="s9">
+  <div class="kicker" style="top:118px">06 · It is live</div>
+  <div id="browser">
+    <div id="bbar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div id="url"><span class="lock">🔒</span><span id="urlText">captab.xyz</span><span class="caret" id="caret"></span></div>
+      <div id="liveTag"><i></i>LIVE · NEAR TESTNET · CAPTURED 2026-11-14</div>
+    </div>
+    <div id="vp">
+      <div class="pg" id="pg-landing"><img src="live/landing.png" alt=""></div>
+      <div class="pg" id="pg-overview"><img src="live/overview.png" alt=""></div>
+      <div class="pg" id="pg-deals"><img src="live/deals.png" alt=""></div>
+      <div class="pg" id="pg-distributions"><img src="live/distributions.png" alt=""></div>
+      <div class="pg" id="pg-approvals"><img src="live/approvals.png" alt=""></div>
+      <div id="ripple"></div>
+      <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.6 14.8 L11.6 21.4 L14.4 20.2 L11.4 13.7 L17.6 13.4 Z" fill="#fff" stroke="#0A0E13" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <div id="vpBadge" class="badge ok" style="font-size:26px;background:rgba(10,14,19,.92);border:1px solid rgba(94,230,168,.5)">✓ 17 of 17 proposals approved</div>
+    </div>
   </div>
 </div>
 
-<!-- S7: end -->
-<div class="scene" id="s7">
+<!-- S10 terminal 70–76 -->
+<div class="scene" id="s10">
+  <div class="kicker" style="top:118px">07 · Verify it yourself</div>
+  <div id="term">
+    <div id="tbar"><i style="background:#FF6B6B"></i><i style="background:#F5B54A"></i><i style="background:#5EE6A8"></i><span style="margin-left:14px">captab — zsh</span></div>
+    <div id="tbody"><div id="tlines"></div></div>
+  </div>
+</div>
+
+<!-- S11 road 76–80 -->
+<div class="scene" id="s11">
+  <div class="kicker">08 · The road</div>
+  <h2>Live today, <em>end to end.</em> <em class="gold">Next: tokens.</em></h2>
+  <div id="road"><div id="roadFill"></div><div id="brLive" class="o"><span>LIVE ON NEAR TESTNET</span></div></div>
+  <div id="next"><span class="lbl">NEXT</span>
+    <span class="nchip" id="n1">Restricted share tokens</span>
+    <span class="nchip" id="n2">One-click company factory</span>
+    <span class="nchip" id="n3">Confidential amounts</span>
+    <span id="goal"><span class="logo-slot" data-size="54"></span>IPO / unicorn</span>
+  </div>
+</div>
+
+<!-- S12 end 80–84 -->
+<div class="scene" id="s12">
   <div id="end">
-    <div id="logoEnd" class="logo-slot" data-size="190" data-anim="2"></div>
+    <div id="logoEnd" class="logo-slot" data-size="180"></div>
     <div id="endTitle" class="o">Captab</div>
-    <div id="endSub" class="o">From day zero <em>to unicorn.</em></div>
-    <div id="endEvidence" class="o"><b>28</b> Rust tests · <b>8</b> NEAR Sandbox tests · <b>18</b> browser tests · <b>live</b> testnet rehearsal</div>
-    <div id="endNote" class="o">TESTNET PROTOTYPE · FICTIONAL UNITS · NOT LEGAL EQUITY</div>
+    <div id="endSub" class="o">From day zero <em class="iri">to unicorn.</em></div>
+    <div id="endLinks" class="o mono">captab.xyz<span>·</span>github.com/mayohalo/captab</div>
+    <div id="endEvidence" class="o"><b>74</b> Rust tests · <b>9</b> NEAR Sandbox tests · <b>26</b> browser tests · <b>17</b> board votes re-verified live</div>
+    <div id="endNote" class="o">TESTNET PROTOTYPE · LEDGER UNITS, NOT LEGAL SHARES · FICTIONAL HOLDERS</div>
   </div>
 </div>
 
 <div id="cap"><div id="capText"></div></div>
 <div id="progress"></div>
 
+<script src="live/verify.js"></script>
 <script>
-const DURATION = 30;
+const DURATION = 84;
 const $ = (id) => document.getElementById(id);
 const clamp = (x) => Math.max(0, Math.min(1, x));
+const lerp = (a, b, p) => a + (b - a) * p;
 const outCubic = (x) => 1 - Math.pow(1 - x, 3);
 const outBack = (x) => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
 const inOut = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -297,24 +472,21 @@ const fmt = (n, d = 0) => n.toLocaleString("en-US", { minimumFractionDigits: d, 
 // ---------- logo: a unicorn horn built from cap-table bands ----------
 const HORN = (() => {
   const xl = (y) => 50 - 17 * (y - 6) / 88, xr = (y) => 50 + 17 * (y - 6) / 88;
-  const cuts = [[94, 94], [79, 69], [59, 49], [39, 29]]; // [left y, right y]; slanted = spiral
+  const cuts = [[94, 94], [79, 69], [59, 49], [39, 29]];
   const gap = 2.6, colors = ["#5EE6A8", "#7AA7FF", "#B79BFF", "#F5B54A"], bands = [];
   for (let i = 0; i < 4; i++) {
     const [l0, r0] = cuts[i];
     const pts = [[xl(l0), l0], [xr(r0), r0]];
     if (i < 3) { const [l1, r1] = cuts[i + 1]; pts.push([xr(r1 + gap), r1 + gap], [xl(l1 + gap), l1 + gap]); }
     else pts.push([50, 6]);
-    bands.push(`<polygon class="band" data-i="${i}" points="${pts.map(p => p.map(v => v.toFixed(2)).join(",")).join(" ")}" fill="${colors[i]}" stroke="${colors[i]}" stroke-width="1.2" stroke-linejoin="round"/>`);
+    bands.push(`<polygon class="band" points="${pts.map(p => p.map(v => v.toFixed(2)).join(",")).join(" ")}" fill="${colors[i]}" stroke="${colors[i]}" stroke-width="1.2" stroke-linejoin="round"/>`);
   }
   const star = (x, y, r) => `M${x},${y - r} Q${x},${y} ${x + r},${y} Q${x},${y} ${x},${y + r} Q${x},${y} ${x - r},${y} Q${x},${y} ${x},${y - r}Z`;
   return (size) => `<svg class="logo" width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <g transform="rotate(22 50 55)">${bands.join("")}</g>
-    <path class="spark" d="${star(85, 20, 10)}" fill="#FFE7A8"/>
-    <path class="spark2" d="${star(90, 38, 4.5)}" fill="#FFE7A8" opacity=".8"/>
-  </svg>`;
+    <path class="spark" d="${star(85, 20, 10)}" fill="#FFE7A8"/><path class="spark2" d="${star(90, 38, 4.5)}" fill="#FFE7A8" opacity=".8"/></svg>`;
 })();
 document.querySelectorAll(".logo-slot").forEach((el) => { el.innerHTML = HORN(Number(el.dataset.size)); });
-
 function animateLogo(host, t, a) {
   host.querySelectorAll(".band").forEach((b, i) => {
     const p = k(t, a + i * .16, .45, outBack);
@@ -322,57 +494,45 @@ function animateLogo(host, t, a) {
     b.style.transform = `translateY(${(1 - Math.min(p, 1)) * 18}px) scale(${Math.max(p, 0)})`;
     b.style.opacity = clamp(p * 1.5);
   });
-  const sp = k(t, a + .75, .5, outBack), sp2 = k(t, a + .9, .4, outBack);
-  [[".spark", sp], [".spark2", sp2]].forEach(([sel, p]) => {
+  [[".spark", k(t, a + .75, .5, outBack)], [".spark2", k(t, a + .9, .4, outBack)]].forEach(([sel, p]) => {
     const s = host.querySelector(sel);
     s.style.transformBox = "fill-box"; s.style.transformOrigin = "50% 50%";
     s.style.transform = `scale(${Math.max(p, 0)}) rotate(${(1 - clamp(p)) * -90 + Math.sin(t * 3) * 6}deg)`;
   });
 }
 
-// ---------- captions (also exported as SRT) ----------
+// ---------- timeline ----------
+const SCENES = [0, 6, 12, 18, 24, 30, 36, 42, 48, 70, 76, 80];
 const CAPTIONS = [
-  [0.4, 3.5, "Captab: your cap table, from day zero to unicorn."],
-  [4.0, 6.1, "Every issuance starts as a DAO proposal."],
-  [6.1, 8.2, "Two of three board members approve, then the contract verifies and executes."],
-  [8.6, 12.6, "One on-chain ledger tracks founders, the contributor pool and free capacity."],
-  [13.0, 15.3, "Contributor grants vest monthly after a 12-month cliff."],
-  [15.3, 17.8, "Claims are sponsored, so a contributor holding 0 NEAR can still claim."],
-  [18.2, 20.8, "Payouts come from a frozen snapshot the DAO approved and funded exactly."],
-  [20.8, 23.4, "A failed payment returns to escrow, and the retry pays exactly once."],
-  [23.8, 27.2, "Live today: founders, grants, payouts. Next: investor rounds and share tokens."],
-  [27.6, 29.8, "Captab. From day zero to unicorn, governed on NEAR."],
+  [0.4, 5.6, "Captab: your company's cap table on NEAR, from day zero to unicorn."],
+  [6.2, 11.6, "Cap tables live in spreadsheets, approvals arrive by email, and payouts are reconciled by hand."],
+  [12.2, 17.6, "The board is a 2-of-3 DAO. Every ownership change is a proposal it votes on."],
+  [18.2, 23.6, "Contributors sign their terms on-chain and claim vested units with zero NEAR."],
+  [24.2, 29.6, "An investor's payment issues their units in the same transaction, or it is refunded."],
+  [30.2, 35.6, "Early holders can sell, but nothing moves without the board and the holder's signature."],
+  [36.2, 41.6, "Exit proceeds follow the preference waterfall and pay each holder exactly once."],
+  [42.2, 47.6, "One ledger, always reconciled: supply never exceeds what is authorized."],
+  [48.4, 55.4, "And it is live. This is captab.xyz, read straight from NEAR testnet."],
+  [55.6, 61.6, "The live company: six holders, and every stage from founding to payouts done on-chain."],
+  [61.8, 69.6, "Every deal settled, every payout paid, all 17 board proposals approved."],
+  [70.2, 75.8, "Don't trust the video: one command re-checks all of it against the chain."],
+  [76.2, 79.8, "Live today, end to end. Next: restricted share tokens and one-click company deploys."],
+  [80.2, 83.8, "Captab. From day zero to unicorn, governed on NEAR."],
 ];
-
-// ---------- sound cues consumed by music.mjs ----------
-const SCENES = [0, 3.8, 8.4, 12.8, 18.0, 23.6, 27.4];
+const MUSIC = { drop: 12, hats: 18, claps: 24, lift: 36, breakStart: 46, breakEnd: 48, drumsEnd: 80 };
 const CUES = [
-  ["sparkle", 0.95], ["vote", 5.2], ["vote", 5.7], ["ok", 6.0], ["ok", 7.4],
-  ["cliff", 14.8], ["ok", 17.0], ["paid", 20.4], ["paid", 20.7], ["fail", 20.9],
-  ["paid", 22.4], ["ok", 22.7], ["node", 24.0], ["node", 24.4], ["node", 24.8], ["sparkle", 26.2], ["sparkle", 28.15],
-  ...SCENES.slice(1).map((s) => ["whoosh", s]),
+  ["sparkle", 0.95], ["fail", 9.4], ["ok", 9.8], ["sparkle", 10.2],
+  ["vote", 13.4], ["vote", 13.9], ["ok", 14.2], ["ok", 15.6],
+  ["cliff", 20.0], ["tick", 20.2], ["tick", 20.7], ["tick", 21.2], ["ok", 22.2], ["sparkle", 22.6],
+  ["bounce", 25.5], ["coin", 27.2], ["paid", 27.6], ["ok", 28.4],
+  ["tick", 30.7], ["tick", 31.1], ["tick", 31.5], ["fail", 31.9], ["paid", 33.0], ["tick", 33.5], ["coin", 33.9], ["ok", 34.3],
+  ["paid", 38.4], ["paid", 38.7], ["paid", 39.0], ["paid", 39.3], ["paid", 39.6], ["ok", 40.0],
+  ["sparkle", 51.4], ["ok", 57.4], ["sparkle", 59.7], ["click", 61.9], ["paid", 63.0], ["paid", 63.3], ["paid", 63.6],
+  ["click", 65.1], ["paid", 66.1], ["paid", 66.3], ["paid", 66.5], ["paid", 66.7], ["click", 67.6], ["ok", 69.0],
+  ...Array.from({ length: 18 }, (_, i) => ["key", 70.5 + i * .062]), ["ok", 74.9],
+  ...Array.from({ length: 7 }, (_, i) => ["node", 76.5 + i * .18]), ["sparkle", 78.6], ["sparkle", 80.85],
+  ...SCENES.slice(1).filter(s => s !== 48).map((s) => ["whoosh", s]),
 ];
-
-// ---------- roadmap nodes ----------
-const ROAD = [
-  ["1", "Founders", "governed issuance", "live"],
-  ["2", "Team", "grants & vesting", "live"],
-  ["3", "Payouts", "snapshot distributions", "live"],
-  ["4", "Investors", "rounds & issuance", "next"],
-  ["5", "Share tokens", "restricted NEP-141", "next"],
-  ["", "IPO / unicorn", "the destination", "goal"],
-];
-const nodeX = (i) => 60 + i * (1480 / 5);
-ROAD.forEach(([n, title, sub, kind], i) => {
-  const el = document.createElement("div");
-  el.className = "node o " + (kind === "goal" ? "next" : kind);
-  el.id = "node" + i;
-  el.style.left = nodeX(i) + "px";
-  el.innerHTML = `<div class="dot">${kind === "goal" ? HORN(84) : n}</div><div class="nl">${title}<span class="ns">${sub}</span></div>`;
-  $("road").appendChild(el);
-});
-$("brLive").style.left = (nodeX(0) - 70) + "px"; $("brLive").style.width = (nodeX(2) - nodeX(0) + 140) + "px";
-$("brNext").style.left = (nodeX(3) - 70) + "px"; $("brNext").style.width = (nodeX(5) - nodeX(3) + 140) + "px";
 
 // vesting ticks
 for (let m = 0; m <= 48; m++) {
@@ -382,7 +542,19 @@ for (let m = 0; m <= 48; m++) {
   if (m % 12 && m !== 0) d.style.opacity = .55;
   $("ticks").appendChild(d);
 }
+// road nodes
+const ROAD = [["Found", "charter, founders"], ["Hire", "grants, vesting"], ["Raise", "priced rounds"], ["Operate", "votes, export"],
+  ["Liquidity", "sales, buybacks"], ["Pay holders", "exact payouts"], ["Exit", "waterfall · close in Sandbox"]];
+const roadX = (i) => 80 + i * (1440 / 6);
+const toneOf = ["var(--a)", "var(--a)", "var(--b)", "var(--b)", "var(--pool)", "var(--gold)", "var(--gold)"];
+ROAD.forEach(([title, sub], i) => {
+  const el = document.createElement("div");
+  el.className = "node o"; el.id = "rn" + i; el.style.left = roadX(i) + "px";
+  el.innerHTML = `<div class="dot" style="border-color:${toneOf[i]};color:${toneOf[i]}">✓</div><div class="nl">${i + 1} · ${title}<span class="ns">${sub}</span></div>`;
+  $("road").appendChild(el);
+});
 
+// ---------- helpers ----------
 function show(el, t, a, d = .5, dy = 26) {
   const p = k(t, a, d);
   el.style.opacity = p;
@@ -395,9 +567,9 @@ function scene(el, t, a, b, last = false) {
   el.style.transform = `translateY(${(1 - i) * 30}px) scale(${1 - (1 - o) * .03})`;
 }
 function pill(el, state) {
-  const map = { ready: ["", "READY"], flight: ["flight", "IN FLIGHT"], paid: ["paid", "PAID ✓"], fail: ["fail", "FAILED"], retry: ["flight", "RETRY · #2"] };
-  el.className = "pill " + map[state][0];
-  el.textContent = map[state][1];
+  const map = { ready: ["", "READY"], pending: ["", "PENDING"], flight: ["flight", "IN FLIGHT"], paid: ["paid", "PAID ✓"], held: ["held", "HELD"],
+    retry: ["flight", "RETRY · #2"], delivered: ["paid", "DELIVERED ✓"] };
+  el.className = "pill " + map[state][0]; el.textContent = map[state][1];
 }
 function caption(t) {
   const c = CAPTIONS.find(([a, b]) => t >= a - .2 && t < b);
@@ -406,30 +578,170 @@ function caption(t) {
   const [a, b, text] = c;
   if (el.textContent !== text) el.textContent = text;
   const p = Math.min(k(t, a - .2, .25), 1 - k(t, b - .2, .2));
-  el.style.opacity = p;
-  el.style.transform = `translateY(${(1 - p) * 8}px)`;
+  el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 8}px)`;
+}
+// moving chip along a path with fade in/out
+function chip(el, t, a, d, [x0, y0], [x1, y1], fadeOut = null) {
+  const p = k(t, a, d, inOut);
+  const vis = t < a ? 0 : fadeOut ? 1 - k(t, fadeOut, .3) : 1;
+  el.style.opacity = vis * clamp((t - a) / .15);
+  el.style.left = lerp(x0, x1, p) + "px"; el.style.top = lerp(y0, y1, p) + "px";
 }
 
+// ---------- live browser (S9) ----------
+const VPW = 1400, VPH = 700, BASE = VPW / 1440;
+const PAGES = {
+  landing: { url: "captab.xyz", cam: [[48, 720, 360, 1], [50.0, 720, 360, 1], [51.2, 984, 733, 1.45], [52.6, 984, 733, 1.45], [53.8, 720, 1610, .98], [56, 720, 1610, .98]] },
+  overview: { url: "captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet", cam: [[55.6, 720, 360, 1], [56.4, 720, 360, 1], [57.2, 720, 368, 1.25], [58.5, 720, 368, 1.25], [59.4, 720, 940, 1.22], [60.6, 720, 940, 1.22], [61.1, 720, 360, 1], [62.3, 720, 360, 1]] },
+  deals: { url: "captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/deals", cam: [[62, 720, 360, 1], [62.3, 720, 360, 1], [62.9, 720, 880, 1.1], [64.3, 720, 880, 1.1], [64.8, 720, 360, 1], [65.4, 720, 360, 1]] },
+  distributions: { url: "captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/distributions", cam: [[65.2, 720, 360, 1], [65.5, 720, 360, 1], [65.95, 720, 640, 1.22], [66.9, 720, 640, 1.22], [67.35, 720, 360, 1], [67.8, 720, 360, 1]] },
+  approvals: { url: "captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/approvals", cam: [[67.7, 720, 360, 1], [68.0, 720, 360, 1], [68.5, 720, 1430, .92], [69.1, 720, 1430, .92], [69.7, 720, 1930, .92], [71, 720, 1930, .92]] },
+};
+// visible windows [fadeIn start, fadeOut start]
+const PAGE_WIN = { landing: [47.9, 55.6], overview: [55.6, 62.0], deals: [62.0, 65.2], distributions: [65.2, 67.7], approvals: [67.7, 99] };
+// highlights in page CSS px: [page, x, y, w, h, start, end, cls, label]
+const HL = [
+  ["landing", 704, 616, 560, 236, 51.3, 52.7, "mint", "Live cap table, read from chain"],
+  ["overview", 178, 302, 1084, 128, 57.3, 58.5, "mint", "Found → Pay holders done · Exit open"],
+  ["overview", 180, 1035, 1080, 50, 59.6, 60.7, "", "captab.testnet · claimed from Meteor Wallet"],
+  ["deals", 371, 664, 93, 36, 63.0, 64.4, "", ""], ["deals", 902, 664, 93, 36, 63.3, 64.4, "", ""], ["deals", 311, 942, 93, 36, 63.6, 64.4, "", "3 of 3 deals settled"],
+  ["distributions", 199, 477, 93, 36, 65.95, 67.0, "mint", ""],
+  ...[638, 688, 737, 787, 837].map((y, i) => ["distributions", 1089, y - 6, 74, 36, 66.1 + i * .2, 67.0, "mint", i === 4 ? "every holder paid" : ""]),
+];
+const APPROVED_ROWS = [1018, 1215, 1388, 1562, 1735, 1908, 2081, 2255, 2428];
+APPROVED_ROWS.forEach((y, r) => [238, 780].forEach((x, c) => {
+  const id = 16 - (r * 2 + c);
+  if (id >= 0) HL.push(["approvals", x - 6, y - 6, 107, 36, 68.4 + (16 - id) * .075, 99, "mint", ""]);
+}));
+const hlEls = HL.map(([pg, x, y, w, h, , , cls, label]) => {
+  const el = document.createElement("div");
+  el.className = "hl " + cls;
+  Object.assign(el.style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
+  $("pg-" + pg).appendChild(el);
+  let lab = null;
+  if (label) {
+    lab = document.createElement("div");
+    lab.className = "callout " + cls; lab.textContent = label;
+    Object.assign(lab.style, { left: x + "px", top: (y + h + 12) + "px" });
+    $("pg-" + pg).appendChild(lab);
+  }
+  return [el, lab];
+});
+function camAt(cam, t) {
+  if (t <= cam[0][0]) return cam[0].slice(1);
+  for (let i = 1; i < cam.length; i++) {
+    if (t <= cam[i][0]) {
+      const [t0, ...a] = cam[i - 1], [t1, ...b] = cam[i];
+      const p = inOut(clamp((t - t0) / (t1 - t0)));
+      return a.map((v, j) => lerp(v, b[j], p));
+    }
+  }
+  return cam[cam.length - 1].slice(1);
+}
+const CURSOR = [[60.9, 980, 560, 0], [61.0, 980, 560, 1], [61.8, 709, 242, 1], [62.5, 1010, 600, 1], [64.6, 1010, 600, 1], [65.0, 617, 242, 1],
+  [65.7, 1120, 610, 1], [67.1, 1120, 610, 1], [67.5, 508, 242, 1], [68.3, 1180, 640, 1], [69.4, 1180, 640, 0]];
+const CLICKS = [61.9, 65.1, 67.6];
+function renderBrowser(t) {
+  let activeUrl = PAGES.landing.url;
+  for (const [name, def] of Object.entries(PAGES)) {
+    const [a, b] = PAGE_WIN[name];
+    const vis = t < a ? 0 : t < b ? clamp((t - a) / .3) : 1 - clamp((t - b) / .3);
+    const el = $("pg-" + name);
+    el.style.opacity = vis;
+    if (vis > 0) {
+      const [cx, cy, z] = camAt(def.cam, t), S = BASE * z;
+      el.style.transform = `translate(${VPW / 2 - cx * S}px, ${VPH / 2 - cy * S}px) scale(${S})`;
+    }
+    if (t >= a) activeUrl = def.url;
+  }
+  // address bar: type the company URL between 55.0 and 55.6
+  const typing = clamp((t - 55.0) / .6);
+  let url = activeUrl;
+  if (t >= 55.0 && t < 55.6) url = PAGES.overview.url.slice(0, Math.max(10, Math.round(PAGES.overview.url.length * typing)));
+  $("urlText").textContent = url;
+  $("caret").style.opacity = t >= 54.8 && t < 55.8 && Math.floor(t * 4) % 2 === 0 ? 1 : 0;
+  HL.forEach(([, , , , , a, b], i) => {
+    const [el, lab] = hlEls[i];
+    const p = k(t, a, .3, outBack) * (1 - k(t, b, .25));
+    el.style.opacity = clamp(p); el.style.transform = `scale(${.9 + .1 * Math.min(p, 1.05)})`;
+    if (lab) { lab.style.opacity = clamp(k(t, a + .15, .3) * (1 - k(t, b, .25))); }
+  });
+  // cursor
+  let cx = CURSOR[0][1], cy = CURSOR[0][2], cv = 0;
+  for (let i = 1; i < CURSOR.length; i++) {
+    if (t <= CURSOR[i][0]) {
+      const [t0, x0, y0, v0] = CURSOR[i - 1], [t1, x1, y1, v1] = CURSOR[i], p = inOut(clamp((t - t0) / (t1 - t0)));
+      cx = lerp(x0, x1, p); cy = lerp(y0, y1, p); cv = lerp(v0, v1, p); break;
+    }
+    [, cx, cy, cv] = CURSOR[i];
+  }
+  if (t < CURSOR[0][0]) cv = 0;
+  const pressed = CLICKS.some(c => t >= c - .05 && t < c + .1);
+  $("cursor").style.opacity = cv;
+  $("cursor").style.transform = `translate(${cx - 6}px, ${cy - 3}px) scale(${pressed ? .85 : 1})`;
+  const lastClick = CLICKS.filter(c => t >= c).pop();
+  const rp = lastClick !== undefined ? clamp((t - lastClick) / .45) : 1;
+  const r = $("ripple");
+  r.style.opacity = rp < 1 ? (1 - rp) : 0;
+  r.style.left = cx + "px"; r.style.top = cy + "px"; r.style.transform = `scale(${.3 + rp * 1.2})`;
+  const vb = k(t, 69.0, .35, outBack);
+  $("vpBadge").style.opacity = clamp(vb); $("vpBadge").style.transform = `scale(${.8 + .2 * Math.min(vb, 1.05)})`;
+}
+
+// ---------- terminal (S10) ----------
+const TCOLS = 118;
+const verifyLines = (window.VERIFY || "verify output missing").trimEnd().split("\n");
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function termLine(s) {
+  const cut = s.length > TCOLS ? s.slice(0, TCOLS - 1) + "…" : s;
+  if (/^All checks passed/.test(s)) return `<span class="final">${esc(cut)}</span>`;
+  if (/^\s+PASS/.test(s)) return esc(cut).replace("PASS", '<span class="pass">PASS</span>');
+  if (/^[A-Z][A-Za-z -]+(\(|$)/.test(s) && !/^Captab/.test(s)) return `<span class="sec">${esc(cut)}</span>`;
+  return `<span class="dim">${esc(cut)}</span>`;
+}
+const CMD = "node apps/web/scripts/verify-evidence.mjs";
+function renderTerminal(t) {
+  const typed = Math.round(CMD.length * clamp((t - 70.5) / 1.1));
+  const shown = Math.floor(verifyLines.length * clamp((t - 71.9) / 2.9));
+  const cursorOn = Math.floor(t * 3) % 2 === 0;
+  let html = `<span class="prompt">~/captab $</span> ${esc(CMD.slice(0, typed))}${t < 71.8 && cursorOn ? "▌" : ""}\n`;
+  html += verifyLines.slice(0, shown).map(termLine).join("\n");
+  $("tlines").innerHTML = html;
+  const lineH = 28.5, visible = Math.floor((760 - 48 - 36) / lineH);
+  const total = 1 + shown, over = Math.max(0, total - visible);
+  $("tlines").style.transform = `translateY(${-over * lineH}px)`;
+}
+
+// ---------- render ----------
 function render(t) {
-  const [, S2, S3, S4, S5, S6, S7] = SCENES;
+  const S = SCENES;
   $("progress").style.width = (t / DURATION * 100) + "%";
-  $("chrome").style.opacity = k(t, S2, .45) * (1 - k(t, S7 - .4, .4));
+  $("chrome").style.opacity = k(t, S[1], .45) * (1 - k(t, S[11] - .4, .4));
   caption(t);
 
-  // S1
-  scene($("s1"), t, 0, S2);
+  // S1 title
+  scene($("s1"), t, 0, S[1]);
   animateLogo($("logoBig"), t, .1);
-  show($("title"), t, .55, .6, 40);
-  show($("tagline"), t, 1.0, .55);
-  show($("subtitle"), t, 1.4, .5);
-  show($("tag"), t, 1.8, .45);
+  show($("title"), t, .55, .6, 40); show($("tagline"), t, 1.0, .55); show($("subtitle"), t, 1.4, .5); show($("tag"), t, 1.8, .45);
 
-  // S2 govern
-  scene($("s2"), t, S2, S3);
-  show($("c2a"), t, S2 + .2);
-  $("ar2a").style.transform = `scaleX(${k(t, S2 + .7, .35)})`;
-  show($("c2b"), t, S2 + .8);
-  [[1, 5.2], [2, 5.7]].forEach(([n, at]) => {
+  // S2 problem
+  scene($("s2"), t, S[1], S[2]);
+  ["o1", "o2", "o3"].forEach((id, i) => {
+    const p = show($(id), t, 6.3 + i * .35, .5, 40);
+    const dimP = k(t, 9.3, .5);
+    $(id).style.opacity = p * (1 - .72 * dimP);
+    $(id).style.filter = `grayscale(${dimP}) blur(${dimP * 1.5}px)`;
+    $(id).style.transform += ` scale(${1 - .04 * dimP})`;
+  });
+  const sol = k(t, 9.6, .55, outBack);
+  $("solution").style.opacity = clamp(sol);
+  $("solution").style.transform = `translateY(${(1 - Math.min(sol, 1)) * 40}px) scale(${.92 + .08 * Math.min(sol, 1.03)})`;
+  animateLogo($("solution"), t, 9.7);
+
+  // S3 found
+  scene($("s3"), t, S[2], S[3]);
+  show($("c3a"), t, 12.2); $("ar3a").style.transform = `scaleX(${k(t, 12.7, .35)})`; show($("c3b"), t, 12.8);
+  [[1, 13.4], [2, 13.9]].forEach(([n, at]) => {
     const on = t >= at;
     $("v" + n).textContent = on ? "✓ approve" : "pending";
     $("v" + n).style.color = on ? "var(--a)" : "var(--dim)";
@@ -437,88 +749,95 @@ function render(t) {
     $("av" + n).style.color = on ? "var(--a)" : "var(--dim)";
     $("av" + n).style.transform = `scale(${1 + .12 * Math.sin(Math.PI * clamp((t - at) / .3))})`;
   });
-  show($("approved"), t, 6.0, .35, 12);
-  $("ar2b").style.transform = `scaleX(${k(t, 6.3, .35)})`;
-  show($("c2c"), t, 6.4);
-  show($("k1"), t, 6.7, .3, 10); show($("k2"), t, 6.9, .3, 10); show($("k3"), t, 7.1, .3, 10);
-  show($("executed"), t, 7.4, .35, 12);
+  show($("approved3"), t, 14.2, .35, 12); $("ar3b").style.transform = `scaleX(${k(t, 14.5, .35)})`; show($("c3c"), t, 14.6);
+  show($("k1"), t, 14.9, .3, 10); show($("k2"), t, 15.1, .3, 10); show($("k3"), t, 15.3, .3, 10); show($("executed3"), t, 15.6, .35, 12);
 
-  // S3 ledger
-  scene($("s3"), t, S3, S4);
-  const pA = k(t, S3 + .4, .8, inOut), pB = k(t, S3 + 1.1, .7, inOut), pP = k(t, S3 + 1.7, .7, inOut);
-  $("segA").style.width = (36 * pA) + "%";
-  $("segB").style.width = (24 * pB) + "%";
-  $("segP").style.width = (20 * pP) + "%";
-  show($("lgU"), t, S3 + .2); show($("lgA"), t, S3 + .4); show($("lgB"), t, S3 + 1.1); show($("lgP"), t, S3 + 1.7);
-  $("nA").textContent = fmt(Math.round(3600000 * pA));
-  $("nB").textContent = fmt(Math.round(2400000 * pB));
-  $("nP").textContent = fmt(Math.round(2000000 * pP));
-  $("nU").textContent = fmt(10000000 - Math.round(3600000 * pA) - Math.round(2400000 * pB) - Math.round(2000000 * pP));
-  show($("invariant"), t, S3 + 2.6, .5, 14);
-
-  // S4 vest + sponsored claim
-  scene($("s4"), t, S4, S5);
-  const month = 12 * k(t, S4 + .5, 1.5, inOut);
+  // S4 hire
+  scene($("s4"), t, S[3], S[4]);
+  const month = 12 * k(t, 18.5, 1.5, inOut);
   $("tlFill").style.width = (month / 48 * 1600) + "px";
   $("monthNow").style.left = (month / 48 * 1600) + "px";
   $("monthNow").textContent = "month " + Math.floor(month + 1e-6);
   $("monthNow").style.color = month >= 12 ? "var(--warn)" : "var(--a)";
-  show($("c4a"), t, S4 + .3);
-  show($("c4b"), t, S4 + .6);
-  const vested = month >= 12 ? 25000 : 0;
-  const claimP = k(t, 16.5, .6);
+  show($("c4a"), t, 18.3); show($("c4b"), t, 18.6);
+  const vested = month >= 12 ? 25000 : 0, claimP = k(t, 21.7, .6);
   $("claimable").textContent = fmt(Math.round(vested * (1 - claimP)));
   $("claimable").style.color = vested && claimP < 1 ? "var(--a)" : "var(--text)";
-  $("issued").textContent = fmt(6000000 + Math.round(25000 * claimP));
-  ["f1", "f2", "f3"].forEach((id, i) => {
-    const on = t >= 15.0 + i * .5;
-    $(id).classList.toggle("on", on);
-    $(id).style.opacity = on ? 1 : .35;
-  });
-  show($("claimed"), t, 17.0, .4, 12);
+  $("holds").textContent = fmt(Math.round(25000 * claimP));
+  ["f1", "f2", "f3"].forEach((id, i) => { const on = t >= 20.2 + i * .5; $(id).classList.toggle("on", on); $(id).style.opacity = on ? 1 : .35; });
+  show($("claimed4"), t, 22.2, .4, 12); show($("meteor"), t, 22.6, .45, 14);
 
-  // S5 distribution
-  scene($("s5"), t, S5, S6);
-  ["st1", "st2", "st3", "st4"].forEach((id, i) => $(id).classList.toggle("on", t >= S5 + .3 + i * .45));
-  show($("r1"), t, S5 + .4, .4, 16); show($("r2"), t, S5 + .5, .4, 16); show($("r3"), t, S5 + .6, .4, 16);
-  [5975.103734, 3983.402490, 41.493776].forEach((amt, i) => {
-    $("a" + (i + 1)).textContent = fmt(amt * k(t, 19.6 + i * .1, .6), 6);
-  });
-  pill($("p1"), t >= 20.4 ? "paid" : t >= 20.0 ? "flight" : "ready");
-  pill($("p2"), t >= 20.7 ? "paid" : t >= 20.2 ? "flight" : "ready");
-  pill($("p3"), t >= 22.4 ? "paid" : t >= 21.9 ? "retry" : t >= 20.9 ? "fail" : t >= 20.5 ? "flight" : "ready");
-  const shake = t >= 20.9 && t < 21.3 ? Math.sin((t - 20.9) * 60) * 6 * (1 - (t - 20.9) / .4) : 0;
-  $("p3").style.transform = `translateX(${shake}px)`;
-  $("failNote").style.opacity = k(t, 21.0, .3) * (1 - k(t, 22.4, .3));
-  show($("total"), t, 22.7, .4, 12);
+  // S5 raise
+  scene($("s5"), t, S[4], S[5]);
+  show($("c5a"), t, 24.2); show($("contract5"), t, 24.5); show($("c5b"), t, 24.7); show($("c5c"), t, 24.8);
+  // wrong payment: goes in, bounces back
+  if (t < 25.5) chip($("pBad"), t, 24.9, .6, [640, 560], [790, 560]);
+  else chip($("pBad"), t, 25.5, .6, [790, 560], [600, 640], 26.3);
+  show($("refund5"), t, 25.6, .4, 10);
+  chip($("pGood"), t, 26.6, .6, [630, 560], [820, 560], 27.25);
+  const flash = Math.sin(Math.PI * clamp((t - 27.2) / .4));
+  $("contract5").style.borderColor = flash > 0 ? `rgba(94,230,168,${.4 + .6 * flash})` : "var(--line)";
+  $("contract5").style.boxShadow = flash > 0 ? `0 0 ${60 * flash}px rgba(94,230,168,.35)` : "none";
+  chip($("outUnits"), t, 27.3, .6, [1000, 520], [1300, 480], 28.0);
+  chip($("outMoney"), t, 27.4, .6, [1000, 600], [1300, 680], 28.1);
+  const raiseP = k(t, 27.8, .5);
+  $("invHolds").textContent = fmt(Math.round(1000000 * raiseP));
+  $("treasury").innerHTML = "+" + fmt(Math.round(10000 * raiseP)) + ' <span style="font-size:26px;color:var(--muted)">TESTUSD</span>';
+  show($("settled5"), t, 28.4, .4, 12);
 
-  // S6 roadmap
-  scene($("s6"), t, S6, S7);
+  // S6 liquidity
+  scene($("s6"), t, S[5], S[6]);
+  show($("c6a"), t, 30.2); show($("c6b"), t, 30.4);
+  [["l1", 30.7], ["l2", 31.1], ["l3", 31.5], ["l4", 31.9], ["b1", 33.5], ["b2", 33.9], ["b3", 34.3]].forEach(([id, at]) => $(id).classList.toggle("on", t >= at));
+  pill($("p6"), t >= 33.0 ? "delivered" : t >= 32.5 ? "retry" : t >= 31.9 ? "held" : "pending");
+  show($("held6"), t, 32.0, .4, 10);
+
+  // S7 pay holders + exit
+  scene($("s7"), t, S[6], S[7]);
+  const PAY = [1000, 500, 350, 100, 50];
+  PAY.forEach((amt, i) => {
+    show($("r" + (i + 1)), t, 36.3 + i * .1, .4, 16);
+    $("a" + (i + 1)).textContent = fmt(amt * k(t, 37.3 + i * .08, .6), 6);
+    pill($("p" + (i + 1)), t >= 38.4 + i * .3 ? "paid" : t >= 38.0 ? "flight" : "ready");
+  });
+  show($("total7"), t, 40.0, .4, 12); show($("chips7"), t, 40.5, .4, 12);
+
+  // S8 ledger
+  scene($("s8"), t, S[7], S[8]);
+  const AUTH = 12000000, VALS = [7145000, 440000, 1790000];
+  const ps = [k(t, 42.4, .9, inOut), k(t, 43.1, .6, inOut), k(t, 43.6, .7, inOut)];
+  ["segI", "segG", "segP"].forEach((id, i) => { $(id).style.width = (VALS[i] / AUTH * 100 * ps[i]) + "%"; });
+  ["nI", "nG", "nP"].forEach((id, i) => { $(id).textContent = fmt(Math.round(VALS[i] * ps[i])); });
+  $("nU").textContent = fmt(AUTH - VALS.reduce((s, v, i) => s + Math.round(v * ps[i]), 0));
+  show($("lgU"), t, 42.2); show($("lgI"), t, 42.4); show($("lgG"), t, 43.1); show($("lgP"), t, 43.6);
+  show($("invariant"), t, 44.6, .5, 14);
+
+  // S9 browser
+  scene($("s9"), t, S[8], S[9]);
+  if (t > 47.5 && t < 70.5) renderBrowser(t);
+
+  // S10 terminal
+  scene($("s10"), t, S[9], S[10]);
+  if (t > 69.5 && t < 76.5) renderTerminal(t);
+
+  // S11 road
+  scene($("s11"), t, S[10], S[11]);
+  $("roadFill").style.width = (1440 * k(t, 76.4, 1.3, inOut)) + "px";
   ROAD.forEach((_, i) => {
-    const p = k(t, S6 + .3 + i * .2, .45, outBack);
-    const el = $("node" + i);
-    el.style.opacity = clamp(p);
-    el.style.transform = `translateY(${(1 - Math.min(p, 1)) * 24}px)`;
+    const p = k(t, 76.5 + i * .18, .4, outBack), el = $("rn" + i);
+    el.style.opacity = clamp(p); el.style.transform = `translateY(${(1 - Math.min(p, 1)) * 20}px)`;
   });
-  const span = nodeX(5) - nodeX(0), liveEnd = nodeX(2) - nodeX(0);
-  $("roadFill").style.width = (liveEnd * k(t, S6 + .4, .9, inOut)) + "px";
-  $("roadNext").style.left = nodeX(2) + "px";
-  $("roadNext").style.width = ((span - liveEnd) * k(t, S6 + 1.3, .9, inOut)) + "px";
-  show($("brLive"), t, S6 + 1.2, .4, 10); show($("brNext"), t, S6 + 1.9, .4, 10);
-  const goal = $("node5").querySelector(".dot");
-  const glow = k(t, 26.1, .5);
-  goal.style.boxShadow = `0 0 ${60 * glow}px rgba(245,181,74,${.45 * glow})`;
-  goal.style.borderStyle = glow > .5 ? "solid" : "dashed";
+  show($("brLive"), t, 77.6, .4, 8);
+  ["n1", "n2", "n3"].forEach((id, i) => show($(id), t, 77.9 + i * .2, .4, 14));
+  show($("goal"), t, 78.6, .45, 14); animateLogo($("goal"), t, 78.5);
 
-  // S7 end
-  scene($("s7"), t, S7, DURATION, true);
-  animateLogo($("logoEnd"), t, S7 + .1);
-  show($("endTitle"), t, S7 + .35, .5, 30);
-  show($("endSub"), t, S7 + .6, .5);
-  show($("endEvidence"), t, S7 + .9, .45);
-  show($("endNote"), t, S7 + 1.1, .45);
+  // S12 end
+  scene($("s12"), t, S[11], DURATION, true);
+  animateLogo($("logoEnd"), t, 80.1);
+  show($("endTitle"), t, 80.35, .5, 30); show($("endSub"), t, 80.6, .5); show($("endLinks"), t, 80.9, .45);
+  show($("endEvidence"), t, 81.15, .45); show($("endNote"), t, 81.4, .45);
 }
-Object.assign(window, { render, DURATION, CAPTIONS, CUES, SCENES });
+Object.assign(window, { render, DURATION, CAPTIONS, CUES, SCENES, MUSIC });
 render(Number(new URLSearchParams(location.search).get("t") ?? 0));
 </script>
 </body>

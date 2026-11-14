@@ -4,7 +4,13 @@
 
 [captab.xyz](https://captab.xyz) serves the schema v2 company read live from NEAR testnet. Screenshots taken from the live site on 2026-11-14: [landing page](live-hero.png), [company overview with the stage tracker](live-overview.png), [rounds and deals](live-deals.png).
 
-The [30-second motion overview](captab-motion-30s.mp4) (with [captions](captab-motion-30s.srt)) explains the product; its source is in [`motion/`](motion/) and re-renders with `node docs/demo/motion/render.mjs`.
+## Demo video
+
+The [84-second demo](captab-demo-84s.mp4) (with [captions](captab-demo-84s.srt)) walks through the seven stages using the live company's figures. It then shows real captab.xyz pages captured on 2026-11-14 and a real run of `node apps/web/scripts/verify-evidence.mjs`, which ends with `All checks passed: 17 DAO proposals, 3 deals, 6 holders.` The journey scenes are motion graphics. In the live section, the cursor, zooms, and highlights are animated over unedited page captures; no wallet prompt is shown.
+
+The source is in [`motion/`](motion/). From the repository root, `node docs/demo/motion/capture-live.mjs` refreshes the page captures and verifier output; it refuses to capture unless every check passes. Then `node docs/demo/motion/render.mjs` renders the video, captions, and the original synthesized music. The live figures in the journey scenes and captions are written into `motion/index.html`, so update them if the live company changes.
+
+The earlier [30-second cut](captab-motion-30s.mp4) predates contract schema v2 and still shows investor rounds as roadmap. It is kept for reference only; render it with `--page index-30s.html`.
 
 ## Fixture walkthrough
 

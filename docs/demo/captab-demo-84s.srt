@@ -1,0 +1,55 @@
+1
+00:00:00,400 --> 00:00:05,600
+Captab: your company's cap table on NEAR, from day zero to unicorn.
+
+2
+00:00:06,200 --> 00:00:11,600
+Cap tables live in spreadsheets, approvals arrive by email, and payouts are reconciled by hand.
+
+3
+00:00:12,200 --> 00:00:17,600
+The board is a 2-of-3 DAO. Every ownership change is a proposal it votes on.
+
+4
+00:00:18,200 --> 00:00:23,600
+Contributors sign their terms on-chain and claim vested units with zero NEAR.
+
+5
+00:00:24,200 --> 00:00:29,600
+An investor's payment issues their units in the same transaction, or it is refunded.
+
+6
+00:00:30,200 --> 00:00:35,600
+Early holders can sell, but nothing moves without the board and the holder's signature.
+
+7
+00:00:36,200 --> 00:00:41,600
+Exit proceeds follow the preference waterfall and pay each holder exactly once.
+
+8
+00:00:42,200 --> 00:00:47,600
+One ledger, always reconciled: supply never exceeds what is authorized.
+
+9
+00:00:48,400 --> 00:00:55,400
+And it is live. This is captab.xyz, read straight from NEAR testnet.
+
+10
+00:00:55,600 --> 00:01:01,600
+The live company: six holders, and every stage from founding to payouts done on-chain.
+
+11
+00:01:01,800 --> 00:01:09,600
+Every deal settled, every payout paid, all 17 board proposals approved.
+
+12
+00:01:10,200 --> 00:01:15,800
+Don't trust the video: one command re-checks all of it against the chain.
+
+13
+00:01:16,200 --> 00:01:19,800
+Live today, end to end. Next: restricted share tokens and one-click company deploys.
+
+14
+00:01:20,200 --> 00:01:23,800
+Captab. From day zero to unicorn, governed on NEAR.

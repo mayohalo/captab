@@ -1,6 +1,6 @@
 # Captab: your company's cap table on NEAR, from day zero to unicorn
 
-**Live app:** [captab.xyz](https://captab.xyz) · **Source:** [github.com/mayohalo/captab](https://github.com/mayohalo/captab) · **For agents:** [captab.xyz/llms.txt](https://captab.xyz/llms.txt) · **Video:** [30 seconds](demo/captab-motion-30s.mp4)
+**Live app:** [captab.xyz](https://captab.xyz) · **Source:** [github.com/mayohalo/captab](https://github.com/mayohalo/captab) · **For agents:** [captab.xyz/llms.txt](https://captab.xyz/llms.txt) · **Video:** [84-second demo](demo/captab-demo-84s.mp4)
 
 ## One line
 

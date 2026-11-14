@@ -1,0 +1,69 @@
+Captab evidence check against live NEAR testnet (https://rpc.testnet.fastnear.com)
+company captab-company-0d07df99e1bb0e44.testnet
+dao     captab-dao-0d07df99e1bb0e44.testnet
+token   captab-token-0d07df99e1bb0e44.testnet
+
+  PASS  RPC is NEAR testnet  testnet
+
+Deployed code and board (docs/deployment-manifest.v2.testnet.json)
+  PASS  company contract code hash Dhq9ZUxtKVibFyA4CwcmoZVdT5xxVSWfvRAVgdRTWwEd  sha256 bcc1ea8771f8e685…
+  PASS  Sputnik DAO code hash CB5QxzaBMy3kArDdQJPX3sEsXSeNdfLW4vx9qMn6uCgq  sha256 a6055ab340bb5b99…, source commit 5434a59
+  PASS  TESTUSD token code hash CCVuZGpR6jBEP6aYdd3TVkysiVPePhErcHnXfnomE53L  sha256 a662a11e8c24510c…
+  PASS  board council is 3 accounts  council2.captab-0d07df99e1bb0e44.testnet, council1.captab-0d07df99e1bb0e44.testnet, council3.captab-0d07df99e1bb0e44.testnet
+  PASS  full DAO policy unchanged since deployment  a proposal passes with more than 1/2 of the council (2 of 3)
+  PASS  company trusts only this DAO and settles in this token
+
+Board actions (Sputnik DAO proposals)
+  PASS  # 0 token-setup/funding: Fund the v2 rehearsal investor and angel with TESTUSD  Approved  https://testnet.nearblocks.io/txns/H1F3HepF72GVgcfgyQyjpALxb2a7h4dW2RM4DniqYjQ8
+  PASS  # 1 charter-and-founders/amend: Raise authorized units to 12,000,000  Approved  https://testnet.nearblocks.io/txns/JBCCbvP4YtmZFAmhcAxHaiPXC5Jy3W2iP9oW9pxzdVSn
+  PASS  # 2 charter-and-founders/founderA: Issue 3,600,000 units to founder A  Approved  https://testnet.nearblocks.io/txns/8fza2P5zsvk4CU827rovZe5eJsGiyf8mDX7ic64sM2PS
+  PASS  # 3 charter-and-founders/founderB: Issue 2,400,000 units to founder B  Approved  https://testnet.nearblocks.io/txns/EETiF9XHZ1H85AM2VX7xMox2poxavrzzTzvMFbwWWvL8
+  PASS  # 4 charter-and-founders/pool: Reserve a 2,000,000-unit contributor pool  Approved  https://testnet.nearblocks.io/txns/7m5r6D7d7DBSFWDBPsNid6YfYWVHPqUTTmgg8rNe1iFy
+  PASS  # 5 contributor-grant/grant: Grant 100,000 units to the contributor (48 months, 12-month cliff)  Approved  https://testnet.nearblocks.io/txns/ET8YUY2RNYSCmio1HvAEyDdxX3wfxZACm1dxMVo8EqmX
+  PASS  # 6 founder-vesting/grant: Founder B vesting grant: 480,000 units from unallocated capacity  Approved
+  PASS  # 7 founder-vesting/accelerate: Accelerate founder B's grant by 12 months  Approved
+  PASS  # 8 founder-vesting/shrink: Return 100,000 pool units to unallocated capacity  Approved
+  PASS  # 9 seed-round/round: Open the seed round at 0.01 TESTUSD per unit  Approved  https://testnet.nearblocks.io/txns/Rzc734Ld6JY7FFSv8E7qgDdFCcYkPL6BoVfhhhUEuy5
+  PASS  #10 seed-round/allocation: Approve the investor's 1,000,000-unit seed allocation  Approved  https://testnet.nearblocks.io/txns/3ngmLFq8jCtQDsfnHyvujUEszLCdpRocQxhc4va7dNhb
+  PASS  #11 secondary-sale/approval: Approve founder B's sale of 100,000 units to the angel  Approved  https://testnet.nearblocks.io/txns/HVpqrH9vm86mMUJ4moQxGPfKFNP7HUxRsY83dJdERCdP
+  PASS  #12 buyback/approval: Approve buying back 5,000 units from the contributor  Approved  https://testnet.nearblocks.io/txns/Ef7DVKvBwtWzvfziKAsTPdoePr1VJ8ZzSWHtNsJHmumW
+  PASS  #13 buyback/payment: Pay 60 TESTUSD for the contributor buyback  Approved  https://testnet.nearblocks.io/txns/ARU7FzfZyZ4NMHiEVGkMWoakdhpgb3npUwLrFCP84Jbe
+  PASS  #14 explicit-payout/prepared: Board-set payout list (preference demo)  Approved  https://testnet.nearblocks.io/txns/3egmxZBC65bvTi8JbEvnV4m7JgQb49WgPm3kbQA8t58K
+  PASS  #15 explicit-payout/funding: Fund the payout list exactly  Approved  https://testnet.nearblocks.io/txns/GNfCbMhefQnrptac19eXy5bT5v5hRcmKzdJjCbLMTT2S
+  PASS  #16 wallet-extension-grant/grant: Grant 10,000 units to captab.testnet for the third-party wallet test (  Approved  https://testnet.nearblocks.io/txns/5W4rLwWWMEbSmNMJtaCasVUiozthaV235emLh6i1oxJW
+
+Ownership ledger
+  PASS  authorized_units = 12000000  live 12000000
+  PASS  issued_total = 7145000  live 7145000
+  PASS  pool_available = 1790000  live 1790000
+  PASS  grant_reserved = 440000  live 440000
+  PASS  deal_reserved = 0  live 0
+  PASS  fully_diluted_total = 9375000  live 9375000
+  PASS  unallocated_units = 2625000  live 2625000
+  PASS  ledger_revision = 16  live 16
+  PASS  holder_count = 6  live 6
+  PASS  contract schema v2  live v2
+  PASS  holdings sum to issued units  7145000
+  PASS  foundera.captab-0d07df99e1bb0e44.testnet holds 3600000  live 3600000
+  PASS  founderb.captab-0d07df99e1bb0e44.testnet holds 2420000  live 2420000
+  PASS  contributor.captab-0d07df99e1bb0e44.testnet holds 20000  live 20000
+  PASS  investor.captab-0d07df99e1bb0e44.testnet holds 1000000  live 1000000
+  PASS  angel.captab-0d07df99e1bb0e44.testnet holds 100000  live 100000
+  PASS  captab.testnet holds 5000  live 5000
+
+Rounds and deals
+  PASS  deal #0 Issue: 1000000 units for 10000000000 base units  Settled, pending 0
+  PASS  deal #1 Secondary: 100000 units for 1500000000 base units  Settled, pending 0
+  PASS  deal #2 Buyback: 5000 units for 60000000 base units  Settled, pending 0
+  PASS  seed round recorded with units issued and amount raised  1000000 units, 10000000000 base units
+
+Third-party wallet
+  PASS  captab.testnet accepted grant #2's terms from its own wallet  https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj
+  PASS  captab.testnet claimed 5000 vested units  https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md
+
+Payouts
+  PASS  distribution #0 is an explicit list of 2000000000 base units  Explicit
+  PASS  every recipient paid exactly once; paid total equals the budget  2000000000/2000000000
+  PASS  DAO treasury holds 72940000000 TESTUSD base units  live 72940000000
+
+All checks passed: 17 DAO proposals, 3 deals, 6 holders.

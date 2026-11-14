@@ -6,7 +6,7 @@ Captab keeps a company's cap table, the record of who owns what, in a NEAR smart
 
 [![CI](https://github.com/mayohalo/captab/actions/workflows/ci.yml/badge.svg)](https://github.com/mayohalo/captab/actions/workflows/ci.yml)
 
-**[Live app: captab.xyz](https://captab.xyz)** · [Live company](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet) · [30-second video](docs/demo/captab-motion-30s.mp4) · [Evidence](docs/EVIDENCE.md) · [Summary for agents](https://captab.xyz/llms.txt)
+**[Live app: captab.xyz](https://captab.xyz)** · [Live company](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet) · [84-second demo video](docs/demo/captab-demo-84s.mp4) · [Evidence](docs/EVIDENCE.md) · [Summary for agents](https://captab.xyz/llms.txt)
 
 [![Captab landing page](docs/demo/live-hero.png)](https://captab.xyz)
 

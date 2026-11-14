@@ -1,5 +1,6 @@
 // Renders index.html frame by frame, synthesizes the music bed, and muxes an H.264/AAC MP4 + SRT.
-// Usage: node docs/demo/motion/render.mjs [--stills 2,6.5,12 [--stills-dir dir]] [--out path.mp4] [--fps 30]
+// Usage: node docs/demo/motion/render.mjs [--page index.html|index-30s.html] [--stills 2,6.5,12 [--stills-dir dir]] [--out path.mp4] [--fps 30]
+// The default page is the 84-second demo; refresh its live captures first with capture-live.mjs.
 import { createRequire } from "node:module";
 import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -15,15 +16,17 @@ const { chromium } = require("@playwright/test");
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : fallback; };
 const fps = Number(opt("--fps", 30));
-const out = path.resolve(opt("--out", path.join(here, "../captab-motion-30s.mp4")));
+const pageFile = opt("--page", "index.html");
+const out = path.resolve(opt("--out", path.join(here, pageFile === "index-30s.html" ? "../captab-motion-30s.mp4" : "../captab-demo-84s.mp4")));
 const stills = opt("--stills");
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
-await page.goto(pathToFileURL(path.join(here, "index.html")).href);
+await page.goto(pathToFileURL(path.join(here, pageFile)).href);
 await page.evaluate(() => document.fonts.ready);
-const { duration, captions, cues, scenes } = await page.evaluate(() =>
-  ({ duration: window.DURATION, captions: window.CAPTIONS, cues: window.CUES, scenes: window.SCENES }));
+await page.waitForFunction(() => [...document.images].every((img) => img.complete && img.naturalWidth > 0));
+const { duration, captions, cues, scenes, music } = await page.evaluate(() =>
+  ({ duration: window.DURATION, captions: window.CAPTIONS, cues: window.CUES, scenes: window.SCENES, music: window.MUSIC ?? null }));
 
 if (stills) {
   const dir = opt("--stills-dir", path.join(here, "stills"));
@@ -52,7 +55,7 @@ ff.stdin.end();
 await new Promise((r, j) => ff.on("close", (c) => (c === 0 ? r() : j(new Error(`ffmpeg exited ${c}`)))));
 await browser.close();
 
-writeWav(audio, synthesize({ duration, scenes, cues }));
+writeWav(audio, synthesize({ duration, scenes, cues, music }));
 const mux = spawnSync("ffmpeg", ["-y", "-loglevel", "error", "-i", video, "-i", audio, "-map", "0:v", "-map", "1:a",
   "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
   "-shortest", "-movflags", "+faststart", out], { stdio: "inherit" });
