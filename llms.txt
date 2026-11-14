@@ -14,7 +14,7 @@ A cap table decides who gets paid at an exit, how much each investor dilutes eve
 ## Lifecycle, all live on NEAR testnet
 
 1. Found: charter amendment (increase_authorized), founder units with the agreement's SHA-256 (issue_founder_units), founder vesting (create_grant from unallocated units).
-2. Hire: pool and grants with any cliff and 1-120 monthly steps (create_grant); the recipient signs the terms (accept_grant) and claims with zero NEAR via an NEP-366 sponsored relayer (claim_vested).
+2. Hire: pool and grants with any cliff and 1-120 monthly steps (create_grant); the recipient signs the terms (accept_grant) and claims (claim_vested), including with zero NEAR via an NEP-366 sponsored relayer. Verified from a real Meteor Wallet on captab.xyz: accept https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj, claim https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md.
 3. Raise: rounds (create_round) and issuance deals (approve_deal); the investor pays with NEP-141 ft_transfer_call and the units are issued in the same receipt, or the payment is refunded; proceeds go to the DAO treasury.
 4. Operate: replay-safe board actions, corrections (retire_units), lost-wallet recovery (reassign_holding), CSV/JSON cap table export with ledger revision and SHA-256.
 5. Liquidity: secondary sales (board approves, seller locks units with accept_deal, buyer pays) and buybacks (DAO pays, units retired); held proceeds retryable by anyone (forward_proceeds).
@@ -23,7 +23,7 @@ A cap table decides who gets paid at an exit, how much each investor dilutes eve
 
 ## Try it: do X, see Y
 
-- Open https://captab.xyz: see the live cap table and figures (7,140,000 units issued, 5 holders, 3 deals settled, contract and DAO Verified).
+- Open https://captab.xyz: see the live cap table and figures (7,145,000 units issued, 6 holders, 3 deals settled, contract and DAO Verified).
 - Open https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet: see the stage tracker with Found, Hire, Raise, Liquidity, and Pay holders checked.
 - Open https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/deals: see the seed round and deals #0 (issuance), #1 (secondary sale), #2 (buyback), each Settled with payment delivered.
 - Open https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/distributions: see distribution #0, an explicit payout list of 2,000 TESTUSD, Funded, every recipient Paid.
@@ -31,7 +31,7 @@ A cap table decides who gets paid at an exit, how much each investor dilutes eve
 
 ## Verify it yourself
 
-- `git clone https://github.com/mayohalo/captab && cd captab && node apps/web/scripts/verify-evidence.mjs` (Node 18+, no install, no keys, under a minute): checks the deployed company, DAO, and token code hashes and the 2-of-3 DAO policy against docs/deployment-manifest.v2.testnet.json, that all 16 recorded DAO proposals executed, that 3 deals settled with proceeds delivered, that the payout list was fully paid, and that totals, holdings, and treasury match docs/testnet-v2-rehearsal.json. Expected last line: "All checks passed: 16 DAO proposals, 3 deals, 5 holders."
+- `git clone https://github.com/mayohalo/captab && cd captab && node apps/web/scripts/verify-evidence.mjs` (Node 18+, no install, no keys, under a minute): checks the deployed company, DAO, and token code hashes and the 2-of-3 DAO policy against docs/deployment-manifest.v2.testnet.json, that all 17 recorded DAO proposals executed, that 3 deals settled with proceeds delivered, that the payout list was fully paid, and that totals, holdings, and treasury match docs/testnet-v2-rehearsal.json. Expected last line: "All checks passed: 17 DAO proposals, 3 deals, 6 holders."
 - `pnpm install && pnpm demo:sandbox` (Node 22.23+, pnpm 10.16.1, Rust 1.88.0): runs found, raise, secondary sale, buyback, exit payout, and close on a local NEAR chain through real Sputnik DAO votes and token transfers, printing [1/6] to [6/6].
 - `pnpm test:contract` (74 Rust unit tests), `pnpm test:sandbox` (9 NEAR Sandbox tests), `pnpm test:e2e` (26 browser tests); all run in GitHub Actions CI.
 
@@ -55,4 +55,4 @@ Public on chain: units per account, grants and vesting, rounds and prices, deals
 
 ## Not implemented
 
-Legal shares or an IPO itself (Captab provides a verifiable export, pays proceeds, and closes the ledger); SAFEs, convertible notes, options with an exercise price; investor KYC; confidential amounts; wallet-visible share tokens (designed in docs/TOKENIZATION_PLAN.md). Third-party wallet extensions are not yet verified; testnet signing used local test keys.
+Legal shares or an IPO itself (Captab provides a verifiable export, pays proceeds, and closes the ledger); SAFEs, convertible notes, options with an exercise price; investor KYC; confidential amounts; wallet-visible share tokens (designed in docs/TOKENIZATION_PLAN.md). A third-party wallet (Meteor Wallet on captab.testnet) signed accept_grant, claim_vested, and an NEP-413 sign-in on captab.xyz; deal flows and the sponsored claim have not yet been signed from a third-party wallet.

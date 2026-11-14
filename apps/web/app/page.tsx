@@ -147,7 +147,7 @@ export default async function Home() {
       <h3>Check it yourself</h3>
       <div className="three-up verify-steps">
         <article><span className="step-time">1 minute · Node only</span><pre><code>git clone https://github.com/mayohalo/captab{"\n"}cd captab{"\n"}node apps/web/scripts/verify-evidence.mjs</code></pre>
-          <p>Reads NEAR testnet directly: deployed code hashes and the 2-of-3 board policy match the manifest, all 16 board proposals executed, 3 deals settled, the payout list paid in full, totals and treasury exact.</p></article>
+          <p>Reads NEAR testnet directly: deployed code hashes and the 2-of-3 board policy match the manifest, all 17 board proposals executed, 3 deals settled, the payout list paid in full, totals and treasury exact.</p></article>
         <article><span className="step-time">5 minutes · Node and Rust</span><pre><code>pnpm install{"\n"}pnpm demo:sandbox</code></pre>
           <p>Runs the whole lifecycle on a local NEAR chain through real DAO votes: found, raise, secondary sale, buyback, exit payout, close.</p></article>
         <article><span className="step-time">Any time · browser</span><pre><code>pnpm test:contract{"\n"}pnpm test:sandbox{"\n"}pnpm test:e2e</code></pre>
@@ -178,7 +178,7 @@ export default async function Home() {
       </div>
       <h3>What comes next</h3>
       <ul className="roadmap">
-        <li><Pill status="Next" tone="info" />Sign the deal flows with third-party wallet extensions.</li>
+        <li><Pill status="Next" tone="info" />Sign the deal flows and the sponsored claim from third-party wallets.</li>
         <li><Pill status="Next" tone="info" />Restricted share tokens per class, migrated from the ledger.</li>
         <li><Pill status="Next" tone="info" />One-click company deployment through a factory contract, and a history indexer.</li>
         <li><Pill status="Future" tone="muted" />Confidential amounts, stock options with an exercise price, SAFEs and convertible notes.</li>
@@ -191,7 +191,7 @@ export default async function Home() {
       <ul className="limits">
         <li>Testnet prototype. Units are on-chain records, not legal shares, and TESTUSD is a demo token. An IPO itself happens off-chain: Captab hands the transfer agent or acquirer a verifiable export, pays the proceeds, and closes the ledger.</li>
         <li>Closing a company is proven on a local NEAR Sandbox chain; the live company stays open as a demo.</li>
-        <li>Signing so far used local test keys; third-party wallet extensions are not yet verified.</li>
+        <li>A third-party wallet (Meteor Wallet) signed a grant acceptance, a claim, and a wallet sign-in on this site; the other live actions used local test keys, and the deal flows have not yet been signed from a third-party wallet.</li>
         <li>The activity history covers transactions submitted through this app; contract views are always the source of truth.</li>
       </ul>
       <p className="small"><Link href="/setup">Inspect or deploy a company</Link> · <a href="https://github.com/mayohalo/captab">Source on GitHub</a> · For agents: a plain-text summary is at <a href="/llms.txt">/llms.txt</a>.</p>

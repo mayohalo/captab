@@ -105,7 +105,18 @@ const rounds = await view(companyId, "list_rounds", {});
 const seed = rounds.find(round => round.id === "seed");
 check(Boolean(seed) && seed.units_issued !== "0", "seed round recorded with units issued and amount raised", seed ? `${seed.units_issued} units, ${seed.amount_raised} base units` : "missing");
 
-// 4. Payouts.
+// 4. A holder signed from a third-party wallet extension (Meteor Wallet) on captab.xyz.
+const walletGrant = evidence.steps.find(step => step.step === "wallet-extension-grant");
+const walletUse = evidence.steps.find(step => step.step === "wallet-extension");
+if (walletGrant && walletUse) {
+  console.log("\nThird-party wallet");
+  const grant = await view(companyId, "get_grant", { grant_id: walletGrant.grantId });
+  check(grant.recipient === walletUse.recipient && grant.accepted_terms_hash === walletGrant.termsHash,
+    `${walletUse.recipient} accepted grant #${walletGrant.grantId}'s terms from its own wallet`, `${explorer}/txns/${walletUse.accept.hash}`);
+  check(grant.issued_units === walletUse.claimedUnits, `${walletUse.recipient} claimed ${walletUse.claimedUnits} vested units`, `${explorer}/txns/${walletUse.claim.hash}`);
+}
+
+// 5. Payouts.
 console.log("\nPayouts");
 const payout = evidence.steps.find(step => step.step === "explicit-payout");
 const distributions = await view(companyId, "list_distributions", { from_index: 0, limit: 5 });

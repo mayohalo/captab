@@ -22,14 +22,14 @@ Every stage of a company's life runs on NEAR testnet today:
 6. **Pay holders:** payouts that sum exactly to the budget and pay each holder once, retry-safe.
 7. **Exit:** a preference waterfall paid as an explicit payout list, accelerated vesting, and a closed ledger.
 
-The live company [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) holds 7,140,000 units across 5 holders after 16 executed DAO proposals, a seed round, a secondary sale, a buyback, and a payout list paid to every holder. An earlier MVP deployment proved browser-signed DAO votes, a zero-NEAR sponsored claim, and a failed-then-retried payout.
+The live company [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) holds 7,145,000 units across 6 holders after 17 executed DAO proposals, a seed round, a secondary sale, a buyback, and a payout list paid to every holder. An earlier MVP deployment proved browser-signed DAO votes, a zero-NEAR sponsored claim, and a failed-then-retried payout.
 
 ## Check it yourself
 
 | Time | Command | What it proves |
 | --- | --- | --- |
 | 1 minute, nothing to install | Open [captab.xyz](https://captab.xyz) | The live cap table, deals, payouts, and board actions, read from chain |
-| 1 minute, Node only | `node apps/web/scripts/verify-evidence.mjs` | All 16 recorded DAO proposals executed, 3 deals settled, the payout list fully paid, totals and treasury exact |
+| 1 minute, Node only | `node apps/web/scripts/verify-evidence.mjs` | All 17 recorded DAO proposals executed, 3 deals settled, the payout list fully paid, totals and treasury exact |
 | 5 minutes, Node and Rust | `pnpm install && pnpm demo:sandbox` | The whole lifecycle on a local NEAR chain through real DAO votes and token transfers, including close |
 | A few minutes | `pnpm test:contract`, `pnpm test:sandbox`, `pnpm test:e2e` | 74 Rust, 9 Sandbox, and 26 browser tests |
 
@@ -53,4 +53,4 @@ Founders anywhere who need an auditable cap table with built-in payouts and no e
 
 ## Honest limits
 
-NEAR testnet only, with fictional holders and a demo token; units are ledger records, not legal shares. Closing a company is proven in NEAR Sandbox, not on the live company. Signing used local test keys; third-party wallet extensions are not yet verified. The activity history covers app-submitted transactions; contract views are the source of truth. This repository contains no private keys or local database files.
+NEAR testnet only, with fictional holders and a demo token; units are ledger records, not legal shares. Closing a company is proven in NEAR Sandbox, not on the live company. A third-party wallet (Meteor Wallet) signed a grant acceptance, a claim, and an NEP-413 sign-in on captab.xyz ([accept](https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj), [claim](https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md)); the other live actions used local test keys. The activity history covers app-submitted transactions; contract views are the source of truth. This repository contains no private keys or local database files.

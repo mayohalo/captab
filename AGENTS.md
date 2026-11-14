@@ -12,7 +12,7 @@ All commands run from the repository root. None needs keys, accounts, or funds, 
 
 | # | Command | Needs | Time | Expected result |
 | --- | --- | --- | --- | --- |
-| 1 | `node apps/web/scripts/verify-evidence.mjs` | Node 18+ only, no install | < 1 min | Every line `PASS`; last line `All checks passed: 16 DAO proposals, 3 deals, 5 holders.`; exit code 0 |
+| 1 | `node apps/web/scripts/verify-evidence.mjs` | Node 18+ only, no install | < 1 min | Every line `PASS`; last line `All checks passed: 17 DAO proposals, 3 deals, 6 holders.`; exit code 0 |
 | 2 | `pnpm install` | Node 22.23+, pnpm 10.16.1 (`corepack enable`) | ~1 min | Installs the workspace |
 | 3 | `pnpm test:contract` | Rust 1.88.0 + `wasm32-unknown-unknown` (pinned in `rust-toolchain.toml`) | < 1 min | `test result: ok. 74 passed` |
 | 4 | `pnpm demo:sandbox` | as above; downloads a NEAR Sandbox binary | ~5 min first run | Lines `[1/6]` to `[6/6]`, then `Lifecycle complete…` and `test result: ok. 1 passed` |
@@ -31,9 +31,9 @@ Notes for reproducing:
 
 | Feature | Code | Tests | Live testnet evidence |
 | --- | --- | --- | --- |
-| Board (2-of-3 Sputnik DAO) is the only caller that can change the ledger | `assert_dao` in [`lib.rs`](contracts/company/src/lib.rs) | `non_dao_cannot_issue`; Sandbox `real_sputnik_requires_two_votes_and_funds_company` | `verify-evidence`: DAO policy and 16 executed proposals |
+| Board (2-of-3 Sputnik DAO) is the only caller that can change the ledger | `assert_dao` in [`lib.rs`](contracts/company/src/lib.rs) | `non_dao_cannot_issue`; Sandbox `real_sputnik_requires_two_votes_and_funds_company` | `verify-evidence`: DAO policy and 17 executed proposals |
 | Charter, founder units with document SHA-256 | [`ledger.rs`](contracts/company/src/ledger.rs) | `authorized_capacity_can_rise`, `authorized_capacity_never_falls`, `doc_hashes_are_validated_recorded_and_bound_to_the_action` | proposals #1–#3 |
-| Vesting grants: any cliff, 1–120 months, founder vesting, signed terms, acceleration | [`grants.rs`](contracts/company/src/grants.rs) | `custom_schedule_and_cliff_vest_on_their_own_months`, `founder_vesting_draws_from_unallocated_and_returns_there_on_cancel`, `recipient_accepts_grant_terms_matching_the_board_document`, `acceleration_counts_extra_months_and_crosses_the_cliff` | proposals #5–#7; accept and claim transactions in [`docs/testnet-v2-rehearsal.json`](docs/testnet-v2-rehearsal.json) |
+| Vesting grants: any cliff, 1–120 months, founder vesting, signed terms, acceleration | [`grants.rs`](contracts/company/src/grants.rs) | `custom_schedule_and_cliff_vest_on_their_own_months`, `founder_vesting_draws_from_unallocated_and_returns_there_on_cancel`, `recipient_accepts_grant_terms_matching_the_board_document`, `acceleration_counts_extra_months_and_crosses_the_cliff` | proposals #5–#7 and #16; accept and claim transactions in [`docs/testnet-v2-rehearsal.json`](docs/testnet-v2-rehearsal.json), including grant #2 accepted and claimed from Meteor Wallet |
 | Zero-NEAR claim (NEP-366 delegate action + relayer) | [`apps/web/lib/sponsor-policy.ts`](apps/web/lib/sponsor-policy.ts), `claim_vested` | Sandbox `zero_balance_contributor_claims_through_signed_delegate`; `pnpm test:sponsor` | v1 [`docs/testnet-browser-rehearsal.json`](docs/testnet-browser-rehearsal.json) |
 | Priced round; investor pays and is issued units in one receipt, or is refunded | [`deals.rs`](contracts/company/src/deals.rs), `ft_on_transfer` in `lib.rs` | `investor_issuance_reserves_capacity_settles_on_payment_and_forwards_to_the_dao`, `issuance_price_must_match_the_round` | deal #0 Settled; refund transactions in the rehearsal JSON |
 | Secondary sale: board approval + seller signature, retryable proceeds | `deals.rs` | `secondary_sale_needs_the_sellers_signature_then_moves_units_and_pays_the_seller`, `a_seller_cannot_commit_the_same_units_twice`, `stale_forward_callback_cannot_settle_a_newer_attempt` | deal #1 Settled, proceeds delivered by retry |
@@ -59,4 +59,4 @@ Unit tests: [`contracts/company/src/tests.rs`](contracts/company/src/tests.rs) (
 
 ## What is not implemented
 
-Legal shares, an IPO itself, SAFEs, convertible notes, options with an exercise price, investor KYC, confidential amounts, and wallet-visible share tokens are not implemented (tokens are designed in [`docs/TOKENIZATION_PLAN.md`](docs/TOKENIZATION_PLAN.md)). `close_company` is proven in Sandbox, not on the live company. Signing with third-party wallet extensions has not been verified; testnet signing used local test keys.
+Legal shares, an IPO itself, SAFEs, convertible notes, options with an exercise price, investor KYC, confidential amounts, and wallet-visible share tokens are not implemented (tokens are designed in [`docs/TOKENIZATION_PLAN.md`](docs/TOKENIZATION_PLAN.md)). `close_company` is proven in Sandbox, not on the live company. A third-party wallet (Meteor Wallet on `captab.testnet`) signed `accept_grant`, `claim_vested`, and an NEP-413 sign-in on captab.xyz (rehearsal step `wallet-extension`); the deal flows and the sponsored claim have not yet been signed from a third-party wallet.

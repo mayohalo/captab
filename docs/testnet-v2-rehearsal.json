@@ -406,21 +406,59 @@
         }
       ],
       "budgetBaseUnits": "2000000000"
+    },
+    {
+      "step": "wallet-extension-grant",
+      "recipient": "captab.testnet",
+      "grant": {
+        "proposalId": 16,
+        "proposal": {
+          "hash": "5W4rLwWWMEbSmNMJtaCasVUiozthaV235emLh6i1oxJW",
+          "explorerUrl": "https://testnet.nearblocks.io/txns/5W4rLwWWMEbSmNMJtaCasVUiozthaV235emLh6i1oxJW"
+        },
+        "votes": [
+          {
+            "hash": "EyyPEgitWfvg7GgGAemXaxeT6dYL6ECw5SkNhdRDZwG7",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/EyyPEgitWfvg7GgGAemXaxeT6dYL6ECw5SkNhdRDZwG7"
+          },
+          {
+            "hash": "69MMnskPLQJDotExHSUhH6pwKCpGfWY58bVQdzqrNF4W",
+            "explorerUrl": "https://testnet.nearblocks.io/txns/69MMnskPLQJDotExHSUhH6pwKCpGfWY58bVQdzqrNF4W"
+          }
+        ]
+      },
+      "grantId": 2,
+      "termsHash": "bd8cd18d320c37d743f30281eb496a92fb5141b83d248dcb5b50f9647a59bebf"
+    },
+    {
+      "step": "wallet-extension",
+      "recipient": "captab.testnet",
+      "grantId": 2,
+      "accept": {
+        "hash": "GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj"
+      },
+      "claim": {
+        "hash": "z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md",
+        "explorerUrl": "https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md"
+      },
+      "claimedUnits": "5000",
+      "signer": "the holder's own browser wallet extension on https://captab.xyz"
     }
   ],
-  "updatedAt": "2026-11-13T01:23:19.043Z",
+  "updatedAt": "2026-11-14T15:16:23.718Z",
   "finalState": {
     "totals": {
       "dao_id": "captab-dao-0d07df99e1bb0e44.testnet",
       "authorized_units": "12000000",
-      "issued_total": "7140000",
-      "pool_available": "1800000",
-      "grant_reserved": "435000",
+      "issued_total": "7145000",
+      "pool_available": "1790000",
+      "grant_reserved": "440000",
       "deal_reserved": "0",
       "fully_diluted_total": "9375000",
       "unallocated_units": "2625000",
-      "ledger_revision": 14,
-      "holder_count": 5
+      "ledger_revision": 16,
+      "holder_count": 6
     },
     "holdings": [
       {
@@ -446,6 +484,11 @@
       {
         "account_id": "angel.captab-0d07df99e1bb0e44.testnet",
         "issued_units": "100000",
+        "locked_units": "0"
+      },
+      {
+        "account_id": "captab.testnet",
+        "issued_units": "5000",
         "locked_units": "0"
       }
     ],
@@ -503,6 +546,6 @@
         "forward_in_flight": false
       }
     ],
-    "checkedAt": "2026-11-13T01:23:20.126Z"
+    "checkedAt": "2026-11-14T15:16:24.916Z"
   }
 }

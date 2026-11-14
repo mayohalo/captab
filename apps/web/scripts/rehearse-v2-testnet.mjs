@@ -32,6 +32,7 @@ const DOCS = {
   sale: doc("Captab v2 testnet demo: share purchase agreement, founder B to angel"),
   buyback: doc("Captab v2 testnet demo: repurchase agreement with the contributor"),
   exit: doc("Captab v2 testnet demo: board-approved payout list"),
+  walletGrant: doc("Captab v2 testnet demo: grant agreement for the third-party wallet test, 10,000 units, 24 months, no cliff"),
 };
 
 let evidence;
@@ -290,6 +291,29 @@ if (!done("explicit-payout")) {
   expect(settled.paid_total === String(budget) && settled.available_escrow === "0" && settled.in_flight_total === "0", "Payout list does not reconcile");
   await record("explicit-payout", { prepared, distributionId: distribution.id, scheduleHash: Buffer.from(distribution.schedule_hash).toString("hex"),
     funding, payments, budgetBaseUnits: String(budget) });
+}
+
+// 9. Optional third-party wallet test: CAPTAB_WALLET_TEST_ACCOUNT=<testnet account held in a wallet extension>.
+// The board grants that account 10,000 units vesting monthly over 24 months from 2025-11-01 with no cliff, so about
+// half is claimable at once. The holder then accepts the terms and claims on captab.xyz with their own wallet;
+// a later run (with CAPTAB_WALLET_TEST_TXS=acceptHash,claimHash) records those transactions after checking chain state.
+const walletAccount = process.env.CAPTAB_WALLET_TEST_ACCOUNT;
+if (walletAccount && !done("wallet-extension-grant")) {
+  const t = await totals();
+  const grant = await proposal(`Grant 10,000 units to ${walletAccount} for the third-party wallet test (24 months, no cliff)`, companyId,
+    [company("create_grant", { action_id: `v2-live-wallet-${walletAccount}`, expected_revision: t.ledger_revision, recipient: walletAccount,
+      units: "10000", boundaries: boundaries("2025-11-01T00:00:00Z", 24), doc_hash: DOCS.walletGrant, terms: { cliff_index: 0, source: "Pool" } })]);
+  const grants = await view(companyId, "list_grants", { from_index: 0, limit: 20 });
+  const grantId = grants.find(g => g.recipient === walletAccount).id;
+  await record("wallet-extension-grant", { recipient: walletAccount, grant, grantId, termsHash: DOCS.walletGrant });
+}
+const walletTxs = process.env.CAPTAB_WALLET_TEST_TXS?.split(",").filter(Boolean);
+if (walletAccount && walletTxs?.length === 2 && !done("wallet-extension")) {
+  const { grantId } = evidence.steps.find(step => step.step === "wallet-extension-grant");
+  const grantView = await view(companyId, "get_grant", { grant_id: grantId });
+  expect(grantView.accepted_terms_hash === DOCS.walletGrant && grantView.issued_units !== "0", "The wallet holder has not accepted and claimed yet");
+  await record("wallet-extension", { recipient: walletAccount, grantId, accept: tx(walletTxs[0]), claim: tx(walletTxs[1]),
+    claimedUnits: grantView.issued_units, signer: "the holder's own browser wallet extension on https://captab.xyz" });
 }
 
 // Final state, read at finality.

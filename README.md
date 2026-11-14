@@ -29,7 +29,7 @@ A cap table decides who gets paid when a company is sold, how much each new inve
 | Stage | What the company gets | Contract calls | See it live |
 | --- | --- | --- | --- |
 | **1. Found** | Authorized units, the founder split with its agreement's SHA-256, founder vesting | `increase_authorized`, `issue_founder_units`, `create_grant` | [charter proposal](https://testnet.nearblocks.io/txns/JBCCbvP4YtmZFAmhcAxHaiPXC5Jy3W2iP9oW9pxzdVSn) |
-| **2. Hire** | A pool and grants with any cliff and 1–120 monthly steps; contributors sign the terms and claim with **zero NEAR** | `create_grant`, `accept_grant`, `claim_vested` | [accept](https://testnet.nearblocks.io/txns/CE4y23r3fiRcM81FrCk9eDgpQadM6i8BWxKNHxyrMEba), [claim](https://testnet.nearblocks.io/txns/FyFBrAFfkQz1DLPTS9JQR5AsTVEf13Ecm5Q2FHZecmdf) |
+| **2. Hire** | A pool and grants with any cliff and 1–120 monthly steps; contributors sign the terms and claim with **zero NEAR** | `create_grant`, `accept_grant`, `claim_vested` | [accept](https://testnet.nearblocks.io/txns/CE4y23r3fiRcM81FrCk9eDgpQadM6i8BWxKNHxyrMEba), [claim](https://testnet.nearblocks.io/txns/FyFBrAFfkQz1DLPTS9JQR5AsTVEf13Ecm5Q2FHZecmdf); from Meteor Wallet: [accept](https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj), [claim](https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md) |
 | **3. Raise** | Priced rounds; each investor pays and receives units in one transaction, and the money lands in the DAO treasury | `create_round`, `approve_deal`, `ft_transfer_call` | [refund](https://testnet.nearblocks.io/txns/38fDEUrTUDA2jeHMUvqrnv4JSqJs4XsYnwyhjFTrsYNE), [payment](https://testnet.nearblocks.io/txns/DGY7VapS6G9b8XCzaT8y3LnMpXbb1mUpRUVydX184Jmd) |
 | **4. Operate** | Board votes with replay protection, corrections, lost-wallet recovery, a CSV/JSON export carrying its SHA-256 | `retire_units`, `reassign_holding` | [export](https://captab.xyz/api/companies/captab-company-0d07df99e1bb0e44.testnet/export?format=csv) |
 | **5. Liquidity** | Secondary sales and buybacks; a unit moves only with the board's approval and the holder's signature | `approve_deal`, `accept_deal`, `forward_proceeds` | [sale](https://testnet.nearblocks.io/txns/9gBWG3pbnz2yfSNwrZ6vZDN4QnDRjdgT2sv62aFYCGE9), [retry](https://testnet.nearblocks.io/txns/EGuQtscaKtLKcaEb1qiByeQGdG7ajRxJDNcJFpmB5KY6), [buyback](https://testnet.nearblocks.io/txns/EtXZJ5Egqj8mZqKZb3NoWmBvrdsci6gK6sT7v6apj9oj) |
@@ -44,12 +44,12 @@ The app adds planning tools on top: a priced-round model (price per unit, new un
 
 | Do | See |
 | --- | --- |
-| Open [captab.xyz](https://captab.xyz) | What Captab is, the live cap table bar, and live figures: 7,140,000 units issued, 5 holders, 3 deals settled, contract and DAO "Verified" |
+| Open [captab.xyz](https://captab.xyz) | What Captab is, the live cap table bar, and live figures: 7,145,000 units issued, 6 holders, 3 deals settled, contract and DAO "Verified" |
 | Click **Explore the live company** | The stage tracker with Found, Hire, Raise, Liquidity, and Pay holders checked (Exit stays open), and the ownership bar split into issued, grants, pool, and unallocated units |
 | Open **[Deals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/deals)** | The `seed` round at 1,000,000 units; deal #0 (issuance), #1 (secondary sale), and #2 (buyback), each **Settled** with "Payment … delivered" |
 | Open **[Distributions](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/distributions)** | Distribution #0, an explicit payout list of 2,000 TESTUSD (2,000,000,000 base units), **Funded**, with every recipient **Paid**; below it, the exit-waterfall planner |
-| Open **[Approvals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/approvals)** | The board actions the app can propose, and the DAO's 16 proposals, all **Approved** |
-| Open the **[CSV export](https://captab.xyz/api/companies/captab-company-0d07df99e1bb0e44.testnet/export?format=csv)** | Holdings and grants; the response headers `X-Captab-Ledger-Revision: 14` and `X-Captab-Export-SHA256` |
+| Open **[Approvals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/approvals)** | The board actions the app can propose, and the DAO's 17 proposals, all **Approved** |
+| Open the **[CSV export](https://captab.xyz/api/companies/captab-company-0d07df99e1bb0e44.testnet/export?format=csv)** | Holdings and grants; the response headers `X-Captab-Ledger-Revision: 16` and `X-Captab-Export-SHA256` |
 | Open any transaction link in the table above | The finalized transaction on NearBlocks testnet |
 
 Board actions need a council wallet, so the live app is read-only for visitors. To watch every write happen, use option 3.
@@ -61,7 +61,7 @@ git clone https://github.com/mayohalo/captab && cd captab
 node apps/web/scripts/verify-evidence.mjs
 ```
 
-This reads NEAR testnet directly. It checks that the deployed company, DAO, and token run the code hashes pinned in the [manifest](docs/deployment-manifest.v2.testnet.json), that the board is the pinned 2-of-3 council, that all 16 recorded DAO proposals executed, the 3 deals settled with proceeds delivered, the payout list was paid in full, and the totals, holdings, and DAO treasury match the recorded end state. It exits nonzero on any mismatch. [Sample output](docs/EVIDENCE.md#check-it-yourself).
+This reads NEAR testnet directly. It checks that the deployed company, DAO, and token run the code hashes pinned in the [manifest](docs/deployment-manifest.v2.testnet.json), that the board is the pinned 2-of-3 council, that all 17 recorded DAO proposals executed, the 3 deals settled with proceeds delivered, the payout list was paid in full, and the totals, holdings, and DAO treasury match the recorded end state. It exits nonzero on any mismatch. [Sample output](docs/EVIDENCE.md#check-it-yourself).
 
 ### 3. Run the whole lifecycle yourself (5 minutes)
 
@@ -100,9 +100,10 @@ To deploy your own company, DAO, and token on testnet, follow the [runbook](docs
 
 | | |
 | --- | --- |
-| **Live on testnet** | Company [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet), board [`captab-dao-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-dao-0d07df99e1bb0e44.testnet), token [`captab-token-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-token-0d07df99e1bb0e44.testnet). 7,140,000 units across 5 holders, 16 executed DAO proposals, 3 settled deals, 72,940 TESTUSD in the treasury. |
+| **Live on testnet** | Company [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet), board [`captab-dao-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-dao-0d07df99e1bb0e44.testnet), token [`captab-token-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-token-0d07df99e1bb0e44.testnet). 7,145,000 units across 6 holders, 17 executed DAO proposals, 3 settled deals, 72,940 TESTUSD in the treasury. |
 | **Recorded** | Every transaction hash and the final state: [`testnet-v2-rehearsal.json`](docs/testnet-v2-rehearsal.json); code hashes and DAO policy: [`deployment-manifest.v2.testnet.json`](docs/deployment-manifest.v2.testnet.json). |
 | **Re-checkable** | `node apps/web/scripts/verify-evidence.mjs` checks deployed code hashes, the DAO policy, and the live state against the records, with no keys and nothing installed. |
+| **Real wallet** | Meteor Wallet (browser extension) on `captab.testnet` connected to captab.xyz, accepted a board grant's terms, claimed 5,000 vested units, and signed in with NEP-413: [grant proposal](https://testnet.nearblocks.io/txns/5W4rLwWWMEbSmNMJtaCasVUiozthaV235emLh6i1oxJW), [accept](https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj), [claim](https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md). |
 | **Tested** | 74 Rust unit tests, 9 NEAR Sandbox tests, 26 browser tests, 13 web test suites, all in CI. |
 | **Earlier MVP** | Schema v1 ran browser-signed DAO votes, a zero-NEAR sponsored claim, and a failed-then-retried payout. See [From v1 to v2](#from-v1-to-v2). |
 
@@ -183,14 +184,14 @@ flowchart LR
 
 | | |
 | --- | --- |
-| **Next** | Sign the deal flows with third-party wallet extensions · restricted share tokens per class, migrated from the ledger · one-click company deployment through a factory contract · a history indexer |
+| **Next** | Sign the deal flows and the sponsored claim from third-party wallets · restricted share tokens per class, migrated from the ledger · one-click company deployment through a factory contract · a history indexer |
 | **Future** | Confidential amounts · stock options with an exercise price, SAFEs, and convertible notes · AI agents as operators or council members, held to the same DAO rules as people · legal wrappers |
 
 ## Honest limits
 
 - **Testnet prototype.** Units are on-chain records, not legal shares, and TESTUSD is a demo token. An IPO itself happens off-chain: Captab hands the transfer agent or acquirer a verifiable export, pays the proceeds, and closes the ledger.
 - **Close is proven in Sandbox.** `close_company` runs in `pnpm demo:sandbox`; the live company stays open as a demo.
-- **Wallets.** Signing so far used local test keys and a Playwright wallet bridge ([browser evidence](docs/testnet-browser-rehearsal.json)); third-party wallet extensions are not yet verified.
+- **Wallets.** A third-party browser wallet, Meteor Wallet on `captab.testnet`, signed `accept_grant`, `claim_vested`, and an NEP-413 sign-in on captab.xyz ([accept](https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj), [claim](https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md)). The other live actions were signed with local test keys; the sponsored zero-NEAR claim and the deal flows have not yet been signed from a third-party wallet.
 - **History.** The activity page covers transactions submitted through the app; contract views are always the source of truth.
 - **Lost callbacks.** If a token transfer succeeds but its callback fails, the payment stays locked for review, by design; there is no timeout reset.
 - **Upgrades.** The contract has no self-upgrade method, and the deployer key is deliberately kept. Key removal is implemented (`pnpm freeze:company`) and proven in Sandbox. A production deployment would give upgrade authority to the DAO.

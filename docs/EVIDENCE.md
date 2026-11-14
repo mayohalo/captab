@@ -6,7 +6,7 @@ Everything Captab claims is implemented and working, and you can check each clai
 
 | What you check | Command | Needs | Time |
 | --- | --- | --- | --- |
-| The deployed company, DAO, and token run the code hashes the manifest pins; the board is the pinned 2-of-3 council and policy; and the live company matches the recorded rehearsal: 16 DAO proposals executed, 3 deals settled with proceeds delivered, the payout list fully paid, totals, holdings, and treasury exact | `node apps/web/scripts/verify-evidence.mjs` | Node 22, nothing installed | under 1 min |
+| The deployed company, DAO, and token run the code hashes the manifest pins; the board is the pinned 2-of-3 council and policy; and the live company matches the recorded rehearsal: 17 DAO proposals executed, 3 deals settled with proceeds delivered, the payout list fully paid, totals, holdings, and treasury exact | `node apps/web/scripts/verify-evidence.mjs` | Node 22, nothing installed | under 1 min |
 | The whole lifecycle on a local NEAR chain with real Sputnik DAO votes and token transfers: charter, founder units, seed round with a refunded wrong payment, secondary sale with a retried payout, buyback, exit payout list, close | `pnpm demo:sandbox` | Node, pnpm, Rust 1.88 | ~5 min first run, 30 s after |
 | Contract rules: supply invariants, vesting, replay safety, deals, payouts, close | `pnpm test:contract` | Rust | under 1 min |
 | Every Sandbox scenario, including a zero-NEAR sponsored claim, a failed-then-retried payout, a lost callback that stays locked, and storage at the limits | `pnpm test:sandbox` | Rust | a few minutes |
@@ -34,7 +34,7 @@ Rounds and deals
 Payouts
   PASS  every recipient paid exactly once; paid total equals the budget  2000000000/2000000000
   PASS  DAO treasury holds 72940000000 TESTUSD base units  live 72940000000
-All checks passed: 16 DAO proposals, 3 deals, 5 holders.
+All checks passed: 17 DAO proposals, 3 deals, 6 holders.
 ```
 
 **About rebuilding the WASM yourself.** Rust embeds absolute build paths and host-specific code layout in a WASM file, so the same source built on another OS or CPU produces different bytes from the deployed macOS (arm64) build. The code hashes above are therefore checked against the chain, not against your rebuild. For the Sandbox tests, `scripts/build-sputnik.sh` builds Sputnik from its pinned commit and, if the bytes differ, takes the pinned WASM from the live testnet DAO and accepts it only if its SHA-256 matches. Docker-based reproducible builds (`cargo near build reproducible-wasm`) are the planned fix.
@@ -58,6 +58,8 @@ The live rehearsal (`pnpm rehearse:v2`, [evidence](testnet-v2-rehearsal.json), [
 | Board-set payout list of 2,000 TESTUSD, funded exactly and paid to five holders | [funding](https://testnet.nearblocks.io/txns/HVefYMr38JD72oebKw7gCR7BFb8vaTx61ThZ8Y9GQqCf), [first payment](https://testnet.nearblocks.io/txns/9SZVkKe9RKhe8wMHF3j4v4c1djzucKBP1MREwCsg6cCb) |
 
 Afterwards the ledger holds 7,140,000 issued units across five holders, the DAO treasury is exactly 72,940 TESTUSD, the app's audit reports **Consistent**, and `CAPTAB_DEPLOYMENT=v2 pnpm verify:testnet` passes. Closing the company is proven in Sandbox only, so the testnet company stays usable as a demo.
+
+**Third-party wallet (2026-11-14).** The board granted `captab.testnet` 10,000 units vesting over 24 months with no cliff ([proposal 16](https://testnet.nearblocks.io/txns/5W4rLwWWMEbSmNMJtaCasVUiozthaV235emLh6i1oxJW)). From Opera with the Meteor Wallet extension, the holder connected to captab.xyz, signed `accept_grant` with the board's document hash ([tx](https://testnet.nearblocks.io/txns/GzpcBV1oLdp2suupsWdKYJEdB5bvb3oFMsk8ibxoKLWj)), claimed the 5,000 vested units ([tx](https://testnet.nearblocks.io/txns/z8Z4BK38ny7ttDScvrZBH2SxbabDiu2UXTeyzfV73md)), and completed an NEP-413 wallet sign-in. Both transactions are signed by Meteor's key `ed25519:DdS9kx…`, not a project key. The ledger now holds 7,145,000 units across six holders at revision 16; `verify-evidence` checks this state.
 
 | Capability | Contract method | How it works |
 |---|---|---|
