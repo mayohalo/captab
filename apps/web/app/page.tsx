@@ -155,7 +155,7 @@ export default async function Home() {
       </div>
       <div className="three-up tests">{TEST_COUNTS.map(test => <article key={test.label}><strong>{test.value}</strong><span>{test.label}</span><p>{test.detail}</p></article>)}</div>
       <p className="small">Contracts: <a href={accountUrl(DEPLOYMENTS.v2.company)}>{DEPLOYMENTS.v2.company}</a> (company), <a href={accountUrl(DEPLOYMENTS.v2.dao)}>{DEPLOYMENTS.v2.dao}</a> (board),
-        {" "}<a href={accountUrl(DEPLOYMENTS.v2.token)}>{DEPLOYMENTS.v2.token}</a> (TESTUSD). An earlier v1 deployment, <a href={accountUrl(DEPLOYMENTS.v1.company)}>{DEPLOYMENTS.v1.company}</a>, ran the original payout and zero-NEAR claim rehearsals.</p>
+        {" "}<a href={accountUrl(DEPLOYMENTS.v2.token)}>{DEPLOYMENTS.v2.token}</a> (TESTUSD). An earlier MVP ran on separate accounts; see <a href="https://github.com/mayohalo/captab#from-v1-to-v2">From v1 to v2</a>.</p>
     </section>
 
     <section id="how" aria-labelledby="how-title">

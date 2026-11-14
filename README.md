@@ -42,12 +42,15 @@ The app adds planning tools on top: a priced-round model (price per unit, new un
 
 ### 1. Click through the live app (1 minute, nothing to install)
 
-1. **[captab.xyz](https://captab.xyz)**: what Captab is, with the live cap table and on-chain figures.
-2. **[The live company](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet)**: the stage tracker, metrics, and ownership bar, read from NEAR testnet.
-3. **[Deals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/deals)**: the seed round, the investor issuance, a secondary sale, and a buyback, all settled.
-4. **[Distributions](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/distributions)**: the explicit payout list paid to five holders, and the exit-waterfall planner.
-5. **[Approvals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/approvals)**: every board action the app can propose, and the DAO's recent proposals.
-6. **[Export the cap table](https://captab.xyz/api/companies/captab-company-0d07df99e1bb0e44.testnet/export?format=csv)**: the response headers carry the ledger revision and the file's SHA-256.
+| Do | See |
+| --- | --- |
+| Open [captab.xyz](https://captab.xyz) | What Captab is, the live cap table bar, and live figures: 7,140,000 units issued, 5 holders, 3 deals settled, contract and DAO "Verified" |
+| Click **Explore the live company** | The stage tracker with Found, Hire, Raise, Liquidity, and Pay holders checked (Exit stays open), and the ownership bar split into issued, grants, pool, and unallocated units |
+| Open **[Deals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/deals)** | The `seed` round at 1,000,000 units; deal #0 (issuance), #1 (secondary sale), and #2 (buyback), each **Settled** with "Payment … delivered" |
+| Open **[Distributions](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/distributions)** | Distribution #0, an explicit payout list of 2,000 TESTUSD (2,000,000,000 base units), **Funded**, with every recipient **Paid**; below it, the exit-waterfall planner |
+| Open **[Approvals](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/approvals)** | The board actions the app can propose, and the DAO's 16 proposals, all **Approved** |
+| Open the **[CSV export](https://captab.xyz/api/companies/captab-company-0d07df99e1bb0e44.testnet/export?format=csv)** | Holdings and grants; the response headers `X-Captab-Ledger-Revision: 14` and `X-Captab-Export-SHA256` |
+| Open any transaction link in the table above | The finalized transaction on NearBlocks testnet |
 
 Board actions need a council wallet, so the live app is read-only for visitors. To watch every write happen, use option 3.
 
@@ -101,9 +104,27 @@ To deploy your own company, DAO, and token on testnet, follow the [runbook](docs
 | **Recorded** | Every transaction hash and the final state: [`testnet-v2-rehearsal.json`](docs/testnet-v2-rehearsal.json); code hashes and DAO policy: [`deployment-manifest.v2.testnet.json`](docs/deployment-manifest.v2.testnet.json). |
 | **Re-checkable** | `node apps/web/scripts/verify-evidence.mjs` checks deployed code hashes, the DAO policy, and the live state against the records, with no keys and nothing installed. |
 | **Tested** | 74 Rust unit tests, 9 NEAR Sandbox tests, 26 browser tests, 13 web test suites, all in CI. |
-| **Earlier MVP** | Schema v1 at [`captab-company-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-company-101e85b169dd3522.testnet) ran browser-signed DAO votes, a zero-NEAR sponsored claim, and a failed-then-retried payout. Its code is tag `v1-testnet`, which rebuilds the deployed WASM byte for byte. |
+| **Earlier MVP** | Schema v1 ran browser-signed DAO votes, a zero-NEAR sponsored claim, and a failed-then-retried payout. See [From v1 to v2](#from-v1-to-v2). |
 
 The [evidence page](docs/EVIDENCE.md) maps every guarantee to the code that enforces it, the tests that prove it, and the testnet transaction that shows it.
+
+## From v1 to v2
+
+Captab was built in two stages during the hackathon, and both are live on testnet.
+
+| | v1: the MVP (Nov 1–4) | v2: the full lifecycle (Nov 13) |
+| --- | --- | --- |
+| Covers | Found, hire, pay holders | Found, hire, raise, operate, liquidity, pay holders, exit |
+| Grants | Fixed 12-month cliff, 48 months, from the pool | 1–120 months, any cliff, from the pool or unallocated units (founder vesting); recipients sign the terms; acceleration |
+| Investors and trading | None | Rounds; issuance, secondary-sale, and buyback deals settled atomically with `ft_transfer_call`; locked units; retryable proceeds |
+| Payouts | Pro-rata snapshots | Pro-rata snapshots and board-set explicit payout lists (exit waterfalls) |
+| Ledger actions | Issue, pool, grant, cancel, pause | Adds charter amendment, pool reduction, retirement, lost-wallet reassignment, close, and a document SHA-256 on every board action |
+| Limits | 20 holders, 100 grants, 20 distributions, 200 actions (pause counted, so a company paused at 200 could never resume) | 100 holders, 200 grants, 50 distributions, 200 deals, 20 rounds, no action cap |
+| Code | One `lib.rs` | [`ledger`](contracts/company/src/ledger.rs), [`grants`](contracts/company/src/grants.rs), [`distributions`](contracts/company/src/distributions.rs), [`deals`](contracts/company/src/deals.rs) modules |
+| Tests | 28 Rust unit tests | 74 (46 new) |
+| Testnet company | [`captab-company-101e85b169dd3522.testnet`](https://testnet.nearblocks.io/address/captab-company-101e85b169dd3522.testnet) | [`captab-company-0d07df99e1bb0e44.testnet`](https://testnet.nearblocks.io/address/captab-company-0d07df99e1bb0e44.testnet) |
+
+**Why a new deployment instead of an upgrade.** The contract has no self-upgrade method, by design, and v2 changes the stored state layout. So v2 runs on fresh accounts with its own DAO and token, and v1 stays live and untouched as a record. The v1 code is tag [`v1-testnet`](https://github.com/mayohalo/captab/tree/v1-testnet); the full change is [`v1-testnet...main`](https://github.com/mayohalo/captab/compare/v1-testnet...main). The hosted app serves v2. Moving a live company between versions is designed in the [tokenization plan](docs/TOKENIZATION_PLAN.md): pause, export at a finalized block, import once, and reconcile.
 
 ## Transparent where it matters, private where it should be
 
@@ -173,5 +194,12 @@ flowchart LR
 - **History.** The activity page covers transactions submitted through the app; contract views are always the source of truth.
 - **Lost callbacks.** If a token transfer succeeds but its callback fails, the payment stays locked for review, by design; there is no timeout reset.
 - **Upgrades.** The contract has no self-upgrade method, and the deployer key is deliberately kept. Key removal is implemented (`pnpm freeze:company`) and proven in Sandbox. A production deployment would give upgrade authority to the DAO.
+
+## Hackathon notes
+
+- **Built at NEAR HACKATHON**, entirely within the event window: the first commit is 2026-11-01 and there is no earlier code. v1 was built Nov 1–4; v2, the hosted app, and the docs Nov 13–14.
+- **Libraries.** Contract: `near-sdk` 5.17.2; tests: `near-workspaces` 0.22.1. Board: [Sputnik DAO](https://github.com/near-daos/sputnik-dao-contract) v2 at commit `5434a59`, unmodified. App: Next.js 15, React 19, `near-api-js` 7, `@hot-labs/near-connect`, `better-sqlite3`, `borsh`; browser tests with Playwright. No templates.
+- **AI assistance.** Much of the code and documentation was written with AI coding assistants (Claude Code and OpenAI Codex) under the author's direction and review.
+- **License:** [MIT](LICENSE).
 
 More: [release status](docs/RELEASE_STATUS.md) · [operations](docs/OPERATIONS.md) · [implementation plan](IMPLEMENTATION_PLAN.md)

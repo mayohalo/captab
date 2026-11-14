@@ -1,0 +1,58 @@
+# Captab
+
+> Captab keeps a company's cap table (who owns what) in a NEAR smart contract governed by a Sputnik DAO board. It covers founding, vesting grants, priced investor rounds, secondary sales, buybacks, exact payouts, and closing at exit. It runs on NEAR testnet; units are on-chain ledger records, not legal shares or tokens. Built at NEAR HACKATHON (2026-11-01 to 2026-11-14). MIT license.
+
+- Live app: https://captab.xyz (read-only for visitors; schema v2 company)
+- Source: https://github.com/mayohalo/captab
+- Guide for coding agents and AI judges (commands, expected output, feature-to-code-to-test map): https://github.com/mayohalo/captab/blob/main/AGENTS.md
+- Every claim mapped to code, tests, and testnet transactions: https://github.com/mayohalo/captab/blob/main/docs/EVIDENCE.md
+
+## Problem and product
+
+A cap table decides who gets paid at an exit, how much each investor dilutes everyone else, and whether an employee's equity has vested. Companies usually keep it in a spreadsheet or a paid platform; approvals arrive by email, money is reconciled by hand, and holders trust whoever keeps the file. In Captab, the board votes on-chain (a 2-of-3 Sputnik DAO council and the only caller that can change the ledger), the rules are contract code (supply caps, vesting schedules, replay protection, no transfer without the holder's signature), and money moves in the same transaction as the ownership it pays for.
+
+## Lifecycle, all live on NEAR testnet
+
+1. Found: charter amendment (increase_authorized), founder units with the agreement's SHA-256 (issue_founder_units), founder vesting (create_grant from unallocated units).
+2. Hire: pool and grants with any cliff and 1-120 monthly steps (create_grant); the recipient signs the terms (accept_grant) and claims with zero NEAR via an NEP-366 sponsored relayer (claim_vested).
+3. Raise: rounds (create_round) and issuance deals (approve_deal); the investor pays with NEP-141 ft_transfer_call and the units are issued in the same receipt, or the payment is refunded; proceeds go to the DAO treasury.
+4. Operate: replay-safe board actions, corrections (retire_units), lost-wallet recovery (reassign_holding), CSV/JSON cap table export with ledger revision and SHA-256.
+5. Liquidity: secondary sales (board approves, seller locks units with accept_deal, buyer pays) and buybacks (DAO pays, units retired); held proceeds retryable by anyone (forward_proceeds).
+6. Pay holders: pro-rata distributions that sum exactly to the budget, funded once by the DAO, paid once per holder, retry-safe.
+7. Exit: board-set explicit payout lists (exit waterfalls, prepare_explicit_distribution), acceleration (accelerate_grant), and close_company (proven on a local Sandbox chain, not on the live company).
+
+## Try it: do X, see Y
+
+- Open https://captab.xyz: see the live cap table and figures (7,140,000 units issued, 5 holders, 3 deals settled, contract and DAO Verified).
+- Open https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet: see the stage tracker with Found, Hire, Raise, Liquidity, and Pay holders checked.
+- Open https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/deals: see the seed round and deals #0 (issuance), #1 (secondary sale), #2 (buyback), each Settled with payment delivered.
+- Open https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet/distributions: see distribution #0, an explicit payout list of 2,000 TESTUSD, Funded, every recipient Paid.
+- Open https://captab.xyz/api/companies/captab-company-0d07df99e1bb0e44.testnet/export?format=csv: get the cap table with headers X-Captab-Ledger-Revision and X-Captab-Export-SHA256.
+
+## Verify it yourself
+
+- `git clone https://github.com/mayohalo/captab && cd captab && node apps/web/scripts/verify-evidence.mjs` (Node 18+, no install, no keys, under a minute): checks the deployed company, DAO, and token code hashes and the 2-of-3 DAO policy against docs/deployment-manifest.v2.testnet.json, that all 16 recorded DAO proposals executed, that 3 deals settled with proceeds delivered, that the payout list was fully paid, and that totals, holdings, and treasury match docs/testnet-v2-rehearsal.json. Expected last line: "All checks passed: 16 DAO proposals, 3 deals, 5 holders."
+- `pnpm install && pnpm demo:sandbox` (Node 22.23+, pnpm 10.16.1, Rust 1.88.0): runs found, raise, secondary sale, buyback, exit payout, and close on a local NEAR chain through real Sputnik DAO votes and token transfers, printing [1/6] to [6/6].
+- `pnpm test:contract` (74 Rust unit tests), `pnpm test:sandbox` (9 NEAR Sandbox tests), `pnpm test:e2e` (26 browser tests); all run in GitHub Actions CI.
+
+## Deployment (NEAR testnet, schema v2)
+
+- Company contract: captab-company-0d07df99e1bb0e44.testnet
+- DAO board: captab-dao-0d07df99e1bb0e44.testnet (Sputnik DAO v2, commit 5434a59)
+- Settlement token (TESTUSD, 6 decimals): captab-token-0d07df99e1bb0e44.testnet
+- History: a schema v1 MVP (Nov 1-4) covered founding, hiring, and payouts; v2 (Nov 13) added rounds, deals, explicit payouts, flexible grants, and close on fresh accounts, because the contract has no self-upgrade method. See "From v1 to v2" in the README.
+
+## How it is built
+
+- Rust company contract on near-sdk 5.17 (modules: ledger, grants, distributions, deals)
+- Pinned Sputnik DAO as the board
+- NEP-141 payments with ft_transfer_call, NEP-366 sponsored claims, NEP-413 wallet sign-in, NEP-297 events
+- Next.js app with a SQLite receipt and payment worker
+
+## Transparency and privacy
+
+Public on chain: units per account, grants and vesting, rounds and prices, deals, payouts, and board votes. Private and off-chain: names and emails behind account IDs, visible to council members after NEP-413 wallet sign-in; each holder sees only their own. Fingerprinted only: charter and agreements (SHA-256 on chain). Amounts are public today; confidential balances are on the roadmap.
+
+## Not implemented
+
+Legal shares or an IPO itself (Captab provides a verifiable export, pays proceeds, and closes the ledger); SAFEs, convertible notes, options with an exercise price; investor KYC; confidential amounts; wallet-visible share tokens (designed in docs/TOKENIZATION_PLAN.md). Third-party wallet extensions are not yet verified; testnet signing used local test keys.

@@ -35,5 +35,6 @@
     "accounts:testnet": "pnpm --filter @captab/web accounts:testnet",
     "rehearse:testnet": "pnpm --filter @captab/web rehearse:testnet",
     "rehearse:v2": "pnpm --filter @captab/web rehearse:v2"
-  }
+  },
+  "license": "MIT"
 }
