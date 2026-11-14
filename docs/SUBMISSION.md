@@ -1,5 +1,7 @@
 # Captab NEAR testnet package
 
+**Live app:** [captab.xyz](https://captab.xyz) shows the v2 company read live from NEAR testnet, with its evidence; [captab.xyz/llms.txt](https://captab.xyz/llms.txt) is a plain-text summary for agents.
+
 Captab runs a company's ownership from day zero to exit on NEAR testnet: founder issuance, contributor grants with vesting, priced investor rounds paid and issued in one transaction, secondary sales, buybacks, exact payouts, and a final close. A Sputnik DAO council is the board and approves every change.
 
 Two fictional companies are live:

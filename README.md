@@ -2,6 +2,8 @@
 
 **DAO-governed company ownership on NEAR, from day zero to exit.** A board approves every change through a Sputnik DAO. A company contract keeps the ownership ledger, vests contributor grants, sells new units to investors in the same transaction that takes their money, settles secondary sales and buybacks, and pays holders from exact, immutable payout lists, so no one is ever paid twice.
 
+**Live app: [captab.xyz](https://captab.xyz)** · [live v2 company](https://captab.xyz/company/captab-company-0d07df99e1bb0e44.testnet) · [summary for agents](https://captab.xyz/llms.txt)
+
 > Testnet prototype. Ownership units are on-chain ledger records, not share tokens or legal equity. TESTUSD is a demo NEP-141 token. All holders are fictional.
 
 ## From day zero to exit
@@ -43,7 +45,7 @@ Two deployments run side by side. Schema v2 covers the whole lifecycle; schema v
 
 Each manifest records code hashes, the full DAO policy, token supply, and storage funding. `CAPTAB_DEPLOYMENT=v2 pnpm verify:testnet` (from `main`) and `pnpm verify:testnet` (from tag `v1-testnet`, which rebuilds the v1 WASM byte for byte) re-check them against live chain state and exit nonzero on any drift.
 
-Demo: [motion overview](docs/demo/captab-motion-30s.mp4) (30 s) · [live read-only walkthrough](docs/demo/live-testnet.webm) (31 s, v1) · [fixture walkthrough and screenshots](docs/demo/README.md)
+Demo: [live app](https://captab.xyz) (v2 company, read from chain) · [motion overview](docs/demo/captab-motion-30s.mp4) (30 s) · [live read-only walkthrough](docs/demo/live-testnet.webm) (31 s, v1) · [fixture walkthrough and screenshots](docs/demo/README.md)
 
 ## How it works
 
